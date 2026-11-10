@@ -16,6 +16,7 @@
     "detect-ats": "tsx src/scripts/detect-ats.ts",
     "ingest:once": "tsx src/scripts/ingest-once.ts",
     "classify:once": "tsx src/scripts/classify-once.ts",
+    "classify:fast": "tsx src/scripts/classify-fast.ts",
     "stats": "tsx src/scripts/stats.ts",
     "test": "vitest run",
     "test:watch": "vitest",
