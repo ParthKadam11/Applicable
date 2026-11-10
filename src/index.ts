@@ -6,7 +6,7 @@ import { createBoss, registerIngestWorkers, scheduleIngestCron } from "./ingesti
 import { pool } from "./db/client.js";
 
 async function main() {
-  console.log("JobFit worker starting…");
+  console.log("CaniApply worker starting…");
 
   const boss = await createBoss();
   await registerIngestWorkers(boss);

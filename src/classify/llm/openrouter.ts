@@ -31,7 +31,7 @@ export class OpenRouterProvider implements LlmProvider {
         "Content-Type": "application/json",
         "User-Agent": config.USER_AGENT,
         "HTTP-Referer": "https://github.com/ParthKadam11/CaniApply",
-        "X-Title": "JobFit",
+        "X-Title": "CaniApply",
       },
       body: JSON.stringify({
         model: this.model,

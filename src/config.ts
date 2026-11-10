@@ -14,7 +14,7 @@ const envSchema = z.object({
     .string()
     .min(1)
     .default(
-      "JobFit/0.1 (+https://github.com/ParthKadam11/CaniApply; job-board research bot)",
+      "CaniApply/0.1 (+https://github.com/ParthKadam11/CaniApply; job-board research bot)",
     ),
   HTTP_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   PER_HOST_DELAY_MS: z.coerce.number().int().nonnegative().default(500),

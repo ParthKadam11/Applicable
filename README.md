@@ -1,4 +1,4 @@
-# JobFit
+# CaniApply
 
 TypeScript (Node 20) backend that collects startup job postings from public ATS
 job-board APIs, stores them in Postgres, and will expose them through an MCP
@@ -39,7 +39,7 @@ See `.env.example`. Required for local ingest:
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Postgres connection string |
-| `USER_AGENT` | Identifies JobFit on outbound HTTP |
+| `USER_AGENT` | Identifies CaniApply on outbound HTTP |
 | `PER_HOST_DELAY_MS` | Polite per-host delay between requests |
 | `INGEST_CRON` | Cron expression (default every 6 hours UTC) |
 | `INGEST_CONCURRENCY` | Max concurrent company fetches (default 5) |

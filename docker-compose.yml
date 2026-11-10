@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: jobfit-postgres
+    container_name: caniapply-postgres
     environment:
       POSTGRES_USER: jobfit
       POSTGRES_PASSWORD: jobfit
