@@ -43,9 +43,11 @@ export function guardEvidence(
     compensation: result.compensation ? { ...result.compensation } : null,
   };
 
-  // india eligibility evidence required for open | region_locked
+  // Evidence required for any decisive india label
   if (
     next.india_eligibility === "open" ||
+    next.india_eligibility === "india_remote" ||
+    next.india_eligibility === "india_onsite" ||
     next.india_eligibility === "region_locked"
   ) {
     const valid = next.eligibility_evidence.filter((e) =>

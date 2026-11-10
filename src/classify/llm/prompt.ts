@@ -1,34 +1,34 @@
 import type { LlmClassifyInput } from "./provider.js";
+import { buildEligibilitySnippet } from "./snippet.js";
 
-export const CLASSIFY_SYSTEM_PROMPT = `You classify job postings for remote-from-India eligibility.
-Return ONLY valid JSON matching this schema:
+export const CLASSIFY_SYSTEM_PROMPT = `Classify India remote eligibility for a job posting.
+Return ONLY JSON:
 {
-  "india_eligibility": "open" | "region_locked" | "unclear",
-  "eligibility_evidence": string[],  // exact verbatim sentences from the posting
-  "remote_scope": "worldwide" | "region" | "country" | "onsite" | "hybrid" | "unknown",
-  "seniority": "intern" | "junior" | "mid" | "senior" | "staff" | "unknown",
-  "role_family": "backend" | "fullstack" | "frontend" | "infra" | "ml" | "other",
-  "seniority_evidence": string[],
-  "role_family_evidence": string[]
+  "india_eligibility": "open" | "india_remote" | "india_onsite" | "region_locked" | "unclear",
+  "eligibility_evidence": string[],
+  "remote_scope": "worldwide" | "region" | "country" | "onsite" | "hybrid" | "unknown"
 }
 
 Rules:
-- Never invent facts. Evidence strings MUST be exact substrings of the posting text.
-- Prefer the Location field: non-India geo (US, EMEA, Europe, London, …) => region_locked with location as evidence; Anywhere/Worldwide/Global/India/APAC => open candidate.
-- india_eligibility evidence MUST be about who can apply / where the worker may work — NOT company marketing ("worldwide team", "customers in 100 countries", "we're distributed").
-- Bare "Remote" is NOT open — use "unclear".
-- "region_locked" ONLY with an explicit geographic/authorization restriction.
-- If no explicit applicant-eligibility sentence supports a value, use "unclear" / "unknown".
-- Temperature is 0; be conservative.`;
+- Evidence MUST be exact substrings of the snippet.
+- open = worldwide / work-from-anywhere / contractor-EOR with no geo lock.
+- india_remote = India allowed and remote; india_onsite = India city, no remote.
+- region_locked = explicit US/UK/EU/etc restriction or auth requirement.
+- Remote APAC/EMEA without India = unclear (not open).
+- Bare "Remote" = unclear. Never invent facts.`;
 
 export function buildClassifyUserPrompt(input: LlmClassifyInput): string {
+  const snippet =
+    input.snippet ??
+    buildEligibilitySnippet({
+      title: input.title,
+      descriptionText: input.descriptionText,
+      locationRaw: input.locationRaw,
+    });
+
   return [
-    `Title: ${input.title}`,
-    `Location: ${input.locationRaw ?? "(none)"}`,
-    `Rules hint: india=${input.rulesHint.india_eligibility}, seniority=${input.rulesHint.seniority}, role_family=${input.rulesHint.role_family}`,
+    snippet,
     "",
-    "Posting text:",
-    // Keep prompts small — Groq free tier is ~8k TPM; long JD dumps cause 429s.
-    input.descriptionText.slice(0, 2_500),
+    `Rules hint: india=${input.rulesHint.india_eligibility}`,
   ].join("\n");
 }

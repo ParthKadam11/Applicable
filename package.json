@@ -18,6 +18,7 @@
     "classify:once": "tsx src/scripts/classify-once.ts",
     "classify:fast": "tsx src/scripts/classify-fast.ts",
     "reclassify:open": "tsx src/scripts/reclassify-open.ts",
+    "llm:status": "tsx src/scripts/llm-status.ts",
     "audit:sample": "tsx src/scripts/audit-sample.ts",
     "stats": "tsx src/scripts/stats.ts",
     "test": "vitest run",

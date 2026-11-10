@@ -15,6 +15,8 @@ describe("classifyWithRules", () => {
 
       if (
         result.india_eligibility === "open" ||
+        result.india_eligibility === "india_remote" ||
+        result.india_eligibility === "india_onsite" ||
         result.india_eligibility === "region_locked"
       ) {
         expect(result.eligibility_evidence.length).toBeGreaterThan(0);

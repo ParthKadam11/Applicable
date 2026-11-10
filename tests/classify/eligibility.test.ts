@@ -38,12 +38,22 @@ describe("classifyLocationRaw", () => {
     expect(classifyLocationRaw("London")?.eligibility_evidence).toEqual(["London"]);
   });
 
-  it("opens Anywhere/Worldwide/Global/India/APAC", () => {
+  it("opens Anywhere/Worldwide; APAC without India is unclear", () => {
     expect(classifyLocationRaw("Anywhere")?.india_eligibility).toBe("open");
     expect(classifyLocationRaw("Worldwide")?.india_eligibility).toBe("open");
     expect(classifyLocationRaw("Global")?.india_eligibility).toBe("open");
-    expect(classifyLocationRaw("India")?.india_eligibility).toBe("open");
-    expect(classifyLocationRaw("APAC")?.india_eligibility).toBe("open");
+    expect(classifyLocationRaw("Remote, APAC")?.india_eligibility).toBe("unclear");
+    expect(classifyLocationRaw("APAC")?.india_eligibility).toBe("unclear");
+    expect(classifyLocationRaw("EMEA")?.india_eligibility).toBe("region_locked");
+  });
+
+  it("splits India remote vs onsite", () => {
+    expect(classifyLocationRaw("Remote - India")?.india_eligibility).toBe(
+      "india_remote",
+    );
+    expect(classifyLocationRaw("Bengaluru, India")?.india_eligibility).toBe(
+      "india_onsite",
+    );
   });
 
   it("ignores bare Remote", () => {
@@ -51,7 +61,7 @@ describe("classifyLocationRaw", () => {
   });
 });
 
-describe("classifyIndiaEligibility ignores marketing worldwide", () => {
+describe("classifyIndiaEligibility", () => {
   it("stays unclear for worldwide team marketing", () => {
     const r = classifyIndiaEligibility({
       title: "Eng",
@@ -69,5 +79,31 @@ describe("classifyIndiaEligibility ignores marketing worldwide", () => {
     });
     expect(r.india_eligibility).toBe("region_locked");
     expect(r.eligibility_evidence).toEqual(["Remote - USA"]);
+  });
+
+  it("locks title country codes like (US)", () => {
+    const r = classifyIndiaEligibility({
+      title: "Backend Engineer (UK)",
+      locationRaw: "Remote",
+      descriptionText: "Great remote role.",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+  });
+
+  it("opens contractor/EOR paths", () => {
+    const r = classifyIndiaEligibility({
+      title: "Eng",
+      descriptionText: "Hired through Deel as a contractor.",
+    });
+    expect(r.india_eligibility).toBe("open");
+  });
+
+  it("does not treat Remote, APAC as open", () => {
+    const r = classifyIndiaEligibility({
+      title: "Eng",
+      locationRaw: "Remote, APAC",
+      descriptionText: "Hiring across APAC for our team.",
+    });
+    expect(r.india_eligibility).toBe("unclear");
   });
 });

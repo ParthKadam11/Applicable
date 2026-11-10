@@ -30,6 +30,7 @@ export async function registerClassifyWorkers(boss: PgBoss): Promise<void> {
           rateLimiter: llm ? rateLimiter : null,
           rulesOnly: !llm,
           llmOnlyIfUnclear: true,
+          force: true, // queue jobs are enqueued for unclear — always run
         });
         console.log(
           `[classify] ok ${jobId}: india=${tag.india_eligibility} via ${tag.classifier}`,

@@ -7,7 +7,7 @@ interface GroqChatResponse {
 }
 
 export class GroqProvider implements LlmProvider {
-  readonly name = "groq";
+  readonly name = "groq" as const;
   readonly model: string;
 
   constructor(
@@ -17,10 +17,12 @@ export class GroqProvider implements LlmProvider {
     this.model = model;
   }
 
+  isConfigured(): boolean {
+    return Boolean(this.apiKey);
+  }
+
   async classify(input: LlmClassifyInput): Promise<unknown> {
-    if (!this.apiKey) {
-      throw new Error("GROQ_API_KEY is not set");
-    }
+    if (!this.apiKey) throw new Error("GROQ_API_KEY is not set");
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

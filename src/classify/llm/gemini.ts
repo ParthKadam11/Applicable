@@ -9,7 +9,7 @@ interface GeminiResponse {
 }
 
 export class GeminiProvider implements LlmProvider {
-  readonly name = "gemini";
+  readonly name = "gemini" as const;
   readonly model: string;
 
   constructor(
@@ -19,10 +19,12 @@ export class GeminiProvider implements LlmProvider {
     this.model = model;
   }
 
+  isConfigured(): boolean {
+    return Boolean(this.apiKey);
+  }
+
   async classify(input: LlmClassifyInput): Promise<unknown> {
-    if (!this.apiKey) {
-      throw new Error("GEMINI_API_KEY is not set");
-    }
+    if (!this.apiKey) throw new Error("GEMINI_API_KEY is not set");
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
 

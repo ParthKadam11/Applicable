@@ -4,7 +4,12 @@ export interface ClassifyFixture {
   locationRaw?: string;
   descriptionText: string;
   expect: {
-    india_eligibility: "open" | "region_locked" | "unclear";
+    india_eligibility:
+      | "open"
+      | "india_remote"
+      | "india_onsite"
+      | "region_locked"
+      | "unclear";
     contractor_or_eor?: boolean;
     seniority?: string;
     role_family?: string;
@@ -13,7 +18,7 @@ export interface ClassifyFixture {
   };
 }
 
-/** 15+ descriptions covering open / region_locked / unclear / tricky cases. */
+/** Descriptions covering open / india_* / region_locked / unclear / tricky cases. */
 export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
   {
     id: "open-india",
@@ -22,7 +27,7 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     descriptionText:
       "We are a distributed team. Candidates in India are welcome to apply. You will own our APIs.",
     expect: {
-      india_eligibility: "open",
+      india_eligibility: "india_remote",
       seniority: "senior",
       role_family: "backend",
     },
@@ -38,12 +43,12 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     },
   },
   {
-    id: "open-apac",
+    id: "unclear-apac",
     title: "Staff Platform Engineer",
     descriptionText:
       "Hiring across APAC for our infrastructure team. System design interview included.",
     expect: {
-      india_eligibility: "open",
+      india_eligibility: "unclear",
       seniority: "staff",
       role_family: "infra",
       interview_style_includes: ["system_design"],
@@ -144,6 +149,20 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     },
   },
   {
+    id: "locked-title-us-code",
+    title: "Software Engineer (US)",
+    locationRaw: "Remote",
+    descriptionText: "Build products with a great team.",
+    expect: { india_eligibility: "region_locked" },
+  },
+  {
+    id: "locked-visa-sponsorship",
+    title: "Engineer",
+    descriptionText:
+      "Visa sponsorship not available. Must have US work authorization.",
+    expect: { india_eligibility: "region_locked" },
+  },
+  {
     id: "unclear-bare-remote",
     title: "Engineer",
     locationRaw: "Remote",
@@ -152,6 +171,20 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     expect: {
       india_eligibility: "unclear",
     },
+  },
+  {
+    id: "unclear-remote-apac",
+    title: "Engineer",
+    locationRaw: "Remote, APAC",
+    descriptionText: "Join our platform team across the region.",
+    expect: { india_eligibility: "unclear" },
+  },
+  {
+    id: "unclear-remote-emea",
+    title: "Engineer",
+    locationRaw: "Remote, EMEA",
+    descriptionText: "Join our platform team across the region.",
+    expect: { india_eligibility: "unclear" },
   },
   {
     id: "unclear-no-location",
@@ -170,7 +203,7 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     descriptionText:
       "Engagement is through Oyster as an employer of record. Remote role with flexible hours.",
     expect: {
-      india_eligibility: "unclear",
+      india_eligibility: "open",
       contractor_or_eor: true,
       seniority: "senior",
       role_family: "fullstack",
@@ -182,7 +215,7 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     descriptionText:
       "You will be hired via Rippling EOR. Location is remote. Salary €80k-€100k annually.",
     expect: {
-      india_eligibility: "unclear",
+      india_eligibility: "open",
       contractor_or_eor: true,
       seniority: "mid",
       role_family: "backend",
@@ -229,11 +262,18 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     expect: { india_eligibility: "open" },
   },
   {
-    id: "loc-open-india",
+    id: "loc-india-onsite",
     title: "Engineer",
-    locationRaw: "India",
+    locationRaw: "Bengaluru, India",
+    descriptionText: "Backend services in our Bangalore office.",
+    expect: { india_eligibility: "india_onsite" },
+  },
+  {
+    id: "loc-india-remote",
+    title: "Engineer",
+    locationRaw: "Remote - India",
     descriptionText: "Backend services.",
-    expect: { india_eligibility: "open" },
+    expect: { india_eligibility: "india_remote" },
   },
   {
     id: "neg-worldwide-team",
@@ -258,4 +298,3 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     expect: { india_eligibility: "unclear" },
   },
 ];
-

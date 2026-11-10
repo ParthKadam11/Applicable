@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const IndiaEligibilitySchema = z.enum([
   "open",
+  "india_remote",
+  "india_onsite",
   "region_locked",
   "unclear",
 ]);
@@ -76,21 +78,17 @@ export const ClassificationResultSchema = z.object({
 
 export type ClassificationResult = z.infer<typeof ClassificationResultSchema>;
 
-/** Subset the LLM is asked to fill when rules are inconclusive. */
+/** Short schema the LLM fills when rules leave india unclear. */
 export const LlmClassificationSchema = z.object({
   india_eligibility: IndiaEligibilitySchema,
-  eligibility_evidence: z.array(z.string()),
+  eligibility_evidence: z.array(z.string()).max(4),
   remote_scope: RemoteScopeSchema.optional(),
-  seniority: SenioritySchema,
-  role_family: RoleFamilySchema,
-  seniority_evidence: z.array(z.string()).optional(),
-  role_family_evidence: z.array(z.string()).optional(),
 });
 
 export type LlmClassification = z.infer<typeof LlmClassificationSchema>;
 
 export type ClassifiedTag = ClassificationResult & {
-  classifier: "rules" | "llm";
+  classifier: "rules" | "llm" | "cache";
   model: string | null;
   classifiedAt: Date;
   contentHash: string;

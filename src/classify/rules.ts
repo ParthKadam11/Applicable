@@ -225,26 +225,17 @@ export function classifyWithRules(input: {
   };
 }
 
-/** LLM when india unclear OR seniority unknown OR unmapped engineering role. */
+/** LLM only when india eligibility is still unclear after rules. */
 export function shouldCallLlm(
   result: ClassificationResult,
-  title: string,
-  descriptionText: string,
+  _title?: string,
+  _descriptionText?: string,
 ): { call: boolean; reason: string } {
   if (result.india_eligibility === "unclear") {
     return { call: true, reason: "india_eligibility=unclear" };
   }
-  if (result.seniority === "unknown") {
-    return { call: true, reason: "seniority=unknown" };
-  }
-  if (
-    result.role_family === "other" &&
-    /\b(?:engineer|developer|software)\b/i.test(`${title} ${descriptionText}`)
-  ) {
-    return { call: true, reason: "role_family=other for engineering title" };
-  }
   return {
     call: false,
-    reason: `skip llm: india=${result.india_eligibility} seniority=${result.seniority} role=${result.role_family}`,
+    reason: `skip llm: india=${result.india_eligibility} (rules confident)`,
   };
 }

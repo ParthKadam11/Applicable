@@ -1,4 +1,4 @@
-import { and, count, countDistinct, eq, isNull, sql } from "drizzle-orm";
+import { and, countDistinct, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { companies, jobTags, jobs } from "../db/schema.js";
 
@@ -6,14 +6,20 @@ export interface EligibilityStats {
   /** Open jobs only (closed_at IS NULL), deduped by (company_id, external_id). */
   jobsScanned: number;
   open: number;
+  indiaRemote: number;
+  indiaOnsite: number;
   regionLocked: number;
   unclear: number;
   untagged: number;
+  /** Jobs that still need LLM (unclear after rules). */
+  needsLlm: number;
   byClassifier: Record<string, number>;
   byCompany: Array<{
     company: string;
     openJobs: number;
     indiaOpen: number;
+    indiaRemote: number;
+    indiaOnsite: number;
     regionLocked: number;
     unclear: number;
     untagged: number;
@@ -21,7 +27,6 @@ export interface EligibilityStats {
 }
 
 export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
-  // Active companies only — dropped boards (Notion/Stripe) stay out of totals.
   const openActive = and(isNull(jobs.closedAt), eq(companies.active, true));
 
   const [{ jobsScanned } = { jobsScanned: 0 }] = await db
@@ -74,6 +79,8 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
       company: companies.name,
       openJobs: countDistinct(sql`(${jobs.companyId}, ${jobs.externalId})`),
       indiaOpen: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'open')`,
+      indiaRemote: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_remote')`,
+      indiaOnsite: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_onsite')`,
       regionLocked: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'region_locked')`,
       unclear: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'unclear')`,
       tagged: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.jobId} is not null)`,
@@ -92,18 +99,25 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
       company: row.company,
       openJobs: openJobsN,
       indiaOpen: Number(row.indiaOpen),
+      indiaRemote: Number(row.indiaRemote),
+      indiaOnsite: Number(row.indiaOnsite),
       regionLocked: Number(row.regionLocked),
       unclear: Number(row.unclear),
       untagged: Math.max(0, openJobsN - taggedN),
     };
   });
 
+  const unclear = map.unclear ?? 0;
+
   return {
     jobsScanned: scanned,
     open: map.open ?? 0,
+    indiaRemote: map.india_remote ?? 0,
+    indiaOnsite: map.india_onsite ?? 0,
     regionLocked: map.region_locked ?? 0,
-    unclear: map.unclear ?? 0,
+    unclear,
     untagged: Math.max(0, scanned - tagged),
+    needsLlm: unclear,
     byClassifier,
     byCompany,
   };
@@ -112,9 +126,11 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
 export function formatEligibilityStats(stats: EligibilityStats): string {
   const lines = [
     `open jobs (deduped): ${stats.jobsScanned}`,
-    `india open:          ${stats.open}`,
+    `worldwide open:      ${stats.open}`,
+    `india remote:        ${stats.indiaRemote}`,
+    `india onsite:        ${stats.indiaOnsite}`,
     `region locked:       ${stats.regionLocked}`,
-    `unclear:             ${stats.unclear}`,
+    `unclear (need LLM):  ${stats.unclear}`,
     `untagged:            ${stats.untagged}`,
     `by classifier:       ${JSON.stringify(stats.byClassifier)}`,
     ``,
@@ -122,7 +138,7 @@ export function formatEligibilityStats(stats: EligibilityStats): string {
   ];
   for (const c of stats.byCompany) {
     lines.push(
-      `  ${c.company}: ${c.openJobs} open | india_open=${c.indiaOpen} locked=${c.regionLocked} unclear=${c.unclear} untagged=${c.untagged}`,
+      `  ${c.company}: ${c.openJobs} open | ww_open=${c.indiaOpen} india_remote=${c.indiaRemote} india_onsite=${c.indiaOnsite} locked=${c.regionLocked} unclear=${c.unclear} untagged=${c.untagged}`,
     );
   }
   return lines.join("\n");

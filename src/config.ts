@@ -3,6 +3,8 @@ import { z } from "zod";
 
 loadEnv();
 
+const providerName = z.enum(["ollama", "groq", "gemini", "openrouter"]);
+
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
@@ -19,15 +21,31 @@ const envSchema = z.object({
   INGEST_CRON: z.string().min(1).default("0 */6 * * *"),
   INGEST_CONCURRENCY: z.coerce.number().int().positive().default(5),
   INGEST_COMPANY_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+
+  // Free-tier LLM providers (comma-separated rotation order)
+  LLM_PROVIDERS: z.string().default("ollama,groq,gemini,openrouter"),
+  /** @deprecated prefer LLM_PROVIDERS */
+  LLM_PROVIDER: z.string().optional().default(""),
+
+  OLLAMA_URL: z.string().default("http://127.0.0.1:11434"),
+  OLLAMA_MODEL: z.string().min(1).default("qwen2.5:3b"),
+
   GROQ_API_KEY: z.string().optional().default(""),
-  GEMINI_API_KEY: z.string().optional().default(""),
-  LLM_PROVIDER: z.enum(["groq", "gemini"]).default("groq"),
-  // llama-3.3-70b-versatile was shut down on Groq free/dev tier (2026-08-16)
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
+
+  GEMINI_API_KEY: z.string().optional().default(""),
   GEMINI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
-  // Keep low for Groq free tier (~8k TPM). Raise if you upgrade.
+
+  OPENROUTER_API_KEY: z.string().optional().default(""),
+  OPENROUTER_MODEL: z
+    .string()
+    .min(1)
+    .default("google/gemma-3-4b-it:free"),
+
   CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(1),
   LLM_RPM: z.coerce.number().int().positive().default(6),
+  LLM_STATE_PATH: z.string().default(".llm-state.json"),
+
   SEARCH_PROVIDER: z.enum(["searxng", "tavily", "brave"]).default("searxng"),
   SEARXNG_URL: z.string().optional().default("http://localhost:8080"),
   TAVILY_API_KEY: z.string().optional().default(""),
@@ -38,3 +56,22 @@ const envSchema = z.object({
 export type AppConfig = z.infer<typeof envSchema>;
 
 export const config: AppConfig = envSchema.parse(process.env);
+
+export function parseLlmProviders(
+  raw: string = config.LLM_PROVIDERS,
+): Array<z.infer<typeof providerName>> {
+  const fromList = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const legacy = config.LLM_PROVIDER?.trim().toLowerCase();
+  const names = fromList.length > 0 ? fromList : legacy ? [legacy] : [];
+
+  const out: Array<z.infer<typeof providerName>> = [];
+  for (const n of names) {
+    const parsed = providerName.safeParse(n);
+    if (parsed.success && !out.includes(parsed.data)) out.push(parsed.data);
+  }
+  return out.length > 0 ? out : ["ollama", "groq", "gemini", "openrouter"];
+}
