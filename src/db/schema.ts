@@ -21,6 +21,12 @@ export const atsEnum = pgEnum("ats", [
   "personio",
 ]);
 
+export const candidateStatusEnum = pgEnum("candidate_status", [
+  "pending",
+  "verified",
+  "rejected",
+]);
+
 export const companies = pgTable(
   "companies",
   {
@@ -101,6 +107,41 @@ export const fetchRuns = pgTable(
   ],
 );
 
+/** Discovered companies awaiting ATS verify / promote. */
+export const companyCandidates = pgTable(
+  "company_candidates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    domain: text("domain"),
+    source: text("source").notNull(),
+    discoveredAt: timestamp("discovered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    status: candidateStatusEnum("status").notNull().default("pending"),
+    ats: atsEnum("ats"),
+    atsSlug: text("ats_slug"),
+    evidenceUrl: text("evidence_url"),
+    jobCount: integer("job_count"),
+    rejectReason: text("reject_reason"),
+    promotedCompanyId: uuid("promoted_company_id").references(
+      () => companies.id,
+      { onDelete: "set null" },
+    ),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("company_candidates_source_name_uidx").on(
+      table.source,
+      table.name,
+    ),
+    index("company_candidates_status_idx").on(table.status),
+    index("company_candidates_source_idx").on(table.source),
+  ],
+);
+
 /** Reserved for phase 2 — classification. */
 export const jobTags = pgTable("job_tags", {
   jobId: uuid("job_id")
@@ -163,3 +204,5 @@ export type NewCompany = typeof companies.$inferInsert;
 export type Job = typeof jobs.$inferSelect;
 export type NewJob = typeof jobs.$inferInsert;
 export type FetchRun = typeof fetchRuns.$inferSelect;
+export type CompanyCandidate = typeof companyCandidates.$inferSelect;
+export type NewCompanyCandidate = typeof companyCandidates.$inferInsert;

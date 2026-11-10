@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import { AtsSchema } from "../ats/types.js";
@@ -16,13 +16,24 @@ const CompanySeedSchema = z.object({
 });
 
 const SeedFileSchema = z.object({
-  companies: z.array(CompanySeedSchema).min(1),
+  companies: z.array(CompanySeedSchema).default([]),
+  blocklist: z.array(z.unknown()).optional(),
 });
 
+/**
+ * Manual overrides only — upserts yaml companies.
+ * Does NOT deactivate discovered companies missing from yaml.
+ */
 async function main() {
   const path = resolve(process.cwd(), "companies.yaml");
   const raw = parseYaml(readFileSync(path, "utf8"));
   const { companies: seeds } = SeedFileSchema.parse(raw);
+
+  if (seeds.length === 0) {
+    console.log("No companies in companies.yaml — nothing to seed.");
+    await pool.end();
+    return;
+  }
 
   const rows = seeds.map((c) => ({
     name: c.name,
@@ -44,34 +55,9 @@ async function main() {
       },
     });
 
-  // Deactivate boards removed from companies.yaml so they stop ingesting.
-  const keep = new Set(rows.map((r) => `${r.ats}:${r.atsSlug}`));
-  const active = await db
-    .select()
-    .from(companies)
-    .where(eq(companies.active, true));
-
-  const toDeactivate = active.filter(
-    (c) => !keep.has(`${c.ats}:${c.atsSlug}`),
-  );
-
-  for (const c of toDeactivate) {
-    await db
-      .update(companies)
-      .set({ active: false })
-      .where(eq(companies.id, c.id));
-  }
-
   console.log(
-    `Seeded ${rows.length} companies from companies.yaml (upsert by ats+slug).`,
+    `Seeded ${rows.length} manual override companies from companies.yaml.`,
   );
-  if (toDeactivate.length > 0) {
-    console.log(
-      `Deactivated ${toDeactivate.length} not in yaml: ${toDeactivate
-        .map((c) => c.name)
-        .join(", ")}`,
-    );
-  }
   await pool.end();
 }
 

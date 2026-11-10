@@ -1,3 +1,4 @@
+import { extractAtsUrls } from "../discover/ats-urls.js";
 import { fetchText } from "../utils/http.js";
 import type { Ats } from "../ats/types.js";
 
@@ -7,26 +8,11 @@ interface Detection {
   url: string;
 }
 
-const PATTERNS: Array<{
+const EXTRA_PATTERNS: Array<{
   ats: Ats;
   regex: RegExp;
   slugGroup: number;
 }> = [
-  {
-    ats: "ashby",
-    regex: /https?:\/\/jobs\.ashbyhq\.com\/([a-zA-Z0-9_-]+)/gi,
-    slugGroup: 1,
-  },
-  {
-    ats: "greenhouse",
-    regex: /https?:\/\/(?:boards|job-boards)\.greenhouse\.io\/([a-zA-Z0-9_-]+)/gi,
-    slugGroup: 1,
-  },
-  {
-    ats: "lever",
-    regex: /https?:\/\/jobs\.lever\.co\/([a-zA-Z0-9_-]+)/gi,
-    slugGroup: 1,
-  },
   {
     ats: "workable",
     regex: /https?:\/\/apply\.workable\.com\/([a-zA-Z0-9_-]+)/gi,
@@ -51,7 +37,17 @@ export function detectAtsFromHtml(html: string, pageUrl?: string): Detection[] {
   if (pageUrl) sources.push(pageUrl);
 
   for (const source of sources) {
-    for (const pattern of PATTERNS) {
+    for (const hit of extractAtsUrls(source)) {
+      const key = `${hit.ats}:${hit.atsSlug.toLowerCase()}`;
+      if (!found.has(key)) {
+        found.set(key, {
+          ats: hit.ats,
+          ats_slug: hit.atsSlug,
+          url: hit.url,
+        });
+      }
+    }
+    for (const pattern of EXTRA_PATTERNS) {
       pattern.regex.lastIndex = 0;
       let match: RegExpExecArray | null;
       while ((match = pattern.regex.exec(source)) !== null) {

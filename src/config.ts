@@ -52,6 +52,11 @@ const envSchema = z.object({
   TAVILY_API_KEY: z.string().optional().default(""),
   BRAVE_API_KEY: z.string().optional().default(""),
   MCP_HTTP_PORT: z.coerce.number().int().positive().default(3100),
+
+  // Company discovery
+  DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),
+  DISCOVER_PROMOTE_LIMIT: z.coerce.number().int().positive().default(80),
+  YC_ALGOLIA_API_KEY: z.string().optional().default(""),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

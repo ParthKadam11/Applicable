@@ -1,3 +1,5 @@
+# Manual overrides (always upserted by db:seed).
+# Discovery promotes other startups automatically; they are NOT removed when missing here.
 companies:
   - name: Supabase
     website: https://supabase.com
@@ -8,7 +10,7 @@ companies:
     website: https://www.diagrid.io
     ats: ashby
     ats_slug: diagrid
-    
+
   - name: PostHog
     website: https://posthog.com
     ats: ashby
@@ -33,3 +35,12 @@ companies:
     website: https://www.metabase.com
     ats: lever
     ats_slug: metabase
+
+# Block discovery/promote for these names, domains, or ATS slugs.
+blocklist:
+  - name: Notion
+  - name: Stripe
+  - domain: notion.so
+  - domain: stripe.com
+  - ats_slug: notion
+  - ats_slug: stripe
