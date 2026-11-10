@@ -9,6 +9,32 @@ export type ClassifyJobPayload = {
   jobId: string;
 };
 
+/** All currently-open jobs (for forced reclassify). */
+export async function findOpenJobs(
+  db: Db,
+  companyId?: string,
+): Promise<Array<{ id: string; contentHash: string }>> {
+  const conditions = [isNull(jobs.closedAt)];
+  if (companyId) conditions.push(eq(jobs.companyId, companyId));
+  return db
+    .select({ id: jobs.id, contentHash: jobs.contentHash })
+    .from(jobs)
+    .where(and(...conditions));
+}
+
+/** Open jobs tagged unclear (for LLM pass). */
+export async function findOpenUnclearJobs(
+  db: Db,
+): Promise<Array<{ id: string; contentHash: string }>> {
+  return db
+    .select({ id: jobs.id, contentHash: jobs.contentHash })
+    .from(jobs)
+    .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+    .where(
+      and(isNull(jobs.closedAt), eq(jobTags.indiaEligibility, "unclear")),
+    );
+}
+
 /** Jobs with no tags, or tags whose content_hash is stale. */
 export async function findJobsNeedingClassification(
   db: Db,

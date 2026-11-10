@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { jobTags, jobs, type Job } from "../db/schema.js";
+import { isNegativeEligibilitySentence } from "./eligibility.js";
 import { guardEvidence } from "./guard.js";
 import { createLlmProvider, type LlmProvider } from "./llm/index.js";
 import { TokenBucket } from "./rate-limit.js";
@@ -16,6 +17,8 @@ export interface ClassifyOptions {
   rateLimiter?: TokenBucket | null;
   /** Skip LLM even if rules are inconclusive (tests / offline). */
   rulesOnly?: boolean;
+  /** Only call LLM when india_eligibility is unclear (ignore seniority/role). */
+  llmOnlyIfUnclear?: boolean;
 }
 
 function mergeLlmIntoRules(
@@ -25,9 +28,22 @@ function mergeLlmIntoRules(
   const merged: ClassificationResult = { ...rules };
 
   if (rules.india_eligibility === "unclear") {
+    // Drop LLM evidence that fails apply-context / negative filters.
+    const evidence = llm.eligibility_evidence.filter(
+      (e) => !isNegativeEligibilitySentence(e),
+    );
     merged.india_eligibility = llm.india_eligibility;
-    merged.eligibility_evidence = llm.eligibility_evidence;
-    if (llm.remote_scope) merged.remote_scope = llm.remote_scope;
+    merged.eligibility_evidence = evidence;
+    if (
+      (llm.india_eligibility === "open" ||
+        llm.india_eligibility === "region_locked") &&
+      evidence.length === 0
+    ) {
+      merged.india_eligibility = "unclear";
+      merged.remote_scope = "unknown";
+    } else if (llm.remote_scope) {
+      merged.remote_scope = llm.remote_scope;
+    }
   }
 
   if (rules.seniority === "unknown" && llm.seniority !== "unknown") {
@@ -45,38 +61,55 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Parse Groq/Gemini "try again in Xs" hints from 429 bodies. */
+/** Parse Groq/Gemini "try again in Xs" / "Yms" hints from 429 bodies. */
 export function retryAfterMsFromError(message: string): number | null {
-  const m = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*s/i);
-  if (!m?.[1]) return null;
-  return Math.ceil(Number(m[1]) * 1000) + 250;
+  const ms = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*ms/i);
+  if (ms?.[1]) return Math.ceil(Number(ms[1])) + 250;
+  const sec = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*s/i);
+  if (sec?.[1]) return Math.ceil(Number(sec[1]) * 1000) + 250;
+  return null;
 }
 
+/**
+ * Call LLM until success or non-retryable failure.
+ * On 429: wait (honor RPM / TPM) — never drop the job for rate limits.
+ */
 async function callLlmWithRetry(
   provider: LlmProvider,
   input: Parameters<LlmProvider["classify"]>[0],
   rateLimiter: TokenBucket | null | undefined,
 ): Promise<ReturnType<typeof LlmClassificationSchema.parse> | null> {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  let attempt = 0;
+  let validationFailures = 0;
+
+  for (;;) {
+    attempt += 1;
     try {
       if (rateLimiter) await rateLimiter.acquire();
       const raw = await provider.classify(input);
       return LlmClassificationSchema.parse(raw);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.warn(`[classify:llm] attempt ${attempt + 1} failed:`, message);
+      console.warn(`[classify:llm] attempt ${attempt} failed:`, message.slice(0, 300));
 
       const is429 = /\b429\b|rate limit/i.test(message);
-      if (is429 && attempt < 2) {
-        const wait =
-          retryAfterMsFromError(message) ?? 5_000 * (attempt + 1);
-        console.warn(`[classify:llm] rate limited — waiting ${wait}ms`);
+      if (is429) {
+        const wait = retryAfterMsFromError(message) ?? Math.min(60_000, 5_000 * Math.min(attempt, 6));
+        console.warn(`[classify:llm] rate limited — waiting ${wait}ms (will not drop)`);
         await sleep(wait);
         continue;
       }
+
+      // Invalid JSON / schema: retry a couple times then keep rules.
+      validationFailures += 1;
+      if (validationFailures < 3) {
+        await sleep(500);
+        continue;
+      }
+      console.warn(`[classify:llm] giving up after ${validationFailures} non-rate-limit failures`);
+      return null;
     }
   }
-  return null;
 }
 
 export async function classifyJobContent(
@@ -93,34 +126,49 @@ export async function classifyJobContent(
   let classifier: "rules" | "llm" = "rules";
   let model: string | null = null;
 
-  const provider =
-    options.rulesOnly === true
-      ? null
-      : (options.llm ?? createLlmProvider());
+  if (options.rulesOnly !== true) {
+    const provider = options.llm ?? createLlmProvider();
+    if (!provider) {
+      console.log(`[classify] skip llm: no provider configured`);
+    } else {
+      const decision = options.llmOnlyIfUnclear
+        ? rules.india_eligibility === "unclear"
+          ? { call: true, reason: "india_eligibility=unclear" }
+          : {
+              call: false,
+              reason: `skip llm: india=${rules.india_eligibility}`,
+            }
+        : shouldCallLlm(rules, job.title, job.descriptionText);
 
-  if (
-    provider &&
-    shouldCallLlm(rules, job.title, job.descriptionText)
-  ) {
-    const llmParsed = await callLlmWithRetry(
-      provider,
-      {
-        title: job.title,
-        descriptionText: job.descriptionText,
-        locationRaw: job.locationRaw,
-        rulesHint: {
-          india_eligibility: rules.india_eligibility,
-          seniority: rules.seniority,
-          role_family: rules.role_family,
-        },
-      },
-      options.rateLimiter,
-    );
+      if (!decision.call) {
+        console.log(`[classify] ${decision.reason}`);
+      } else {
+        console.log(`[classify] calling llm: ${decision.reason}`);
+        const llmParsed = await callLlmWithRetry(
+          provider,
+          {
+            title: job.title,
+            descriptionText: job.descriptionText,
+            locationRaw: job.locationRaw,
+            rulesHint: {
+              india_eligibility: rules.india_eligibility,
+              seniority: rules.seniority,
+              role_family: rules.role_family,
+            },
+          },
+          options.rateLimiter,
+        );
 
-    if (llmParsed) {
-      result = mergeLlmIntoRules(rules, llmParsed);
-      classifier = "llm";
-      model = `${provider.name}:${provider.model}`;
+        if (llmParsed) {
+          result = mergeLlmIntoRules(rules, llmParsed);
+          classifier = "llm";
+          model = `${provider.name}:${provider.model}`;
+        } else {
+          console.log(
+            `[classify] skip llm merge: invalid output after retries — keeping rules`,
+          );
+        }
+      }
     }
   }
 

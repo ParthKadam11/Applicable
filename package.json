@@ -17,6 +17,8 @@
     "ingest:once": "tsx src/scripts/ingest-once.ts",
     "classify:once": "tsx src/scripts/classify-once.ts",
     "classify:fast": "tsx src/scripts/classify-fast.ts",
+    "reclassify:open": "tsx src/scripts/reclassify-open.ts",
+    "audit:sample": "tsx src/scripts/audit-sample.ts",
     "stats": "tsx src/scripts/stats.ts",
     "test": "vitest run",
     "test:watch": "vitest",

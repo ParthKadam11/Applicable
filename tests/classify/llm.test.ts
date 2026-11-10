@@ -38,14 +38,15 @@ describe("classifyJobContent LLM merge", () => {
     expect(tag.eligibility_evidence[0]).toBe(evidence);
   });
 
-  it("retries once on invalid LLM JSON then keeps rules result", async () => {
+  it("retries invalid LLM JSON then keeps rules result", async () => {
     const provider: LlmProvider = {
       name: "mock",
       model: "mock-1",
       classify: vi
         .fn()
         .mockResolvedValueOnce({ nope: true })
-        .mockResolvedValueOnce({ still: "bad" }),
+        .mockResolvedValueOnce({ still: "bad" })
+        .mockResolvedValueOnce({ also: "bad" }),
     };
 
     const tag = await classifyJobContent(

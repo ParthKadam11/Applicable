@@ -200,4 +200,62 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
       compensation: { min: 90000, max: 110000, currency: "GBP" },
     },
   },
+  {
+    id: "loc-locked-remote-usa",
+    title: "Engineer",
+    locationRaw: "Remote - USA",
+    descriptionText: "Build products. Great benefits.",
+    expect: { india_eligibility: "region_locked" },
+  },
+  {
+    id: "loc-locked-emea",
+    title: "Engineer",
+    locationRaw: "EMEA",
+    descriptionText: "Join our platform team.",
+    expect: { india_eligibility: "region_locked" },
+  },
+  {
+    id: "loc-locked-london",
+    title: "Engineer",
+    locationRaw: "London",
+    descriptionText: "Hybrid in our London office.",
+    expect: { india_eligibility: "region_locked" },
+  },
+  {
+    id: "loc-open-worldwide",
+    title: "Engineer",
+    locationRaw: "Worldwide",
+    descriptionText: "Ship code.",
+    expect: { india_eligibility: "open" },
+  },
+  {
+    id: "loc-open-india",
+    title: "Engineer",
+    locationRaw: "India",
+    descriptionText: "Backend services.",
+    expect: { india_eligibility: "open" },
+  },
+  {
+    id: "neg-worldwide-team",
+    title: "Backend Engineer",
+    locationRaw: "Remote",
+    descriptionText:
+      "We are a worldwide team building cloud tools. Great culture and benefits.",
+    expect: { india_eligibility: "unclear" },
+  },
+  {
+    id: "neg-customers-countries",
+    title: "Frontend Engineer",
+    descriptionText:
+      "Our customers are in 100+ countries. Come build UI for them.",
+    expect: { india_eligibility: "unclear" },
+  },
+  {
+    id: "neg-distributed-company",
+    title: "Engineer",
+    descriptionText:
+      "We're distributed across the globe. Looking for a remote engineer.",
+    expect: { india_eligibility: "unclear" },
+  },
 ];
+

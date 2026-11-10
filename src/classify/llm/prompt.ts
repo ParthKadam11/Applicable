@@ -14,10 +14,11 @@ Return ONLY valid JSON matching this schema:
 
 Rules:
 - Never invent facts. Evidence strings MUST be exact substrings of the posting text.
-- india_eligibility "open" ONLY with an explicit sentence allowing India, APAC, worldwide, work from anywhere, any timezone, or global remote.
+- Prefer the Location field: non-India geo (US, EMEA, Europe, London, …) => region_locked with location as evidence; Anywhere/Worldwide/Global/India/APAC => open candidate.
+- india_eligibility evidence MUST be about who can apply / where the worker may work — NOT company marketing ("worldwide team", "customers in 100 countries", "we're distributed").
 - Bare "Remote" is NOT open — use "unclear".
 - "region_locked" ONLY with an explicit geographic/authorization restriction.
-- If no explicit sentence supports a value, use "unclear" / "unknown".
+- If no explicit applicant-eligibility sentence supports a value, use "unclear" / "unknown".
 - Temperature is 0; be conservative.`;
 
 export function buildClassifyUserPrompt(input: LlmClassifyInput): string {

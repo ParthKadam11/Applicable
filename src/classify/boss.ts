@@ -29,6 +29,7 @@ export async function registerClassifyWorkers(boss: PgBoss): Promise<void> {
           llm,
           rateLimiter: llm ? rateLimiter : null,
           rulesOnly: !llm,
+          llmOnlyIfUnclear: true,
         });
         console.log(
           `[classify] ok ${jobId}: india=${tag.india_eligibility} via ${tag.classifier}`,
