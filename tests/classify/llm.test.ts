@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { classifyJobContent } from "../../src/classify/classify.js";
+import {
+  classifyJobContent,
+  retryAfterMsFromError,
+} from "../../src/classify/classify.js";
 import type { LlmProvider } from "../../src/classify/llm/provider.js";
 
 describe("classifyJobContent LLM merge", () => {
@@ -55,7 +58,7 @@ describe("classifyJobContent LLM merge", () => {
       { llm: provider },
     );
 
-    expect(provider.classify).toHaveBeenCalledTimes(2);
+    expect(provider.classify).toHaveBeenCalledTimes(3);
     expect(tag.classifier).toBe("rules");
     expect(tag.india_eligibility).toBe("unclear");
   });
@@ -85,6 +88,52 @@ describe("classifyJobContent LLM merge", () => {
 
     expect(tag.india_eligibility).toBe("unclear");
     expect(tag.eligibility_evidence).toEqual([]);
+  });
+
+  it("parses Groq retry-after seconds from 429 messages", () => {
+    expect(
+      retryAfterMsFromError(
+        "Rate limit reached. Please try again in 6.5325s. Need more tokens?",
+      ),
+    ).toBe(6783);
+  });
+
+  it("waits and retries on HTTP 429 then succeeds", async () => {
+    vi.useFakeTimers();
+    const provider: LlmProvider = {
+      name: "mock",
+      model: "mock-1",
+      classify: vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error(
+            'Groq HTTP 429: {"error":{"message":"Please try again in 0.05s."}}',
+          ),
+        )
+        .mockResolvedValueOnce({
+          india_eligibility: "unclear",
+          eligibility_evidence: [],
+          remote_scope: "unknown",
+          seniority: "unknown",
+          role_family: "other",
+        }),
+    };
+
+    const pending = classifyJobContent(
+      {
+        title: "Engineer",
+        descriptionText: "Remote position.",
+        locationRaw: "Remote",
+        contentHash: "rate",
+      },
+      { llm: provider },
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    const tag = await pending;
+    expect(provider.classify).toHaveBeenCalledTimes(2);
+    expect(tag.classifier).toBe("llm");
+    vi.useRealTimers();
   });
 
   it("skips LLM when rulesOnly is set", async () => {

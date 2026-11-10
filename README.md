@@ -47,8 +47,8 @@ See `.env.example`. Required for local ingest:
 | `LLM_PROVIDER` | `groq` or `gemini` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` | Optional; rules-only if unset |
 | `GROQ_MODEL` | Default `openai/gpt-oss-20b` (Llama 3.3 IDs are deprecated on Groq) |
-| `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 3) |
-| `LLM_RPM` | Token-bucket rate limit for LLM calls |
+| `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 1; raise if not rate-limited) |
+| `LLM_RPM` | Token-bucket for LLM calls (default 6; Groq free ~8k TPM) |
 
 Search / MCP vars are reserved for later phases.
 

@@ -41,21 +41,39 @@ function mergeLlmIntoRules(
   return merged;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Parse Groq/Gemini "try again in Xs" hints from 429 bodies. */
+export function retryAfterMsFromError(message: string): number | null {
+  const m = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*s/i);
+  if (!m?.[1]) return null;
+  return Math.ceil(Number(m[1]) * 1000) + 250;
+}
+
 async function callLlmWithRetry(
   provider: LlmProvider,
   input: Parameters<LlmProvider["classify"]>[0],
   rateLimiter: TokenBucket | null | undefined,
 ): Promise<ReturnType<typeof LlmClassificationSchema.parse> | null> {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       if (rateLimiter) await rateLimiter.acquire();
       const raw = await provider.classify(input);
       return LlmClassificationSchema.parse(raw);
     } catch (err) {
-      console.warn(
-        `[classify:llm] attempt ${attempt + 1} failed:`,
-        err instanceof Error ? err.message : err,
-      );
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[classify:llm] attempt ${attempt + 1} failed:`, message);
+
+      const is429 = /\b429\b|rate limit/i.test(message);
+      if (is429 && attempt < 2) {
+        const wait =
+          retryAfterMsFromError(message) ?? 5_000 * (attempt + 1);
+        console.warn(`[classify:llm] rate limited — waiting ${wait}ms`);
+        await sleep(wait);
+        continue;
+      }
     }
   }
   return null;

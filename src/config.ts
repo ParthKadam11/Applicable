@@ -25,8 +25,9 @@ const envSchema = z.object({
   // llama-3.3-70b-versatile was shut down on Groq free/dev tier (2026-08-16)
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
   GEMINI_MODEL: z.string().min(1).default("gemini-2.0-flash"),
-  CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(3),
-  LLM_RPM: z.coerce.number().int().positive().default(30),
+  // Keep low for Groq free tier (~8k TPM). Raise if you upgrade.
+  CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(1),
+  LLM_RPM: z.coerce.number().int().positive().default(6),
   SEARCH_PROVIDER: z.enum(["searxng", "tavily", "brave"]).default("searxng"),
   SEARXNG_URL: z.string().optional().default("http://localhost:8080"),
   TAVILY_API_KEY: z.string().optional().default(""),

@@ -27,6 +27,7 @@ export function buildClassifyUserPrompt(input: LlmClassifyInput): string {
     `Rules hint: india=${input.rulesHint.india_eligibility}, seniority=${input.rulesHint.seniority}, role_family=${input.rulesHint.role_family}`,
     "",
     "Posting text:",
-    input.descriptionText.slice(0, 12_000),
+    // Keep prompts small — Groq free tier is ~8k TPM; long JD dumps cause 429s.
+    input.descriptionText.slice(0, 2_500),
   ].join("\n");
 }
