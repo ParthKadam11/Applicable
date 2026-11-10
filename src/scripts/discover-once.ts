@@ -1,13 +1,6 @@
-import {
-  formatEligibilityStats,
-  getEligibilityStats,
-} from "../classify/stats.js";
-import { runDiscovery } from "../discover/run.js";
-import {
-  formatDiscoverStatus,
-  getDiscoverStatus,
-} from "../discover/status.js";
+import { getEligibilityStats } from "../classify/stats.js";
 import { config } from "../config.js";
+import { runDiscovery } from "../discover/run.js";
 import { db, pool } from "../db/client.js";
 
 async function main() {
@@ -25,22 +18,29 @@ async function main() {
   );
   const promoteLimit = promoteLimitArg
     ? Number(promoteLimitArg.split("=")[1])
-    : config.DISCOVER_PROMOTE_LIMIT;
+    : Number(process.env.PROMOTE_LIMIT ?? config.DISCOVER_PROMOTE_LIMIT);
 
-  console.log("Running company discovery…");
+  console.log(
+    `Running company discovery (promote limit=${promoteLimit}, concurrency=${config.DISCOVER_PROMOTE_CONCURRENCY})…`,
+  );
   const result = await runDiscovery(db, { sources, promoteLimit });
 
-  console.log("\n=== discovery summary ===");
-  console.log("found by source:", result.foundBySource);
-  console.log("upserted:", result.upserted);
-  console.log("promote:", result.promote);
-
-  const status = await getDiscoverStatus(db);
-  console.log("\n" + formatDiscoverStatus(status));
-
   const stats = await getEligibilityStats(db);
-  console.log("\n=== open job stats ===");
-  console.log(formatEligibilityStats(stats));
+
+  console.log("\n=== discovery summary ===");
+  console.log(`found:     ${JSON.stringify(result.foundBySource)}`);
+  console.log(`upserted:  ${result.upserted}`);
+  console.log(
+    `promote:   attempted=${result.promote.attempted} promoted=${result.promote.promoted} verified=${result.promote.verified} rejected=${result.promote.rejected} skipped_existing=${result.promote.skippedExisting}`,
+  );
+  console.log(
+    `ingest:    jobs=${result.promote.ingestedJobs} classified=${result.promote.classifiedJobs} timeout_retries=${result.promote.timedOutRetried}`,
+  );
+  console.log(`pending:   ${result.promote.pendingRemaining} remaining`);
+  console.log(
+    `tech open: ${stats.jobsScanned} (non-tech excluded ${stats.nonTechExcluded})`,
+  );
+  console.log(`(details: npm run discover:status | npm run stats)`);
 
   await pool.end();
 }

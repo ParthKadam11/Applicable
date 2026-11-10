@@ -43,9 +43,16 @@ export const RoleFamilySchema = z.enum([
   "backend",
   "fullstack",
   "frontend",
+  "mobile",
   "infra",
   "ml",
+  "data",
+  "security",
+  "qa",
+  "developer_relations",
+  "solutions",
   "other",
+  "non_tech",
 ]);
 export type RoleFamily = z.infer<typeof RoleFamilySchema>;
 

@@ -1,9 +1,18 @@
-import { and, countDistinct, eq, isNull, sql } from "drizzle-orm";
+import { and, countDistinct, eq, isNull, ne, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { companies, jobTags, jobs } from "../db/schema.js";
 
+/** Open + active + tech roles only (excludes role_family=non_tech). */
+function techOpenActive() {
+  return and(
+    isNull(jobs.closedAt),
+    eq(companies.active, true),
+    or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
+  );
+}
+
 export interface EligibilityStats {
-  /** Open jobs only (closed_at IS NULL), deduped by (company_id, external_id). */
+  /** Open tech jobs only (closed_at IS NULL), deduped by (company_id, external_id). */
   jobsScanned: number;
   open: number;
   indiaRemote: number;
@@ -11,6 +20,7 @@ export interface EligibilityStats {
   regionLocked: number;
   unclear: number;
   untagged: number;
+  nonTechExcluded: number;
   /** Jobs that still need LLM (unclear after rules). */
   needsLlm: number;
   byClassifier: Record<string, number>;
@@ -28,6 +38,7 @@ export interface EligibilityStats {
 
 export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
   const openActive = and(isNull(jobs.closedAt), eq(companies.active, true));
+  const techFilter = techOpenActive();
 
   const [{ jobsScanned } = { jobsScanned: 0 }] = await db
     .select({
@@ -37,7 +48,21 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
     })
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
-    .where(openActive);
+    .leftJoin(jobTags, eq(jobTags.jobId, jobs.id))
+    .where(techFilter);
+
+  const [{ nonTechExcluded } = { nonTechExcluded: 0 }] = await db
+    .select({
+      nonTechExcluded: countDistinct(
+        sql`(${jobs.companyId}, ${jobs.externalId})`,
+      ),
+    })
+    .from(jobs)
+    .innerJoin(companies, eq(companies.id, jobs.companyId))
+    .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+    .where(
+      and(openActive, eq(jobTags.roleFamily, "non_tech")),
+    );
 
   const byEligibility = await db
     .select({
@@ -47,7 +72,7 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(openActive)
+    .where(and(openActive, ne(jobTags.roleFamily, "non_tech")))
     .groupBy(jobTags.indiaEligibility);
 
   const byClassifierRows = await db
@@ -58,7 +83,7 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(openActive)
+    .where(and(openActive, ne(jobTags.roleFamily, "non_tech")))
     .groupBy(jobTags.classifier);
 
   const map: Record<string, number> = {};
@@ -77,13 +102,13 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
   const perCompany = await db
     .select({
       company: companies.name,
-      openJobs: countDistinct(sql`(${jobs.companyId}, ${jobs.externalId})`),
-      indiaOpen: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'open')`,
-      indiaRemote: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_remote')`,
-      indiaOnsite: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_onsite')`,
-      regionLocked: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'region_locked')`,
-      unclear: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'unclear')`,
-      tagged: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.jobId} is not null)`,
+      openJobs: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      indiaOpen: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'open' and ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      indiaRemote: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_remote' and ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      indiaOnsite: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'india_onsite' and ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      regionLocked: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'region_locked' and ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      unclear: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.indiaEligibility} = 'unclear' and ${jobTags.roleFamily} is distinct from 'non_tech')`,
+      tagged: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId})) filter (where ${jobTags.jobId} is not null and ${jobTags.roleFamily} is distinct from 'non_tech')`,
     })
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
@@ -117,6 +142,7 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
     regionLocked: map.region_locked ?? 0,
     unclear,
     untagged: Math.max(0, scanned - tagged),
+    nonTechExcluded: Number(nonTechExcluded),
     needsLlm: unclear,
     byClassifier,
     byCompany,
@@ -125,18 +151,20 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
 
 export function formatEligibilityStats(stats: EligibilityStats): string {
   const lines = [
-    `open jobs (deduped): ${stats.jobsScanned}`,
-    `worldwide open:      ${stats.open}`,
-    `india remote:        ${stats.indiaRemote}`,
-    `india onsite:        ${stats.indiaOnsite}`,
-    `region locked:       ${stats.regionLocked}`,
-    `unclear (need LLM):  ${stats.unclear}`,
-    `untagged:            ${stats.untagged}`,
-    `by classifier:       ${JSON.stringify(stats.byClassifier)}`,
+    `tech open jobs (deduped): ${stats.jobsScanned}`,
+    `worldwide open:           ${stats.open}`,
+    `india remote:             ${stats.indiaRemote}`,
+    `india onsite:             ${stats.indiaOnsite}`,
+    `region locked:            ${stats.regionLocked}`,
+    `unclear (need LLM):       ${stats.unclear}`,
+    `untagged:                 ${stats.untagged}`,
+    `non-tech excluded:        ${stats.nonTechExcluded}`,
+    `by classifier:            ${JSON.stringify(stats.byClassifier)}`,
     ``,
-    `open jobs per company:`,
+    `tech open jobs per company:`,
   ];
   for (const c of stats.byCompany) {
+    if (c.openJobs === 0 && c.untagged === 0) continue;
     lines.push(
       `  ${c.company}: ${c.openJobs} open | ww_open=${c.indiaOpen} india_remote=${c.indiaRemote} india_onsite=${c.indiaOnsite} locked=${c.regionLocked} unclear=${c.unclear} untagged=${c.untagged}`,
     );

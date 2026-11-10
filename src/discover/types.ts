@@ -11,6 +11,10 @@ export interface DiscoveredCompany {
   /** Pre-parsed ATS from a job-board URL. */
   ats?: Ats | null;
   atsSlug?: string | null;
+  /** YC industry / tags used for hardware filter. */
+  industries?: string[];
+  tags?: string[];
+  subindustry?: string | null;
 }
 
 export interface AtsHit {
@@ -19,4 +23,5 @@ export interface AtsHit {
   url: string;
 }
 
-export const MAX_JOBS_FOR_PROMOTE = 500;
+/** Skip enterprise-scale boards. */
+export const MAX_JOBS_FOR_PROMOTE = 150;

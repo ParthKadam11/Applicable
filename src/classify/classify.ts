@@ -7,6 +7,7 @@ import { retryAfterMsFromError } from "./llm/errors.js";
 import { createLlmProvider, type LlmProvider } from "./llm/index.js";
 import { buildEligibilitySnippet } from "./llm/snippet.js";
 import { TokenBucket } from "./rate-limit.js";
+import { isTechRole } from "./roles.js";
 import { classifyWithRules, shouldCallLlm } from "./rules.js";
 import {
   LlmClassificationSchema,
@@ -191,12 +192,14 @@ export async function classifyJobContent(
       console.log(`[classify] skip llm: no provider configured`);
     } else {
       const decision = options.llmOnlyIfUnclear
-        ? rules.india_eligibility === "unclear"
-          ? { call: true, reason: "india_eligibility=unclear" }
-          : {
-              call: false,
-              reason: `skip llm: india=${rules.india_eligibility}`,
-            }
+        ? !isTechRole(rules.role_family)
+          ? { call: false, reason: "skip llm: role_family=non_tech" }
+          : rules.india_eligibility === "unclear"
+            ? { call: true, reason: "india_eligibility=unclear" }
+            : {
+                call: false,
+                reason: `skip llm: india=${rules.india_eligibility}`,
+              }
         : shouldCallLlm(rules, job.title, job.descriptionText);
 
       if (!decision.call) {

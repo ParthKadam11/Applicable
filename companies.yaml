@@ -40,7 +40,14 @@ companies:
 blocklist:
   - name: Notion
   - name: Stripe
+  - name: Y Combinator
+  - name: GOAT Group
+  - name: Instacart
+  - name: Gusto
+  - name: CircuitHub
+  - name: AON3D
   - domain: notion.so
   - domain: stripe.com
+  - domain: ycombinator.com
   - ats_slug: notion
   - ats_slug: stripe

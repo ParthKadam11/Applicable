@@ -22,7 +22,7 @@ export async function findOpenJobs(
     .where(and(...conditions));
 }
 
-/** Open jobs tagged unclear (for LLM pass). */
+/** Open tech jobs tagged unclear (for LLM pass). Excludes non_tech. */
 export async function findOpenUnclearJobs(
   db: Db,
 ): Promise<Array<{ id: string; contentHash: string }>> {
@@ -31,7 +31,11 @@ export async function findOpenUnclearJobs(
     .from(jobs)
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
     .where(
-      and(isNull(jobs.closedAt), eq(jobTags.indiaEligibility, "unclear")),
+      and(
+        isNull(jobs.closedAt),
+        eq(jobTags.indiaEligibility, "unclear"),
+        ne(jobTags.roleFamily, "non_tech"),
+      ),
     );
 }
 

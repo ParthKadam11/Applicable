@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 import type { Db } from "../db/client.js";
 import { verifyAndPromote, type PromoteStats } from "./promote.js";
 import { discoverHimalayas } from "./sources/himalayas.js";
@@ -18,6 +19,7 @@ export async function runDiscovery(
   options?: {
     sources?: DiscoverSource[];
     promoteLimit?: number;
+    concurrency?: number;
     ingest?: boolean;
   },
 ): Promise<DiscoverRunResult> {
@@ -60,7 +62,8 @@ export async function runDiscovery(
   console.log(`[discover] upserted ${upserted} candidate rows`);
 
   const promote = await verifyAndPromote(db, {
-    limit: options?.promoteLimit ?? 80,
+    limit: options?.promoteLimit ?? config.DISCOVER_PROMOTE_LIMIT,
+    concurrency: options?.concurrency ?? config.DISCOVER_PROMOTE_CONCURRENCY,
     ingest: options?.ingest,
   });
 

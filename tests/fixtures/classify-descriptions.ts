@@ -144,7 +144,7 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
       "Open to UK residents. Expect a DSA screen and system design round.",
     expect: {
       india_eligibility: "region_locked",
-      role_family: "ml",
+      role_family: "data",
       interview_style_includes: ["dsa", "system_design"],
     },
   },

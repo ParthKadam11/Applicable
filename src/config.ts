@@ -55,7 +55,8 @@ const envSchema = z.object({
 
   // Company discovery
   DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),
-  DISCOVER_PROMOTE_LIMIT: z.coerce.number().int().positive().default(80),
+  DISCOVER_PROMOTE_LIMIT: z.coerce.number().int().positive().default(300),
+  DISCOVER_PROMOTE_CONCURRENCY: z.coerce.number().int().positive().default(5),
   YC_ALGOLIA_API_KEY: z.string().optional().default(""),
 });
 

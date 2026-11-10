@@ -1,11 +1,13 @@
 import { classifyIndiaEligibility } from "./eligibility.js";
+import { classifyRoleFamily, isTechRole } from "./roles.js";
 import type {
   ClassificationResult,
   InterviewStyle,
-  RoleFamily,
   Seniority,
 } from "./types.js";
 import { sentenceMatching } from "./text.js";
+
+export { classifyRoleFamily, isTechRole } from "./roles.js";
 
 const CONTRACTOR_PATTERNS: Array<{ re: RegExp; label: string }> = [
   { re: /\bDeel\b/i, label: "Deel" },
@@ -42,24 +44,6 @@ const SENIORITY_PATTERNS: Array<{ level: Seniority; re: RegExp }> = [
   { level: "junior", re: /\bentry[- ]level\b/i },
   { level: "mid", re: /\bmid[- ]level\b/i },
   { level: "mid", re: /\bmid[- ]career\b/i },
-];
-
-const ROLE_PATTERNS: Array<{ family: RoleFamily; re: RegExp }> = [
-  { family: "ml", re: /\bmachine learning\b/i },
-  { family: "ml", re: /\b\bML\b(?:\s+engineer)?/ },
-  { family: "ml", re: /\bdata scientist\b/i },
-  { family: "ml", re: /\bLLM\b/ },
-  { family: "infra", re: /\bdevops\b/i },
-  { family: "infra", re: /\bsite reliability\b/i },
-  { family: "infra", re: /\b\bSRE\b/ },
-  { family: "infra", re: /\binfrastructure\b/i },
-  { family: "infra", re: /\bplatform engineer\b/i },
-  { family: "fullstack", re: /\bfull[- ]?stack\b/i },
-  { family: "frontend", re: /\bfront[- ]?end\b/i },
-  { family: "frontend", re: /\breact\b/i },
-  { family: "backend", re: /\bback[- ]?end\b/i },
-  { family: "backend", re: /\bapi engineer\b/i },
-  { family: "backend", re: /\bserver[- ]side\b/i },
 ];
 
 function classifyInterview(text: string): {
@@ -104,18 +88,6 @@ function classifySeniority(title: string, text: string): {
     if (sentence) return { seniority: level, evidence: sentence };
   }
   return { seniority: "unknown", evidence: null };
-}
-
-function classifyRoleFamily(title: string, text: string): {
-  role_family: RoleFamily;
-  evidence: string | null;
-} {
-  const combined = `${title}\n${text}`;
-  for (const { family, re } of ROLE_PATTERNS) {
-    const sentence = sentenceMatching(combined, re);
-    if (sentence) return { role_family: family, evidence: sentence };
-  }
-  return { role_family: "other", evidence: null };
 }
 
 export function parseCompensation(text: string): ClassificationResult["compensation"] {
@@ -208,7 +180,7 @@ export function classifyWithRules(input: {
   const interview = classifyInterview(text);
   const contractor = classifyContractor(text);
   const seniority = classifySeniority(input.title, text);
-  const role = classifyRoleFamily(input.title, text);
+  const role = classifyRoleFamily(input.title, input.descriptionText);
   const compensation = parseCompensation(text);
 
   return {
@@ -225,12 +197,15 @@ export function classifyWithRules(input: {
   };
 }
 
-/** LLM only when india eligibility is still unclear after rules. */
+/** LLM only when india eligibility is still unclear after rules (tech roles only). */
 export function shouldCallLlm(
   result: ClassificationResult,
   _title?: string,
   _descriptionText?: string,
 ): { call: boolean; reason: string } {
+  if (!isTechRole(result.role_family)) {
+    return { call: false, reason: "skip llm: role_family=non_tech" };
+  }
   if (result.india_eligibility === "unclear") {
     return { call: true, reason: "india_eligibility=unclear" };
   }
