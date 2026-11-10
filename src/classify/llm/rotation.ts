@@ -25,6 +25,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Process-local: don't retry unreachable providers on every job. */
+const sessionDown = new Map<string, number>();
+
+function markSessionDown(name: string, ms = 10 * 60_000): void {
+  sessionDown.set(name, Date.now() + ms);
+}
+
+function isSessionDown(name: string): boolean {
+  const until = sessionDown.get(name);
+  if (until == null) return false;
+  if (until <= Date.now()) {
+    sessionDown.delete(name);
+    return false;
+  }
+  return true;
+}
+
 export function buildProvider(name: ProviderName): LlmProvider {
   switch (name) {
     case "ollama":
@@ -50,6 +67,12 @@ export function listConfiguredProviders(
   return out;
 }
 
+function isUnreachableError(message: string): boolean {
+  return /unreachable|ECONNREFUSED|fetch failed|AbortError|aborted/i.test(
+    message,
+  );
+}
+
 export class RotatingLlmProvider implements LlmProvider {
   readonly name = "rotation";
   readonly model: string;
@@ -70,95 +93,92 @@ export class RotatingLlmProvider implements LlmProvider {
       throw new Error("No LLM providers configured");
     }
 
-    let round = 0;
-    while (round < 3) {
-      round += 1;
-      const available = this.providers.filter(
-        (p) => !isExhausted(p.name as ProviderName),
+    const available = this.providers.filter((p) => {
+      const name = p.name as ProviderName;
+      if (isSessionDown(p.name)) return false;
+      if (isExhausted(name)) return false;
+      return true;
+    });
+
+    if (available.length === 0) {
+      const reset = earliestResetMs(
+        this.providers.map((p) => p.name as ProviderName),
       );
-
-      if (available.length === 0) {
-        const reset = earliestResetMs(
-          this.providers.map((p) => p.name as ProviderName),
-        );
-        if (reset == null) {
-          throw new Error("ALL_PROVIDERS_EXHAUSTED");
-        }
-        const wait = Math.max(1_000, Math.min(reset - Date.now(), 15 * 60_000));
+      // Don't block the queue for ages — leave job unclear.
+      if (reset != null && reset > Date.now()) {
         console.warn(
-          `[classify:llm] all providers exhausted — pausing ${wait}ms until earliest reset`,
+          `[classify:llm] no providers available (next reset ${new Date(reset).toISOString()}) — skipping LLM`,
         );
-        await sleep(wait);
-        continue;
+      } else {
+        console.warn(`[classify:llm] no providers available — skipping LLM`);
       }
+      throw new Error("ALL_PROVIDERS_EXHAUSTED");
+    }
 
-      let transientHits = 0;
+    for (const provider of available) {
+      try {
+        const raw = await provider.classify(input);
+        markCall(provider.name as ProviderName);
+        if (raw && typeof raw === "object") {
+          (raw as { __provider?: string }).__provider =
+            `${provider.name}:${provider.model}`;
+        }
+        return raw;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `[classify:llm] ${provider.name} failed:`,
+          message.slice(0, 280),
+        );
 
-      for (const provider of available) {
-        try {
-          const raw = await provider.classify(input);
-          markCall(provider.name as ProviderName);
-          if (raw && typeof raw === "object") {
-            (raw as { __provider?: string }).__provider =
-              `${provider.name}:${provider.model}`;
-          }
-          return raw;
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
+        if (isUnreachableError(message)) {
+          markSessionDown(provider.name);
           console.warn(
-            `[classify:llm] ${provider.name} failed:`,
-            message.slice(0, 280),
+            `[classify:llm] ${provider.name} marked down for 10m (won't retry every job)`,
           );
+          continue;
+        }
 
-          if (isRateLimitError(message)) {
-            const wait = retryAfterMsFromError(message);
-            if (isDailyLimitError(message, wait)) {
-              const until = Date.now() + (wait ?? 60 * 60_000);
-              markExhausted(provider.name as ProviderName, until);
-              console.warn(
-                `[classify:llm] ${provider.name} daily/TPD exhausted until ${new Date(until).toISOString()} — rotating`,
-              );
-              continue;
-            }
-            const rpmWait = wait ?? 5_000;
+        if (isRateLimitError(message)) {
+          const wait = retryAfterMsFromError(message);
+          if (isDailyLimitError(message, wait)) {
+            const until = Date.now() + (wait ?? 60 * 60_000);
+            markExhausted(provider.name as ProviderName, until);
             console.warn(
-              `[classify:llm] ${provider.name} RPM — waiting ${rpmWait}ms`,
+              `[classify:llm] ${provider.name} daily/TPD exhausted until ${new Date(until).toISOString()} — rotating`,
             );
-            await sleep(rpmWait);
-            try {
-              const raw = await provider.classify(input);
-              markCall(provider.name as ProviderName);
-              if (raw && typeof raw === "object") {
-                (raw as { __provider?: string }).__provider =
-                  `${provider.name}:${provider.model}`;
-              }
-              return raw;
-            } catch (err2) {
-              const m2 = err2 instanceof Error ? err2.message : String(err2);
-              console.warn(
-                `[classify:llm] ${provider.name} retry failed:`,
-                m2.slice(0, 200),
-              );
-              continue;
-            }
-          }
-
-          if (isTransientProviderError(message)) {
-            transientHits += 1;
-            await sleep(750);
             continue;
           }
-
-          // Non-transient (bad JSON from provider HTTP 200 path is thrown by parse upstream).
-          throw err;
+          const rpmWait = Math.min(wait ?? 5_000, 15_000);
+          console.warn(
+            `[classify:llm] ${provider.name} RPM — waiting ${rpmWait}ms`,
+          );
+          await sleep(rpmWait);
+          try {
+            const raw = await provider.classify(input);
+            markCall(provider.name as ProviderName);
+            if (raw && typeof raw === "object") {
+              (raw as { __provider?: string }).__provider =
+                `${provider.name}:${provider.model}`;
+            }
+            return raw;
+          } catch (err2) {
+            const m2 = err2 instanceof Error ? err2.message : String(err2);
+            console.warn(
+              `[classify:llm] ${provider.name} retry failed:`,
+              m2.slice(0, 200),
+            );
+            continue;
+          }
         }
-      }
 
-      if (transientHits >= available.length) {
-        console.warn(
-          `[classify:llm] all available providers transient-failed (round ${round})`,
-        );
-        await sleep(1_000 * round);
+        if (isTransientProviderError(message)) {
+          // One soft retry then move on — don't loop 3 rounds.
+          await sleep(500);
+          continue;
+        }
+
+        // Bad response from this provider — try next.
         continue;
       }
     }

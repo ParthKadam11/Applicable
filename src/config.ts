@@ -23,12 +23,13 @@ const envSchema = z.object({
   INGEST_COMPANY_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
   // Free-tier LLM providers (comma-separated rotation order)
-  LLM_PROVIDERS: z.string().default("ollama,groq,gemini,openrouter"),
+  LLM_PROVIDERS: z.string().default("groq,gemini,openrouter"),
   /** @deprecated prefer LLM_PROVIDERS */
   LLM_PROVIDER: z.string().optional().default(""),
 
   OLLAMA_URL: z.string().default("http://127.0.0.1:11434"),
   OLLAMA_MODEL: z.string().min(1).default("qwen2.5:3b"),
+
 
   GROQ_API_KEY: z.string().optional().default(""),
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
@@ -73,5 +74,5 @@ export function parseLlmProviders(
     const parsed = providerName.safeParse(n);
     if (parsed.success && !out.includes(parsed.data)) out.push(parsed.data);
   }
-  return out.length > 0 ? out : ["ollama", "groq", "gemini", "openrouter"];
+  return out.length > 0 ? out : ["groq", "gemini", "openrouter"];
 }

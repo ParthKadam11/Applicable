@@ -6,6 +6,8 @@ interface OllamaChatResponse {
   message?: { content?: string };
 }
 
+const CONNECT_TIMEOUT_MS = 2_500;
+
 export class OllamaProvider implements LlmProvider {
   readonly name = "ollama" as const;
   readonly model: string;
@@ -23,23 +25,36 @@ export class OllamaProvider implements LlmProvider {
 
   async classify(input: LlmClassifyInput): Promise<unknown> {
     const url = `${this.baseUrl.replace(/\/$/, "")}/api/chat`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": config.USER_AGENT,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        stream: false,
-        format: "json",
-        options: { temperature: 0 },
-        messages: [
-          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: buildClassifyUserPrompt(input) },
-        ],
-      }),
-    });
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), CONNECT_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        signal: ac.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": config.USER_AGENT,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          stream: false,
+          format: "json",
+          options: { temperature: 0 },
+          messages: [
+            { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+            { role: "user", content: buildClassifyUserPrompt(input) },
+          ],
+        }),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Ollama unreachable (${CONNECT_TIMEOUT_MS}ms): ${msg}`,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
 
     const text = await res.text();
     if (!res.ok) {
