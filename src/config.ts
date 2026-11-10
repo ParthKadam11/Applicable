@@ -24,7 +24,7 @@ const envSchema = z.object({
   LLM_PROVIDER: z.enum(["groq", "gemini"]).default("groq"),
   // llama-3.3-70b-versatile was shut down on Groq free/dev tier (2026-08-16)
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
-  GEMINI_MODEL: z.string().min(1).default("gemini-2.0-flash"),
+  GEMINI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
   // Keep low for Groq free tier (~8k TPM). Raise if you upgrade.
   CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(1),
   LLM_RPM: z.coerce.number().int().positive().default(6),

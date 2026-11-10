@@ -61,12 +61,20 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Parse Groq/Gemini "try again in Xs" / "Yms" hints from 429 bodies. */
+/** Parse Groq/Gemini retry hints: "6m53.424s", "16m7.68s", "7.2s", "500ms". */
 export function retryAfterMsFromError(message: string): number | null {
-  const ms = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*ms/i);
-  if (ms?.[1]) return Math.ceil(Number(ms[1])) + 250;
-  const sec = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*s/i);
-  if (sec?.[1]) return Math.ceil(Number(sec[1]) * 1000) + 250;
+  const compound = message.match(
+    /try again in\s+(?:(\d+(?:\.\d+)?)h)?\s*(?:(\d+(?:\.\d+)?)m)?\s*(?:(\d+(?:\.\d+)?)s)?/i,
+  );
+  if (compound && (compound[1] || compound[2] || compound[3])) {
+    const hours = Number(compound[1] ?? 0);
+    const mins = Number(compound[2] ?? 0);
+    const secs = Number(compound[3] ?? 0);
+    const total = Math.ceil((hours * 3600 + mins * 60 + secs) * 1000) + 250;
+    if (total > 250) return total;
+  }
+  const msOnly = message.match(/try again in\s+(\d+(?:\.\d+)?)\s*ms/i);
+  if (msOnly?.[1]) return Math.ceil(Number(msOnly[1])) + 250;
   return null;
 }
 

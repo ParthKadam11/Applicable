@@ -91,12 +91,17 @@ describe("classifyJobContent LLM merge", () => {
     expect(tag.eligibility_evidence).toEqual([]);
   });
 
-  it("parses Groq retry-after seconds from 429 messages", () => {
+  it("parses Groq retry-after including minutes", () => {
     expect(
       retryAfterMsFromError(
         "Rate limit reached. Please try again in 6.5325s. Need more tokens?",
       ),
     ).toBe(6783);
+    expect(
+      retryAfterMsFromError(
+        "Please try again in 6m53.424s. Need more tokens?",
+      ),
+    ).toBe(413674);
   });
 
   it("waits and retries on HTTP 429 then succeeds", async () => {

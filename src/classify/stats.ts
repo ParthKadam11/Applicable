@@ -21,7 +21,8 @@ export interface EligibilityStats {
 }
 
 export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
-  const openJobs = and(isNull(jobs.closedAt));
+  // Active companies only — dropped boards (Notion/Stripe) stay out of totals.
+  const openActive = and(isNull(jobs.closedAt), eq(companies.active, true));
 
   const [{ jobsScanned } = { jobsScanned: 0 }] = await db
     .select({
@@ -30,7 +31,8 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
       ),
     })
     .from(jobs)
-    .where(openJobs);
+    .innerJoin(companies, eq(companies.id, jobs.companyId))
+    .where(openActive);
 
   const byEligibility = await db
     .select({
@@ -38,8 +40,9 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
       n: countDistinct(sql`(${jobs.companyId}, ${jobs.externalId})`),
     })
     .from(jobs)
+    .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(openJobs)
+    .where(openActive)
     .groupBy(jobTags.indiaEligibility);
 
   const byClassifierRows = await db
@@ -48,8 +51,9 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
       n: countDistinct(sql`(${jobs.companyId}, ${jobs.externalId})`),
     })
     .from(jobs)
+    .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(openJobs)
+    .where(openActive)
     .groupBy(jobTags.classifier);
 
   const map: Record<string, number> = {};
@@ -77,7 +81,7 @@ export async function getEligibilityStats(db: Db): Promise<EligibilityStats> {
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
     .leftJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(openJobs)
+    .where(openActive)
     .groupBy(companies.name)
     .orderBy(companies.name);
 
