@@ -46,6 +46,7 @@ See `.env.example`. Required for local ingest:
 | `INGEST_COMPANY_TIMEOUT_MS` | Per-company timeout (default 30000) |
 | `LLM_PROVIDER` | `groq` or `gemini` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` | Optional; rules-only if unset |
+| `GROQ_MODEL` | Default `openai/gpt-oss-20b` (Llama 3.3 IDs are deprecated on Groq) |
 | `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 3) |
 | `LLM_RPM` | Token-bucket rate limit for LLM calls |
 

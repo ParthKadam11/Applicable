@@ -1,15 +1,35 @@
 companies:
-  - name: Notion
-    website: https://www.notion.so
+  - name: Supabase
+    website: https://supabase.com
     ats: ashby
-    ats_slug: notion
+    ats_slug: supabase
 
-  - name: Stripe
-    website: https://stripe.com
+  - name: Diagrid
+    website: https://www.diagrid.io
+    ats: ashby
+    ats_slug: diagrid
+    
+  - name: PostHog
+    website: https://posthog.com
+    ats: ashby
+    ats_slug: posthog
+
+  - name: Modal
+    website: https://modal.com
+    ats: ashby
+    ats_slug: modal
+
+  - name: Sourcegraph
+    website: https://sourcegraph.com
     ats: greenhouse
-    ats_slug: stripe
+    ats_slug: sourcegraph91
 
-  - name: Netflix
-    website: https://jobs.netflix.com
+  - name: Grafana Labs
+    website: https://grafana.com
+    ats: greenhouse
+    ats_slug: grafanalabs
+
+  - name: Metabase
+    website: https://www.metabase.com
     ats: lever
-    ats_slug: netflix
+    ats_slug: metabase

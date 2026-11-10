@@ -22,7 +22,8 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional().default(""),
   GEMINI_API_KEY: z.string().optional().default(""),
   LLM_PROVIDER: z.enum(["groq", "gemini"]).default("groq"),
-  GROQ_MODEL: z.string().min(1).default("llama-3.3-70b-versatile"),
+  // llama-3.3-70b-versatile was shut down on Groq free/dev tier (2026-08-16)
+  GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
   GEMINI_MODEL: z.string().min(1).default("gemini-2.0-flash"),
   CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(3),
   LLM_RPM: z.coerce.number().int().positive().default(30),
