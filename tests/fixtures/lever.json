@@ -1,0 +1,37 @@
+[
+  {
+    "id": "lever-abc",
+    "text": "Backend Engineer",
+    "hostedUrl": "https://jobs.lever.co/netflix/lever-abc",
+    "applyUrl": "https://jobs.lever.co/netflix/lever-abc/apply",
+    "createdAt": 1700000000000,
+    "description": "<p>Build streaming services.</p>",
+    "descriptionPlain": "Build streaming services.",
+    "additional": "<p>Interview includes a take-home and system design.</p>",
+    "additionalPlain": "Interview includes a take-home and system design.",
+    "categories": {
+      "commitment": "Full-time",
+      "department": "Engineering",
+      "location": "Remote",
+      "team": "Playback",
+      "allLocations": ["Remote", "Los Gatos"]
+    },
+    "workplaceType": "remote"
+  },
+  {
+    "id": "lever-def",
+    "text": "Data Scientist",
+    "hostedUrl": "https://jobs.lever.co/netflix/lever-def",
+    "createdAt": 1700500000000,
+    "descriptionHtml": "<p>ML for recommendations.</p>",
+    "description": "<p>ML for recommendations.</p>",
+    "descriptionPlain": "ML for recommendations.",
+    "categories": {
+      "commitment": "Full-time",
+      "department": "Data",
+      "location": "Los Gatos, CA",
+      "team": "Science"
+    },
+    "workplaceType": "onsite"
+  }
+]

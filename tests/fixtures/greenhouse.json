@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "id": 4001,
+      "title": "Staff Software Engineer, Infrastructure",
+      "updated_at": "2026-02-01T08:30:00.000Z",
+      "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4001",
+      "location": { "name": "Remote - US" },
+      "departments": [{ "name": "Engineering" }, { "name": "Infrastructure" }],
+      "offices": [{ "name": "Remote" }],
+      "content": "<p>Own our edge network.</p><p>Must be based in the United States.</p>"
+    },
+    {
+      "id": 4002,
+      "title": "Frontend Engineer",
+      "updated_at": "2026-02-02T10:00:00.000Z",
+      "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4002",
+      "location": { "name": "Dublin, Ireland" },
+      "departments": [{ "name": "Engineering" }],
+      "offices": [{ "name": "Dublin", "location": "Dublin" }],
+      "content": "<h2>About the role</h2><p>Ship UI for Checkout.</p>"
+    }
+  ]
+}

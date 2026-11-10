@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    {
+      "id": "ashby-job-1",
+      "title": "Senior Backend Engineer",
+      "department": "Engineering",
+      "team": "Platform",
+      "locationName": "Remote - Worldwide",
+      "isRemote": true,
+      "employmentType": "FullTime",
+      "descriptionHtml": "<p>Build APIs. <strong>Remote from India welcome.</strong></p>",
+      "descriptionPlain": "Build APIs. Remote from India welcome.",
+      "jobUrl": "https://jobs.ashbyhq.com/notion/ashby-job-1",
+      "publishedAt": "2026-01-15T12:00:00.000Z",
+      "compensation": {
+        "summary": "$180k–$220k"
+      }
+    },
+    {
+      "id": "ashby-job-2",
+      "title": "Product Designer",
+      "department": "Design",
+      "location": "San Francisco, CA",
+      "isRemote": false,
+      "employmentType": "FullTime",
+      "descriptionHtml": "<div>Design delightful products.</div>",
+      "applyUrl": "https://jobs.ashbyhq.com/notion/ashby-job-2/application"
+    }
+  ]
+}

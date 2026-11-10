@@ -1,0 +1,15 @@
+companies:
+  - name: Notion
+    website: https://www.notion.so
+    ats: ashby
+    ats_slug: notion
+
+  - name: Stripe
+    website: https://stripe.com
+    ats: greenhouse
+    ats_slug: stripe
+
+  - name: Netflix
+    website: https://jobs.netflix.com
+    ats: lever
+    ats_slug: netflix
