@@ -1,0 +1,203 @@
+export interface ClassifyFixture {
+  id: string;
+  title: string;
+  locationRaw?: string;
+  descriptionText: string;
+  expect: {
+    india_eligibility: "open" | "region_locked" | "unclear";
+    contractor_or_eor?: boolean;
+    seniority?: string;
+    role_family?: string;
+    interview_style_includes?: string[];
+    compensation?: { min: number; max: number; currency: string } | null;
+  };
+}
+
+/** 15+ descriptions covering open / region_locked / unclear / tricky cases. */
+export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
+  {
+    id: "open-india",
+    title: "Senior Backend Engineer",
+    locationRaw: "Remote",
+    descriptionText:
+      "We are a distributed team. Candidates in India are welcome to apply. You will own our APIs.",
+    expect: {
+      india_eligibility: "open",
+      seniority: "senior",
+      role_family: "backend",
+    },
+  },
+  {
+    id: "open-worldwide",
+    title: "Frontend Engineer",
+    descriptionText:
+      "This role is remote worldwide. Work from anywhere as long as you have solid internet.",
+    expect: {
+      india_eligibility: "open",
+      role_family: "frontend",
+    },
+  },
+  {
+    id: "open-apac",
+    title: "Staff Platform Engineer",
+    descriptionText:
+      "Hiring across APAC for our infrastructure team. System design interview included.",
+    expect: {
+      india_eligibility: "open",
+      seniority: "staff",
+      role_family: "infra",
+      interview_style_includes: ["system_design"],
+    },
+  },
+  {
+    id: "open-any-timezone",
+    title: "Full Stack Developer",
+    descriptionText:
+      "We hire globally and support any timezone. Async-first culture.",
+    expect: {
+      india_eligibility: "open",
+      role_family: "fullstack",
+    },
+  },
+  {
+    id: "open-global-remote",
+    title: "ML Engineer",
+    descriptionText:
+      "Global remote role focused on machine learning research and production models.",
+    expect: {
+      india_eligibility: "open",
+      role_family: "ml",
+    },
+  },
+  {
+    id: "open-deel-countries",
+    title: "Backend Engineer",
+    descriptionText:
+      "We hire via Deel in 100+ countries. Compensation is $120,000-$150,000 per year.",
+    expect: {
+      india_eligibility: "open",
+      contractor_or_eor: true,
+      role_family: "backend",
+      compensation: { min: 120000, max: 150000, currency: "USD" },
+    },
+  },
+  {
+    id: "locked-us-only",
+    title: "Software Engineer",
+    descriptionText:
+      "This position is US only. You must be authorized to work in the United States.",
+    expect: {
+      india_eligibility: "region_locked",
+    },
+  },
+  {
+    id: "locked-remote-us-paren",
+    title: "Product Engineer",
+    locationRaw: "Remote (US)",
+    descriptionText:
+      "Join our product team. Location: Remote (US). Build delightful experiences.",
+    expect: {
+      india_eligibility: "region_locked",
+    },
+  },
+  {
+    id: "locked-pst-overlap",
+    title: "Backend Engineer",
+    descriptionText:
+      "Remote, but must overlap 4h with PST. Interview includes a take-home and live coding.",
+    expect: {
+      india_eligibility: "region_locked",
+      role_family: "backend",
+      interview_style_includes: ["take_home", "live_coding"],
+    },
+  },
+  {
+    id: "locked-must-be-based",
+    title: "Junior Frontend Engineer",
+    descriptionText:
+      "Candidates must be based in New York City. Hybrid schedule three days a week.",
+    expect: {
+      india_eligibility: "region_locked",
+      seniority: "junior",
+      role_family: "frontend",
+    },
+  },
+  {
+    id: "locked-eu-only",
+    title: "DevOps Engineer",
+    descriptionText:
+      "EU only. You will manage Kubernetes clusters and CI pipelines.",
+    expect: {
+      india_eligibility: "region_locked",
+      role_family: "infra",
+    },
+  },
+  {
+    id: "locked-uk-residents",
+    title: "Data Scientist",
+    descriptionText:
+      "Open to UK residents. Expect a DSA screen and system design round.",
+    expect: {
+      india_eligibility: "region_locked",
+      role_family: "ml",
+      interview_style_includes: ["dsa", "system_design"],
+    },
+  },
+  {
+    id: "unclear-bare-remote",
+    title: "Engineer",
+    locationRaw: "Remote",
+    descriptionText:
+      "We are hiring a remote engineer to join the team. Great benefits.",
+    expect: {
+      india_eligibility: "unclear",
+    },
+  },
+  {
+    id: "unclear-no-location",
+    title: "Intern Software Engineer",
+    descriptionText:
+      "Summer internship working on our TypeScript codebase. Pair programming encouraged.",
+    expect: {
+      india_eligibility: "unclear",
+      seniority: "intern",
+      interview_style_includes: ["pair_programming"],
+    },
+  },
+  {
+    id: "contractor-oyster",
+    title: "Senior Fullstack Engineer",
+    descriptionText:
+      "Engagement is through Oyster as an employer of record. Remote role with flexible hours.",
+    expect: {
+      india_eligibility: "unclear",
+      contractor_or_eor: true,
+      seniority: "senior",
+      role_family: "fullstack",
+    },
+  },
+  {
+    id: "contractor-rippling",
+    title: "Mid-level Backend Engineer",
+    descriptionText:
+      "You will be hired via Rippling EOR. Location is remote. Salary €80k-€100k annually.",
+    expect: {
+      india_eligibility: "unclear",
+      contractor_or_eor: true,
+      seniority: "mid",
+      role_family: "backend",
+      compensation: { min: 80000, max: 100000, currency: "EUR" },
+    },
+  },
+  {
+    id: "open-work-from-anywhere",
+    title: "SRE",
+    descriptionText:
+      "Work from anywhere. You must love on-call and infrastructure. Compensation £90k to £110k.",
+    expect: {
+      india_eligibility: "open",
+      role_family: "infra",
+      compensation: { min: 90000, max: 110000, currency: "GBP" },
+    },
+  },
+];
