@@ -1,28 +1,44 @@
-import { registerClassifyWorkers } from "../classify/boss.js";
 import { classifyAndStoreJob } from "../classify/classify.js";
 import {
-  CLASSIFY_QUEUE,
-  enqueueClassifyJobs,
   findOpenJobs,
   findOpenUnclearJobs,
 } from "../classify/enqueue.js";
+import { createLlmProvider } from "../classify/llm/index.js";
+import { TokenBucket } from "../classify/rate-limit.js";
 import {
   formatEligibilityStats,
   getEligibilityStats,
 } from "../classify/stats.js";
-import { createBoss } from "../ingestion/boss.js";
+import { config } from "../config.js";
 import { db, pool } from "../db/client.js";
 
 /**
- * 1) Force rules reclassify of all open jobs (fast) unless cached & no --force.
- * 2) Enqueue remaining unclear for LLM via pg-boss (waits on RPM, never drops).
- * 3) Print stats.
+ * Fast path: rules in parallel, then LLM on unclear in parallel (no pg-boss).
  *
- * Usage: npm run reclassify:open
- *        npm run reclassify:open -- --rules-only
- *        npm run reclassify:open -- --rules-only --force
- *        npm run reclassify:open -- --llm-only
+ * Usage:
+ *   npm run reclassify:open -- --rules-only --force
+ *   npm run reclassify:open -- --llm-only
+ *   npm run reclassify:open -- --force
  */
+async function mapPool<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<void>,
+): Promise<void> {
+  let i = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, Math.max(1, items.length)) },
+    async () => {
+      while (i < items.length) {
+        const idx = i;
+        i += 1;
+        await fn(items[idx]!, idx);
+      }
+    },
+  );
+  await Promise.all(workers);
+}
+
 async function main() {
   const rulesOnly = process.argv.includes("--rules-only");
   const llmOnly = process.argv.includes("--llm-only");
@@ -35,25 +51,19 @@ async function main() {
       `Rules reclassify ${open.length} open jobs${force ? " (force)" : " (skip unchanged hash)"}…`,
     );
 
-    const concurrency = 20;
     let done = 0;
     let cached = 0;
-    for (let i = 0; i < open.length; i += concurrency) {
-      const batch = open.slice(i, i + concurrency);
-      await Promise.all(
-        batch.map(async (job) => {
-          const tag = await classifyAndStoreJob(db, job.id, {
-            rulesOnly: true,
-            force,
-          });
-          if (tag.classifier === "cache") cached += 1;
-          done += 1;
-        }),
-      );
+    await mapPool(open, 20, async (job) => {
+      const tag = await classifyAndStoreJob(db, job.id, {
+        rulesOnly: true,
+        force,
+      });
+      if (tag.classifier === "cache") cached += 1;
+      done += 1;
       if (done % 100 === 0 || done === open.length) {
         console.log(`  rules ${done}/${open.length} (cache hits ${cached})`);
       }
-    }
+    });
 
     stats = await getEligibilityStats(db);
     console.log("\n=== stats after rules ===");
@@ -69,31 +79,47 @@ async function main() {
   }
 
   const unclear = await findOpenUnclearJobs(db);
-  console.log(`\nEnqueue ${unclear.length} unclear jobs for LLM…`);
+  const llm = createLlmProvider();
+  if (!llm) {
+    console.log(`\nNo LLM providers configured — leaving ${unclear.length} unclear.`);
+    stats = await getEligibilityStats(db);
+    console.log(formatEligibilityStats(stats));
+    await pool.end();
+    return;
+  }
 
-  const boss = await createBoss();
-  await registerClassifyWorkers(boss);
-  await enqueueClassifyJobs(
-    boss,
-    unclear.map((j) => j.id),
+  const concurrency = config.CLASSIFY_CONCURRENCY;
+  const rateLimiter = new TokenBucket(config.LLM_RPM);
+  console.log(
+    `\nLLM classify ${unclear.length} unclear jobs (concurrency=${concurrency}, RPM=${config.LLM_RPM}, no queue)…`,
   );
 
-  if (unclear.length > 0) {
-    console.log("Waiting for classify queue to drain (waits on rate limits)…");
-    for (;;) {
-      const pending = await boss.getQueueSize(CLASSIFY_QUEUE, {
-        before: "completed",
-      });
-      if (pending === 0) break;
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
+  const started = Date.now();
+  let done = 0;
+  let llmHits = 0;
+  await mapPool(unclear, concurrency, async (job) => {
+    const tag = await classifyAndStoreJob(db, job.id, {
+      llm,
+      rateLimiter,
+      llmOnlyIfUnclear: true,
+      force: true,
+    });
+    if (tag.classifier === "llm") llmHits += 1;
+    done += 1;
+    console.log(
+      `  [${done}/${unclear.length}] ${tag.india_eligibility} via ${tag.classifier}${tag.model ? ` (${tag.model})` : ""}`,
+    );
+  });
+
+  const secs = ((Date.now() - started) / 1000).toFixed(1);
+  console.log(
+    `\nLLM pass done in ${secs}s — ${llmHits}/${unclear.length} resolved by LLM`,
+  );
 
   stats = await getEligibilityStats(db);
   console.log("\n=== india_eligibility stats ===");
   console.log(formatEligibilityStats(stats));
 
-  await boss.stop({ graceful: true, timeout: 15_000 });
   await pool.end();
 }
 

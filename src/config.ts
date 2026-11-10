@@ -43,8 +43,8 @@ const envSchema = z.object({
     .min(1)
     .default("google/gemma-3-4b-it:free"),
 
-  CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(1),
-  LLM_RPM: z.coerce.number().int().positive().default(6),
+  CLASSIFY_CONCURRENCY: z.coerce.number().int().positive().default(4),
+  LLM_RPM: z.coerce.number().int().positive().default(30),
   LLM_STATE_PATH: z.string().default(".llm-state.json"),
 
   SEARCH_PROVIDER: z.enum(["searxng", "tavily", "brave"]).default("searxng"),
