@@ -75,10 +75,12 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
       MCP_HTTP_PORT: "3100"
       MCP_RATE_LIMIT_RPM: ${MCP_RATE_LIMIT_RPM:-60}
-      USER_AGENT: ${USER_AGENT:-CaniApply/0.1 (+https://github.com/ParthKadam11/CaniApply; MCP)}
-    # Internal only — Caddy proxies publicly.
+      USER_AGENT: ${USER_AGENT:-CaniApply/0.1}
+    # Published for host nginx (this VPS). Caddy profile is optional for dedicated boxes.
     expose:
       - "3100"
+    ports:
+      - "127.0.0.1:3110:3100"
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,7 +100,13 @@ services:
     networks:
       - caniapply
 
+  # Only for a dedicated VPS with free :80/:443.
+  # This Contabo box already runs host nginx — leave the profile off:
+  #   docker compose -f docker-compose.prod.yml up -d --build
+  # Dedicated box with Caddy:
+  #   docker compose -f docker-compose.prod.yml --profile caddy up -d --build
   caddy:
+    profiles: ["caddy"]
     image: caddy:2-alpine
     container_name: caniapply-caddy
     ports:
