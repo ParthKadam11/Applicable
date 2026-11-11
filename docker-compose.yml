@@ -53,7 +53,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      MCP_DOMAIN: ${MCP_DOMAIN:-mcp.example.com}
+      MCP_HOST: ${MCP_HOST:-${MCP_DOMAIN:-localhost}}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

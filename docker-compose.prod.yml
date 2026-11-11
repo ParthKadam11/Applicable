@@ -1,0 +1,129 @@
+# Production stack for a single Contabo VPS (Ubuntu + Docker).
+# Usage:
+#   cp .env.example .env   # fill secrets + MCP_HOST
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Public surface: Caddy :80/:443 only. Postgres and MCP stay on the internal network.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: caniapply-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-caniapply}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-caniapply}
+    volumes:
+      - caniapply_pgdata:/var/lib/postgresql/data
+    # Not published to the host — app/mcp reach it on the Docker network only.
+    expose:
+      - "5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-caniapply} -d ${POSTGRES_DB:-caniapply}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - caniapply
+
+  migrate:
+    build: .
+    container_name: caniapply-migrate
+    command: ["node", "dist/db/migrate.js"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "on-failure"
+    networks:
+      - caniapply
+
+  app:
+    build: .
+    container_name: caniapply-app
+    command: ["node", "dist/index.js"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+      LLM_STATE_PATH: /data/.llm-state.json
+    volumes:
+      - caniapply_appdata:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - caniapply
+
+  mcp:
+    build: .
+    container_name: caniapply-mcp
+    command: ["node", "dist/mcp/http.js"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+      MCP_HTTP_PORT: "3100"
+      MCP_RATE_LIMIT_RPM: ${MCP_RATE_LIMIT_RPM:-60}
+      USER_AGENT: ${USER_AGENT:-CaniApply/0.1 (+https://github.com/ParthKadam11/CaniApply; MCP)}
+    # Internal only — Caddy proxies publicly.
+    expose:
+      - "3100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:3100/health | grep -q '\"ok\":true'",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - caniapply
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caniapply-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      MCP_HOST: ${MCP_HOST:?MCP_HOST is required (e.g. mcp.example.com)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caniapply_caddy_data:/data
+      - caniapply_caddy_config:/config
+    depends_on:
+      mcp:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - caniapply
+
+networks:
+  caniapply:
+    driver: bridge
+
+volumes:
+  caniapply_pgdata:
+  caniapply_appdata:
+  caniapply_caddy_data:
+  caniapply_caddy_config:

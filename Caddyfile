@@ -1,6 +1,18 @@
-{$MCP_DOMAIN:mcp.example.com} {
+{$MCP_HOST} {
 	encode gzip
-	reverse_proxy mcp:3100
+
+	# MCP Streamable HTTP + health
+	handle /health {
+		reverse_proxy mcp:3100
+	}
+
+	handle /mcp* {
+		reverse_proxy mcp:3100
+	}
+
+	handle {
+		respond "CaniApply MCP — POST /mcp  GET /health" 200
+	}
 
 	header {
 		X-Content-Type-Options nosniff

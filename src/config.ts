@@ -57,6 +57,9 @@ const envSchema = z.object({
     .string()
     .optional()
     .default("https://mcp.example.com/mcp"),
+  /** Public hostname for Caddy (prod). Prefer over MCP_DOMAIN. */
+  MCP_HOST: z.string().optional().default("mcp.example.com"),
+  /** @deprecated prefer MCP_HOST */
   MCP_DOMAIN: z.string().optional().default("mcp.example.com"),
 
   // Company discovery

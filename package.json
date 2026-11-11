@@ -26,6 +26,7 @@
     "mcp:http": "tsx src/mcp/http.ts",
     "mcp:stdio": "tsx src/mcp/stdio.ts",
     "mcp:smoke": "tsx src/scripts/mcp-smoke.ts",
+    "smoke": "bash scripts/smoke.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts"
