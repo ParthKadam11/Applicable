@@ -149,7 +149,67 @@ gunzip -c /root/backups/caniapply-YYYYMMDD….sql.gz \
 
 ---
 
-## 6. Update (pull + rebuild)
+## 6. CI/CD (GitHub Actions) — no more manual SSH
+
+Workflows:
+
+| File | When | What |
+|---|---|---|
+| `.github/workflows/ci.yml` | PR + push | typecheck + unit tests |
+| `.github/workflows/deploy.yml` | push to `master`/`main`, or **Run workflow** | tests → SSH deploy → optional smoke |
+
+### One-time setup on the VPS
+
+1. Ensure the app is already cloned and running under `/opt/caniapply` (sections 1–3).
+2. Make sure `git pull` works **non-interactively** on the VPS (deploy key recommended):
+
+```bash
+# On your laptop — create a deploy key (no passphrase)
+ssh-keygen -t ed25519 -C "caniapply-github-deploy" -f caniapply_gha_deploy -N ""
+
+# Install the *private* key as a GitHub Actions secret (VPS_SSH_KEY) — see below.
+# Install the *public* key on the VPS for SSH login:
+ssh-copy-id -i caniapply_gha_deploy.pub USER@YOUR_VPS_IP
+
+# On the VPS — read-only deploy key so `git pull` works without a password:
+ssh-keygen -t ed25519 -C "caniapply-vps-git" -f ~/.ssh/caniapply_github -N ""
+cat ~/.ssh/caniapply_github.pub
+# → GitHub repo → Settings → Deploy keys → Add (read-only)
+
+# Point origin at SSH if you cloned via HTTPS:
+cd /opt/caniapply
+git remote set-url origin git@github.com:ParthKadam11/CaniApply.git
+# ~/.ssh/config host github.com → IdentityFile ~/.ssh/caniapply_github
+printf '%s\n' \
+  'Host github.com' \
+  '  HostName github.com' \
+  '  User git' \
+  '  IdentityFile ~/.ssh/caniapply_github' \
+  '  IdentitiesOnly yes' >> ~/.ssh/config
+chmod 600 ~/.ssh/config
+ssh -T git@github.com   # should say "successfully authenticated"
+git pull
+```
+
+### GitHub Actions secrets
+
+Repo → **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Example |
+|---|---|
+| `VPS_HOST` | `123.45.67.89` or `mcp.yourdomain.com` |
+| `VPS_USER` | `root` or your deploy user |
+| `VPS_SSH_KEY` | full PEM/private key contents of `caniapply_gha_deploy` |
+| `VPS_DEPLOY_PATH` | `/opt/caniapply` (optional; this is the default) |
+| `MCP_SMOKE_URL` | `https://mcp.yourdomain.com` (optional; enables post-deploy smoke) |
+
+After secrets are set: push to `master` (or **Actions → Deploy → Run workflow**). Watch the Deploy job; it `git pull`s, `docker compose … up -d --build`s, waits for mcp healthy, then smokes if `MCP_SMOKE_URL` is set.
+
+---
+
+## 7. Manual update (pull + rebuild)
+
+Still works anytime without CI:
 
 ```bash
 cd /opt/caniapply
@@ -163,7 +223,7 @@ Migrations re-run via the **migrate** one-shot service on each recreate.
 
 ---
 
-## 7. Useful commands
+## 8. Useful commands
 
 ```bash
 # Status
