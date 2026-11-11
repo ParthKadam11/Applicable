@@ -94,6 +94,26 @@ jobs:
             git reset --hard "$GH_SHA"
             git rev-parse --short HEAD
 
+            echo "==> check .env (compose interpolation)"
+            if [ ! -f .env ]; then
+              echo "::error::Missing $DEPLOY_PATH/.env on the VPS. Copy from .env.example and set POSTGRES_PASSWORD + MCP_HOST."
+              exit 1
+            fi
+            # shellcheck disable=SC1091
+            set -a
+            # shellcheck disable=SC1091
+            . ./.env
+            set +a
+            missing=""
+            [ -n "${MCP_HOST:-}" ] || missing="$missing MCP_HOST"
+            [ -n "${POSTGRES_PASSWORD:-}" ] || missing="$missing POSTGRES_PASSWORD"
+            if [ -n "$missing" ]; then
+              echo "ERROR: .env is missing required vars:$missing"
+              echo "On the VPS: nano $DEPLOY_PATH/.env  # set MCP_HOST=mcp.yourdomain.com and POSTGRES_PASSWORD=..."
+              exit 1
+            fi
+            echo "MCP_HOST=$MCP_HOST (ok)"
+
             echo "==> docker compose up"
             docker compose -f docker-compose.prod.yml up -d --build
 

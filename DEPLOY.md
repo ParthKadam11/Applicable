@@ -54,14 +54,25 @@ cp .env.example .env
 nano .env   # required: POSTGRES_PASSWORD, MCP_HOST, optional LLM_* keys
 ```
 
-Minimum `.env` values:
+Minimum `.env` values (**must exist on the VPS** at `/opt/caniapply/.env` — compose fails without them):
 
 | Variable | Example |
 |---|---|
 | `POSTGRES_PASSWORD` | long random string |
 | `MCP_HOST` | `mcp.yourdomain.com` |
 | `MCP_PUBLIC_URL` | `https://mcp.yourdomain.com/mcp` |
+| `POSTGRES_USER` / `POSTGRES_DB` | `caniapply` / `caniapply` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` / … | optional (rules-only if empty) |
+
+If deploy fails with `MCP_HOST is missing`, SSH once and fix:
+
+```bash
+ssh USER@VPS
+cd /opt/caniapply
+grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
+# MCP_HOST=mcp.yourdomain.com
+# POSTGRES_PASSWORD=...
+```
 
 `DATABASE_URL` on the host is for local scripts; **inside Docker**, compose builds it from `POSTGRES_*` → `postgres:5432`.
 
