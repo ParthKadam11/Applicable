@@ -199,6 +199,30 @@ export const companyResearch = pgTable("company_research", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
+/**
+ * Cache of ATS board probes (Common Crawl discovery, etc.).
+ * Re-runs skip slugs checked within the last 7 days.
+ */
+export const atsBoardChecks = pgTable(
+  "ats_board_checks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ats: atsEnum("ats").notNull(),
+    slug: text("slug").notNull(),
+    /** valid | not_found | empty | error */
+    status: text("status").notNull(),
+    jobCount: integer("job_count"),
+    checkedAt: timestamp("checked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    error: text("error"),
+  },
+  (table) => [
+    uniqueIndex("ats_board_checks_ats_slug_uidx").on(table.ats, table.slug),
+    index("ats_board_checks_checked_at_idx").on(table.checkedAt),
+  ],
+);
+
 export type Company = typeof companies.$inferSelect;
 export type NewCompany = typeof companies.$inferInsert;
 export type Job = typeof jobs.$inferSelect;
@@ -206,3 +230,4 @@ export type NewJob = typeof jobs.$inferInsert;
 export type FetchRun = typeof fetchRuns.$inferSelect;
 export type CompanyCandidate = typeof companyCandidates.$inferSelect;
 export type NewCompanyCandidate = typeof companyCandidates.$inferInsert;
+export type AtsBoardCheck = typeof atsBoardChecks.$inferSelect;

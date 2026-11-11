@@ -1,6 +1,11 @@
 import type { Ats } from "../ats/types.js";
 
-export type DiscoverSource = "yc" | "hn_hiring" | "himalayas" | "remoteok";
+export type DiscoverSource =
+  | "yc"
+  | "hn_hiring"
+  | "himalayas"
+  | "remoteok"
+  | "common_crawl";
 
 export interface DiscoveredCompany {
   name: string;

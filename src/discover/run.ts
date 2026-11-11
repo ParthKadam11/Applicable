@@ -33,6 +33,7 @@ export async function runDiscovery(
     hn_hiring: 0,
     himalayas: 0,
     remoteok: 0,
+    common_crawl: 0,
   };
 
   const all: DiscoveredCompany[] = [];
