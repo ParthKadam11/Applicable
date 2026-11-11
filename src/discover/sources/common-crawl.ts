@@ -370,7 +370,7 @@ export async function discoverCommonCrawlSlugs(options?: {
 
 export function hitsToDiscovered(hits: CcSlugHit[]): DiscoveredCompany[] {
   return hits.map((h) => ({
-    name: `${humanizeSlug(h.slug)} (${h.ats})`.slice(0, 200),
+    name: humanizeSlug(h.slug).slice(0, 200),
     domain: null,
     source: "common_crawl" as const,
     evidenceUrl: h.evidenceUrl,

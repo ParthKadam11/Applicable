@@ -7,9 +7,11 @@ import type { Db } from "../db/client.js";
 import { companies, companyCandidates } from "../db/schema.js";
 import { fetchCompanyJobs } from "../ingestion/fetch-company.js";
 import { extractAtsUrls, websiteFromDomain } from "./ats-urls.js";
+import { fetchBoardJobTitles } from "./board-titles.js";
 import { isBlocked, loadBlocklist } from "./blocklist.js";
+import { resolveCompanyDisplayName } from "./company-name.js";
+import { evaluateIndustryFilter } from "./industry-filter.js";
 import { countOpenJobs, detectAtsByGuess } from "./probe-ats.js";
-import { MAX_JOBS_FOR_PROMOTE } from "./types.js";
 
 export interface PromoteStats {
   attempted: number;
@@ -206,15 +208,36 @@ async function promoteOne(
       return { kind: "done" };
     }
 
-    if (jobCount > MAX_JOBS_FOR_PROMOTE) {
-      await reject(
-        db,
-        cand.id,
-        `too many jobs (${jobCount} > ${MAX_JOBS_FOR_PROMOTE})`,
-      );
+    // Industry / tech-mix filter (all discovery sources).
+    const keywordHit = evaluateIndustryFilter({
+      name: cand.name,
+      domain: cand.domain,
+      atsSlug: slug,
+    });
+    if (!keywordHit.ok) {
+      await reject(db, cand.id, keywordHit.reason);
       stats.rejected += 1;
       return { kind: "done" };
     }
+
+    const titles = await fetchBoardJobTitles(ats, slug);
+    const industry = evaluateIndustryFilter({
+      name: cand.name,
+      domain: cand.domain,
+      atsSlug: slug,
+      jobTitles: titles,
+    });
+    if (!industry.ok) {
+      await reject(db, cand.id, industry.reason);
+      stats.rejected += 1;
+      return { kind: "done" };
+    }
+
+    const displayName = await resolveCompanyDisplayName({
+      ats,
+      slug,
+      fallbackName: cand.name,
+    });
 
     const key = `${ats}:${slug.toLowerCase()}`;
     if (existing.has(key)) {
@@ -230,6 +253,13 @@ async function promoteOne(
           updatedAt: new Date(),
         })
         .where(eq(companyCandidates.id, cand.id));
+      // Keep display name fresh when we re-verify an existing board.
+      await db
+        .update(companies)
+        .set({ name: displayName })
+        .where(
+          and(eq(companies.ats, ats), eq(companies.atsSlug, slug)),
+        );
       stats.verified += 1;
       stats.skippedExisting += 1;
       return { kind: "done" };
@@ -239,7 +269,7 @@ async function promoteOne(
     const [company] = await db
       .insert(companies)
       .values({
-        name: cand.name,
+        name: displayName,
         website,
         ats,
         atsSlug: slug,
@@ -248,7 +278,7 @@ async function promoteOne(
       .onConflictDoUpdate({
         target: [companies.ats, companies.atsSlug],
         set: {
-          name: cand.name,
+          name: displayName,
           active: true,
         },
       })

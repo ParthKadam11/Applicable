@@ -22,6 +22,13 @@
       "when": 1794390000000,
       "tag": "0002_ats_board_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794400000000,
+      "tag": "0003_compensation_bigint",
+      "breakpoints": true
     }
   ]
 }

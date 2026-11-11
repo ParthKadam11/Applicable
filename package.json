@@ -24,6 +24,8 @@
     "discover:once": "tsx src/scripts/discover-once.ts",
     "discover:status": "tsx src/scripts/discover-status.ts",
     "discover:cc": "tsx src/scripts/discover-cc.ts",
+    "promote:pending": "tsx src/scripts/promote-pending.ts",
+    "dq:cleanup": "tsx src/scripts/dq-cleanup.ts",
     "mcp:http": "tsx src/mcp/http.ts",
     "mcp:stdio": "tsx src/mcp/stdio.ts",
     "mcp:smoke": "tsx src/scripts/mcp-smoke.ts",

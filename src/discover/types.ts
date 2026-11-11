@@ -27,6 +27,3 @@ export interface AtsHit {
   atsSlug: string;
   url: string;
 }
-
-/** Skip enterprise-scale boards. */
-export const MAX_JOBS_FOR_PROMOTE = 150;

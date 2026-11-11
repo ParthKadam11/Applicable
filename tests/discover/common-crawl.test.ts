@@ -70,6 +70,7 @@ describe("common crawl slug helpers", () => {
     expect(rows[0]?.source).toBe("common_crawl");
     expect(rows[0]?.ats).toBe("greenhouse");
     expect(rows[0]?.atsSlug).toBe("acme");
-    expect(rows[0]?.name).toContain("greenhouse");
+    expect(rows[0]?.name).toBe("Acme");
+    expect(rows[0]?.name).not.toMatch(/greenhouse/i);
   });
 });

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -156,8 +157,8 @@ export const jobTags = pgTable("job_tags", {
   >(),
   contractorOrEor: boolean("contractor_or_eor"),
   contractorOrEorEvidence: text("contractor_or_eor_evidence"),
-  compensationMin: integer("compensation_min"),
-  compensationMax: integer("compensation_max"),
+  compensationMin: bigint("compensation_min", { mode: "number" }),
+  compensationMax: bigint("compensation_max", { mode: "number" }),
   compensationCurrency: text("compensation_currency"),
   compensationPeriod: text("compensation_period"),
   seniority: text("seniority"),

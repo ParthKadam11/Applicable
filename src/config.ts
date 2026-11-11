@@ -66,6 +66,8 @@ const envSchema = z.object({
   DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),
   DISCOVER_PROMOTE_LIMIT: z.coerce.number().int().positive().default(300),
   DISCOVER_PROMOTE_CONCURRENCY: z.coerce.number().int().positive().default(5),
+  /** Common Crawl slug cap on the weekly discover cron. */
+  DISCOVER_CC_LIMIT: z.coerce.number().int().positive().default(5000),
   YC_ALGOLIA_API_KEY: z.string().optional().default(""),
 });
 
