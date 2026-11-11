@@ -173,18 +173,18 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
     },
   },
   {
-    id: "unclear-remote-apac",
+    id: "locked-remote-apac",
     title: "Engineer",
     locationRaw: "Remote, APAC",
     descriptionText: "Join our platform team across the region.",
-    expect: { india_eligibility: "unclear" },
+    expect: { india_eligibility: "region_locked" },
   },
   {
-    id: "unclear-remote-emea",
+    id: "locked-remote-emea",
     title: "Engineer",
     locationRaw: "Remote, EMEA",
     descriptionText: "Join our platform team across the region.",
-    expect: { india_eligibility: "unclear" },
+    expect: { india_eligibility: "region_locked" },
   },
   {
     id: "unclear-no-location",

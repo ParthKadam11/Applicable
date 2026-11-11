@@ -51,14 +51,16 @@ describe("classifyLocationRaw", () => {
     );
   });
 
-  it("opens Anywhere/Worldwide/Global Remote; APAC without India is unclear", () => {
+  it("opens Anywhere/Worldwide/Global Remote; APAC/EMEA lock with named region", () => {
     expect(classifyLocationRaw("Anywhere")?.india_eligibility).toBe("open");
     expect(classifyLocationRaw("Worldwide")?.india_eligibility).toBe("open");
     expect(classifyLocationRaw("Global")?.india_eligibility).toBe("open");
     expect(classifyLocationRaw("Global Remote")?.india_eligibility).toBe("open");
-    expect(classifyLocationRaw("Remote, APAC")?.india_eligibility).toBe("unclear");
-    expect(classifyLocationRaw("APAC")?.india_eligibility).toBe("unclear");
+    expect(classifyLocationRaw("Remote, APAC")?.india_eligibility).toBe("region_locked");
+    expect(classifyLocationRaw("Remote, APAC")?.remote_scope).toBe("APAC");
+    expect(classifyLocationRaw("APAC")?.india_eligibility).toBe("region_locked");
     expect(classifyLocationRaw("EMEA")?.india_eligibility).toBe("region_locked");
+    expect(classifyLocationRaw("Remote - EMEA")?.remote_scope).toBe("EMEA");
   });
 
   it("splits India remote vs onsite", () => {
@@ -151,7 +153,7 @@ describe("classifyIndiaEligibility", () => {
     expect(r.india_eligibility).toBe("region_locked");
   });
 
-  it("specific location stays locked unless body has explicit open hire phrase", () => {
+  it("specific location stays locked for perk work-from-anywhere; strong hire overrides", () => {
     const locked = classifyIndiaEligibility({
       title: "Eng",
       locationRaw: "Remote - USA",
@@ -159,13 +161,50 @@ describe("classifyIndiaEligibility", () => {
     });
     expect(locked.india_eligibility).toBe("region_locked");
 
-    const overridden = classifyIndiaEligibility({
+    const perk = classifyIndiaEligibility({
       title: "Eng",
       locationRaw: "Remote - USA",
       descriptionText: "Work from anywhere. Worldwide remote role.",
     });
+    expect(perk.india_eligibility).toBe("region_locked");
+
+    const overridden = classifyIndiaEligibility({
+      title: "Eng",
+      locationRaw: "Remote - USA",
+      descriptionText: "We hire in any country for this role.",
+    });
     expect(overridden.india_eligibility).toBe("open");
-    expect(overridden.eligibility_evidence[0]).toMatch(/work from anywhere/i);
+  });
+
+  it("Notabene Remote - EMEA + Flexible Remote Work perk → region_locked", () => {
+    const r = classifyIndiaEligibility({
+      title: "Engineer",
+      locationRaw: "Remote - EMEA",
+      descriptionText:
+        "Benefits\n- Flexible Remote Work: Work from anywhere!\n- Health insurance",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+    expect(r.eligibility_evidence[0]).toMatch(/EMEA/i);
+    expect(r.remote_scope).toBe("EMEA");
+  });
+
+  it("Duffel London + Work from anywhere policy → region_locked", () => {
+    const r = classifyIndiaEligibility({
+      title: "Engineer",
+      locationRaw: "London",
+      descriptionText: "🏝️ Work from anywhere policy\nGreat team.",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+    expect(r.eligibility_evidence[0]).toMatch(/London/i);
+  });
+
+  it("Location Remote (anywhere) + we hire in any country → open", () => {
+    const r = classifyIndiaEligibility({
+      title: "Engineer",
+      locationRaw: "Remote (anywhere)",
+      descriptionText: "Location: Remote (anywhere). We hire in any country.",
+    });
+    expect(r.india_eligibility).toBe("open");
   });
 
   it("locks title country codes like (UK)", () => {
@@ -194,12 +233,13 @@ describe("classifyIndiaEligibility", () => {
     expect(r.india_eligibility).toBe("open");
   });
 
-  it("does not treat Remote, APAC as open", () => {
+  it("Remote, APAC is region_locked (not open)", () => {
     const r = classifyIndiaEligibility({
       title: "Eng",
       locationRaw: "Remote, APAC",
       descriptionText: "Hiring across APAC for our team.",
     });
-    expect(r.india_eligibility).toBe("unclear");
+    expect(r.india_eligibility).toBe("region_locked");
+    expect(r.remote_scope).toBe("APAC");
   });
 });

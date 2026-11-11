@@ -16,6 +16,13 @@ export const RemoteScopeSchema = z.enum([
   "onsite",
   "hybrid",
   "unknown",
+  /** Named mega-regions (stored when location/title locks to that region). */
+  "APAC",
+  "EMEA",
+  "AMER",
+  "Europe",
+  "US",
+  "LATAM",
 ]);
 export type RemoteScope = z.infer<typeof RemoteScopeSchema>;
 
