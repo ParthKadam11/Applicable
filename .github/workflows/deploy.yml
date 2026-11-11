@@ -114,8 +114,10 @@ jobs:
             fi
             echo "MCP_HOST=$MCP_HOST (ok)"
 
-            echo "==> docker compose up"
-            docker compose -f docker-compose.prod.yml up -d --build
+            echo "==> docker compose up (no Caddy — host nginx owns :80/:443)"
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            # Drop a half-created caddy container from older compose files if present
+            docker rm -f caniapply-caddy 2>/dev/null || true
 
             echo "==> wait for mcp healthy"
             for i in $(seq 1 30); do
