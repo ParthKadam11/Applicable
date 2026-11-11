@@ -199,9 +199,29 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 |---|---|
 | `VPS_HOST` | `123.45.67.89` or `mcp.yourdomain.com` |
 | `VPS_USER` | `root` or your deploy user |
-| `VPS_SSH_KEY` | full PEM/private key contents of `caniapply_gha_deploy` |
+| `VPS_SSH_KEY` | full **private** key contents of `caniapply_gha_deploy` (see format below) |
 | `VPS_DEPLOY_PATH` | `/opt/caniapply` (optional; this is the default) |
 | `MCP_SMOKE_URL` | `https://mcp.yourdomain.com` (optional; enables post-deploy smoke) |
+
+**`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines — not the `.pub` file, not one long line, no quotes.
+
+```bash
+# On the machine where you generated the key — copy this exact output into the secret:
+cat caniapply_gha_deploy
+# Must start with: -----BEGIN OPENSSH PRIVATE KEY-----
+# Must end with:   -----END OPENSSH PRIVATE KEY-----
+```
+
+Then on the VPS, the matching public key must be authorized:
+
+```bash
+# From your laptop
+ssh-copy-id -i caniapply_gha_deploy.pub USER@VPS_HOST
+# or append manually:
+# cat caniapply_gha_deploy.pub >> ~/.ssh/authorized_keys
+```
+
+If deploy fails with `ssh: no key found` / `unable to authenticate`, the secret is wrong — delete and re-add `VPS_SSH_KEY`.
 
 After secrets are set: push to `master` (or **Actions → Deploy → Run workflow**). Watch the Deploy job; it `git pull`s, `docker compose … up -d --build`s, waits for mcp healthy, then smokes if `MCP_SMOKE_URL` is set.
 
