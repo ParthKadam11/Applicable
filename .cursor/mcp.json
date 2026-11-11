@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "caniapply": {
+      "url": "http://localhost:3100/mcp"
+    }
+  }
+}

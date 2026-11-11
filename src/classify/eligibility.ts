@@ -1,3 +1,4 @@
+import { stripHtml } from "../utils/html.js";
 import type { IndiaEligibility, RemoteScope } from "./types.js";
 import { sentenceMatching, splitSentences } from "./text.js";
 
@@ -7,28 +8,35 @@ export const ELIGIBILITY_NEGATIVE_PHRASES: RegExp[] = [
   /\bglobal team\b/i,
   /\bdistributed team\b/i,
   /\bwe(?:'re| are) (?:a )?distributed\b/i,
-  /\bour (?:team|company|customers?|clients?|users?|products?)\b.{0,40}\b(?:worldwide|global|around the world|100\+?\s*countries)\b/i,
-  /\b(?:customers?|clients?|users?)\b.{0,40}\b(?:in|across|from)\b.{0,40}\b(?:\d+\+?\s*)?countries\b/i,
+  /\bour (?:team|company|customers?|clients?|users?|products?)\b.{0,60}\b(?:worldwide|global|around the world|100\+?\s*countries|international)\b/i,
+  /\b(?:customers?|clients?|users?|organizations?|organisations?)\b.{0,60}\b(?:worldwide|around the world|globally|international|countries)\b/i,
+  /\b(?:trusted|used|relied) by\b.{0,80}\b(?:worldwide|around the world|globally|countries)\b/i,
   /\bserving (?:customers?|clients?)\b.{0,40}\b(?:worldwide|globally|countries)\b/i,
-  /\boffices? (?:worldwide|around the world|globally)\b/i,
+  /\boffices?\b.{0,40}\b(?:worldwide|around the world|globally)\b/i,
+  /\b(?:around the world|worldwide|globally)\b.{0,40}\boffices?\b/i,
   /\bglobal company\b/i,
   /\bcompany is (?:distributed|global|worldwide)\b/i,
   /\boperating in\b.{0,40}\bcountries\b/i,
   /\breach(?:ing)? (?:customers?|users?)\b.{0,40}\bcountries\b/i,
+  /\bmajor organizations worldwide\b/i,
+  /\b(?:products?|platform|software)\b.{0,40}\b(?:worldwide|around the world|globally)\b/i,
 ];
 
-/** Sentence must be about who can apply / where the worker may be. */
-const APPLY_CONTEXT: RegExp[] = [
+/**
+ * Hiring / candidate-location context. Generic "worldwide/global" only counts
+ * as open-evidence when one of these appears in the SAME sentence.
+ */
+const HIRING_LOCATION_CONTEXT: RegExp[] = [
+  /\bremote\b/i,
+  /\banywhere\b/i,
+  /\blocat(?:ion|ed)\b/i,
+  /\bbased\b/i,
+  /\bwork from\b/i,
+  /\bhire(?:s|d|ing)?\b/i,
   /\bcandidates?\b/i,
   /\bapplicants?\b/i,
   /\bapply\b/i,
-  /\bhiring\b/i,
-  /\bhire\b/i,
   /\bopen to\b/i,
-  /\bwork from\b/i,
-  /\bbased in\b/i,
-  /\blocat(?:ion|ed)\b/i,
-  /\bremote\b/i,
   /\bresidents?\b/i,
   /\bauthorized to work\b/i,
   /\beligible to work\b/i,
@@ -44,8 +52,18 @@ const APPLY_CONTEXT: RegExp[] = [
   /\bEOR\b/i,
 ];
 
+/** Broader apply-context (India mentions, etc.). */
+const APPLY_CONTEXT: RegExp[] = [
+  ...HIRING_LOCATION_CONTEXT,
+  /\bopen to\b/i,
+];
+
 const TITLE_COUNTRY_CODE =
-  /\(\s*(US|USA|UK|AU|NZ|SG|CA|EU|DE|NL|IE)\s*\)/i;
+  /\(\s*(US|USA|UK|AU|NZ|SG|CA|EU|DE|NL|IE|FR|ES|IT|CH|SE|NO|DK|FI|BE|AT|PT|PL|IN)\s*\)/i;
+
+/** Title segments like "| Germany |", "| UK |", "— Spain —". */
+const TITLE_GEO_PIPE =
+  /(?:^|[\|\u2013\u2014\-\/:,])\s*(US|USA|UK|U\.S\.A?\.?|United States|United Kingdom|Ireland|Germany|France|Spain|Italy|Netherlands|Canada|Australia|New Zealand|Singapore|Japan|Brazil|Mexico|Sweden|Norway|Denmark|Finland|Belgium|Austria|Switzerland|Portugal|Poland|EMEA|APAC|LATAM|Europe|Americas)\s*(?:[\|\u2013\u2014\-\/:,]|$)/i;
 
 const REGION_LOCKED_PHRASES: RegExp[] = [
   /\bUS work authorization\b/i,
@@ -77,10 +95,12 @@ const REGION_LOCKED_PHRASES: RegExp[] = [
   /\bmust overlap\b/i,
   /\boverlap .{0,40}\b(?:PST|PDT|EST|EDT|CST|CDT|MST|MDT|PT|ET|Pacific|Eastern)\b/i,
   /\bwithin .{0,20}\b(?:PST|PDT|EST|EDT|CST|CDT|MST|MDT|PT|ET)\b/i,
+  /\b(?:based |work from )?anywhere in (?:the )?(?:US|U\.S\.A?\.?|USA|United States|UK|United Kingdom|EU|EEA|Canada|Australia)\b/i,
+  /\bremote (?:role )?(?:based )?(?:in |within )?(?:the )?(?:US|U\.S\.A?\.?|USA|United States) only\b/i,
 ];
 
-/** Non-India geo locks in location_raw. */
-const LOCKED_LOCATION: RegExp[] = [
+/** Non-India countries / cities / regions that pin the role to a place. */
+const SPECIFIC_GEO: RegExp[] = [
   /\bU\.?S\.?A?\b/i,
   /\bUnited States\b/i,
   /\bEMEA\b/i,
@@ -88,45 +108,122 @@ const LOCKED_LOCATION: RegExp[] = [
   /\b\bEU\b/,
   /\bUK\b/,
   /\bUnited Kingdom\b/i,
+  /\bEngland\b/i,
+  /\bScotland\b/i,
+  /\bWales\b/i,
+  /\bIreland\b/i,
+  /\bRepublic of Ireland\b/i,
   /\bLondon\b/i,
+  /\bDublin\b/i,
+  /\bEdinburgh\b/i,
+  /\bManchester\b/i,
   /\bCanada\b/i,
+  /\bToronto\b/i,
+  /\bVancouver\b/i,
+  /\bMontreal\b/i,
   /\bAustralia\b/i,
+  /\bSydney\b/i,
+  /\bMelbourne\b/i,
   /\bGermany\b/i,
+  /\bBerlin\b/i,
+  /\bMunich\b/i,
+  /\bMünchen\b/i,
+  /\bHamburg\b/i,
+  /\bFrankfurt\b/i,
   /\bFrance\b/i,
+  /\bParis\b/i,
+  /\bLyon\b/i,
   /\bNetherlands\b/i,
   /\bAmsterdam\b/i,
-  /\bBerlin\b/i,
+  /\bRotterdam\b/i,
+  /\bSpain\b/i,
+  /\bMadrid\b/i,
+  /\bBarcelona\b/i,
+  /\bItaly\b/i,
+  /\bMilan\b/i,
+  /\bRome\b/i,
+  /\bSweden\b/i,
+  /\bStockholm\b/i,
+  /\bNorway\b/i,
+  /\bOslo\b/i,
+  /\bDenmark\b/i,
+  /\bCopenhagen\b/i,
+  /\bFinland\b/i,
+  /\bHelsinki\b/i,
+  /\bBelgium\b/i,
+  /\bBrussels\b/i,
+  /\bAustria\b/i,
+  /\bVienna\b/i,
+  /\bSwitzerland\b/i,
+  /\bZurich\b/i,
+  /\bZürich\b/i,
+  /\bGeneva\b/i,
+  /\bPortugal\b/i,
+  /\bLisbon\b/i,
+  /\bPoland\b/i,
+  /\bWarsaw\b/i,
   /\bNew York\b/i,
   /\bSan Francisco\b/i,
   /\bCalifornia\b/i,
+  /\bSeattle\b/i,
+  /\bAustin\b/i,
+  /\bBoston\b/i,
+  /\bChicago\b/i,
+  /\bLos Angeles\b/i,
+  /\bAlameda\b/i,
+  /\b,\s*CA\b/,
   /\bAmericas\b/i,
+  /\bNorth America\b/i,
+  /\bSouth America\b/i,
   /\b\bAMER\b/i,
   /\b\bAPJ\b/i,
   /\bLATAM\b/i,
   /\bUKI\b/i,
   /\bJapan\b/i,
+  /\bTokyo\b/i,
   /\bSingapore\b/i,
   /\bKorea\b/i,
   /\bBrazil\b/i,
   /\bMexico\b/i,
+  /\bIsrael\b/i,
+  /\bTel Aviv\b/i,
 ];
 
-const OPEN_WORLDWIDE: RegExp[] = [
-  /\banywhere\b/i,
-  /\bworldwide\b/i,
+/** Kept for callers / tests that still import LOCKED_LOCATION behavior via classifyLocationRaw. */
+const LOCKED_LOCATION = SPECIFIC_GEO;
+
+/**
+ * Strong location-scope open phrases — about WHERE the candidate can work.
+ * Prefer these as open evidence over generic "worldwide".
+ */
+const EXPLICIT_OPEN_HIRE: RegExp[] = [
   /\bwork from anywhere\b/i,
-  /\banywhere in the world\b/i,
-  /\bglobal remote\b/i,
   /\bremote worldwide\b/i,
   /\bremote[- ]friendly worldwide\b/i,
+  /\banywhere in the world\b/i,
+  /\bglobal remote\b/i,
   /\bthis role is (?:remote )?worldwide\b/i,
-  /\bcandidates from (?:any|all) countr(?:y|ies)\b/i,
+  /\b(?:open to|hiring) (?:candidates? (?:from |in )?)?(?:any|all) countr/i,
+  /\bcandidates? from (?:any|all) countr(?:y|ies)\b/i,
+  /\bhire(?:s|d|ing)? (?:from )?(?:anywhere|globally|worldwide)\b/i,
   /\bhire globally\b/i,
   /\bsupport any timezone\b/i,
   /\bany(?:\s+time)?\s*zone\b/i,
+  /\bany country\b/i,
+  /\ball countries\b/i,
+  /\bbased anywhere\b/i,
+  /\blocat(?:ion|ed)\s*[:\-]?\s*(?:anywhere|worldwide|global(?:\s+remote)?)\b/i,
+  /\bremote\s*[-–—:]\s*work from anywhere\b/i,
 ];
 
-const OPEN_GLOBAL_WORD = /\bglobal\b/i;
+/** Generic words that only count with hiring-location context in the same sentence. */
+const GENERIC_OPEN_WORDS: RegExp[] = [
+  /\bworldwide\b/i,
+  /\baround the world\b/i,
+  /\bglobal\b/i,
+  /\binternational\b/i,
+  /\banywhere\b/i,
+];
 
 const OPEN_INDIA: RegExp[] = [
   /\bopen to candidates (?:from |in )?India\b/i,
@@ -165,8 +262,16 @@ const IST_EXCEPTION = /\b(?:IST|India|Indian Standard Time)\b/i;
 const INDIA_CITY =
   /\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata)\b/i;
 
+const LOCATION_OPEN =
+  /\banywhere\b|\bworldwide\b|\bwork from anywhere\b|\bglobal(?:\s+remote)?\b/i;
+
 export function isNegativeEligibilitySentence(sentence: string): boolean {
   return ELIGIBILITY_NEGATIVE_PHRASES.some((re) => re.test(sentence));
+}
+
+export function isHiringLocationContext(sentence: string): boolean {
+  if (isNegativeEligibilitySentence(sentence)) return false;
+  return HIRING_LOCATION_CONTEXT.some((re) => re.test(sentence));
 }
 
 export function isApplyContextSentence(sentence: string): boolean {
@@ -180,6 +285,82 @@ function hasBlocker(text: string): boolean {
     if (re.test(text) && !isNegativeEligibilitySentence(text)) return true;
   }
   return false;
+}
+
+function hasSpecificGeo(text: string): boolean {
+  return SPECIFIC_GEO.some((re) => re.test(text));
+}
+
+function findTitleGeoEvidence(title: string): string | null {
+  if (!title.trim()) return null;
+  const code = TITLE_COUNTRY_CODE.exec(title);
+  if (code) return title.trim();
+  const pipe = TITLE_GEO_PIPE.exec(title);
+  if (pipe) return title.trim();
+  if (hasSpecificGeo(title) && !INDIA_CITY.test(title) && !LOCATION_OPEN.test(title)) {
+    return title.trim();
+  }
+  return null;
+}
+
+/** "Anywhere/worldwide" scoped to a specific non-India country is not open. */
+function isCountryScopedAnywhere(sentence: string): boolean {
+  return /\b(?:anywhere|worldwide|global)\b.{0,40}\b(?:in|within)\b.{0,20}\b(?:the\s+)?(?:US|U\.S\.A?\.?|USA|United States|UK|United Kingdom|EU|EEA|Europe|Canada|Australia|Germany|France|Spain|Netherlands)\b/i.test(
+    sentence,
+  );
+}
+
+function isAcceptableOpenEvidence(sentence: string): boolean {
+  if (isNegativeEligibilitySentence(sentence)) return false;
+  if (isCountryScopedAnywhere(sentence)) return false;
+  // "based anywhere in the USA" / similar — specific geo + anywhere is a lock.
+  if (
+    hasSpecificGeo(sentence) &&
+    /\b(?:anywhere|worldwide)\b/i.test(sentence) &&
+    !/\b(?:anywhere|worldwide)\b.{0,40}\b(?:world|globe|planet|country|countries|timezone)\b/i.test(
+      sentence,
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function findExplicitOpenSentence(corpus: string): string | null {
+  for (const re of EXPLICIT_OPEN_HIRE) {
+    for (const sentence of splitSentences(corpus)) {
+      if (!re.test(sentence)) continue;
+      if (!isAcceptableOpenEvidence(sentence)) continue;
+      return sentence;
+    }
+    const sentence = sentenceMatching(corpus, re);
+    if (sentence && isAcceptableOpenEvidence(sentence)) return sentence;
+  }
+  return null;
+}
+
+function findGenericOpenWithHiringContext(corpus: string): string | null {
+  for (const sentence of splitSentences(corpus)) {
+    if (isNegativeEligibilitySentence(sentence)) continue;
+    const hasGeneric = GENERIC_OPEN_WORDS.some((re) => re.test(sentence));
+    if (!hasGeneric) continue;
+    if (!isHiringLocationContext(sentence) && !/^Location:/i.test(sentence)) {
+      continue;
+    }
+    // Prefer sentences that look like location-scope, not marketing.
+    if (
+      /\b(?:customers?|clients?|users?|organizations?|organisations?|offices?|products?|platform)\b/i.test(
+        sentence,
+      ) &&
+      !/\b(?:candidates?|applicants?|work from|hire|remote worldwide|global remote)\b/i.test(
+        sentence,
+      )
+    ) {
+      continue;
+    }
+    return sentence;
+  }
+  return null;
 }
 
 function indiaSplit(
@@ -237,11 +418,18 @@ export function classifyLocationRaw(locationRaw: string | null | undefined): {
     };
   }
 
-  const hasLocked = LOCKED_LOCATION.some((re) => re.test(loc));
-  if (
-    hasLocked &&
-    !/\bIndia\b|\bAnywhere\b|\bWorldwide\b|\bGlobal\b/i.test(loc)
-  ) {
+  // Location itself is explicitly worldwide / global remote / anywhere.
+  if (LOCATION_OPEN.test(loc) && !hasSpecificGeo(loc)) {
+    return {
+      india_eligibility: "open",
+      eligibility_evidence: [loc],
+      remote_scope: "worldwide",
+    };
+  }
+
+  // Specific country/city/region in location → region_locked (caller may
+  // upgrade to open only with an explicit hiring open phrase in the body).
+  if (LOCKED_LOCATION.some((re) => re.test(loc)) && !INDIA_CITY.test(loc)) {
     return {
       india_eligibility: "region_locked",
       eligibility_evidence: [loc],
@@ -253,10 +441,8 @@ export function classifyLocationRaw(locationRaw: string | null | undefined): {
     };
   }
 
-  if (
-    /\banywhere\b|\bworldwide\b|\bwork from anywhere\b/i.test(loc) ||
-    (/\bglobal\b/i.test(loc) && !hasBlocker(loc))
-  ) {
+  // "Remote - work from anywhere" style locations without a named country.
+  if (LOCATION_OPEN.test(loc)) {
     return {
       india_eligibility: "open",
       eligibility_evidence: [loc],
@@ -301,6 +487,10 @@ function inferRemoteScope(
 /**
  * Phrase-based India eligibility on location_raw + title + description.
  * Confident open / india_* / region_locked skips LLM; unclear may call LLM.
+ *
+ * Priority: location/title specific geo blocks "open" unless the body has an
+ * explicit hiring location-scope phrase (work from anywhere, remote worldwide, …).
+ * Generic "worldwide/global" marketing never counts as open evidence.
  */
 export function classifyIndiaEligibility(input: {
   descriptionText: string;
@@ -311,28 +501,58 @@ export function classifyIndiaEligibility(input: {
   eligibility_evidence: string[];
   remote_scope: RemoteScope;
 } {
-  const fromLoc = classifyLocationRaw(input.locationRaw);
-  // Decisive location outcomes (including explicit unclear for Remote, APAC).
-  if (fromLoc && fromLoc.india_eligibility !== "unclear") return fromLoc;
-  // Keep APAC/EMEA unclear from location — do not reopen via description.
-  if (fromLoc?.india_eligibility === "unclear") return fromLoc;
-
   const title = input.title ?? "";
-  const text = [title, input.descriptionText].filter(Boolean).join("\n\n");
+  const plainDescription = stripHtml(input.descriptionText);
+  const fromLoc = classifyLocationRaw(input.locationRaw);
+
+  // India / APAC-unclear / explicit open from location alone — decisive.
+  if (
+    fromLoc &&
+    (fromLoc.india_eligibility === "india_remote" ||
+      fromLoc.india_eligibility === "india_onsite" ||
+      fromLoc.india_eligibility === "unclear" ||
+      fromLoc.india_eligibility === "open")
+  ) {
+    return fromLoc;
+  }
+
   const corpus = [
     title,
     input.locationRaw ? `Location: ${input.locationRaw}` : "",
-    input.descriptionText,
+    plainDescription,
   ]
     .filter(Boolean)
     .join("\n\n");
 
-  const titleCode = TITLE_COUNTRY_CODE.exec(title);
-  if (titleCode) {
+  const titleGeo = findTitleGeoEvidence(title);
+  const specificGeoEvidence =
+    fromLoc?.india_eligibility === "region_locked"
+      ? (fromLoc.eligibility_evidence[0] ?? input.locationRaw!.trim())
+      : titleGeo;
+
+  // Specific country/city/region in location or title → not open unless
+  // the body explicitly says candidates can work from anywhere / worldwide.
+  if (specificGeoEvidence) {
+    const explicit = findExplicitOpenSentence(corpus);
+    if (explicit && !hasBlocker(explicit)) {
+      // Only allow override when the open phrase is not contradicted by a
+      // hard authorization lock in the same corpus.
+      const hardLock = REGION_LOCKED_PHRASES.some((re) => {
+        const s = sentenceMatching(corpus, re);
+        return s != null && !isNegativeEligibilitySentence(s);
+      });
+      if (!hardLock) {
+        return {
+          india_eligibility: "open",
+          eligibility_evidence: [explicit],
+          remote_scope: "worldwide",
+        };
+      }
+    }
     return {
       india_eligibility: "region_locked",
-      eligibility_evidence: [title],
-      remote_scope: "country",
+      eligibility_evidence: [specificGeoEvidence],
+      remote_scope: inferRemoteScope(corpus, "region_locked", specificGeoEvidence),
     };
   }
 
@@ -372,7 +592,6 @@ export function classifyIndiaEligibility(input: {
     for (const sentence of splitSentences(corpus)) {
       if (!re.test(sentence)) continue;
       if (isNegativeEligibilitySentence(sentence)) continue;
-      // Location line or apply-context counts.
       if (
         /^Location:/i.test(sentence) ||
         isApplyContextSentence(sentence) ||
@@ -401,37 +620,28 @@ export function classifyIndiaEligibility(input: {
     };
   }
 
-  // Worldwide / anywhere — global only if no blocker.
-  for (const re of OPEN_WORLDWIDE) {
-    let found: string | null = null;
-    for (const sentence of splitSentences(corpus)) {
-      if (!re.test(sentence)) continue;
-      if (!isApplyContextSentence(sentence)) continue;
-      found = sentence;
-      break;
-    }
-    if (!found) {
-      const sentence = sentenceMatching(corpus, re);
-      if (sentence && isApplyContextSentence(sentence)) found = sentence;
-    }
-    if (!found) continue;
-    if (hasBlocker(found) || hasBlocker(corpus)) continue;
+  // Explicit location-scope open phrases first (preferred evidence).
+  const explicit = findExplicitOpenSentence(corpus);
+  if (explicit && !hasBlocker(explicit) && !hasBlocker(corpus)) {
     return {
       india_eligibility: "open",
-      eligibility_evidence: [found],
-      remote_scope: inferRemoteScope(corpus, "open", found),
+      eligibility_evidence: [explicit],
+      remote_scope: inferRemoteScope(corpus, "open", explicit),
     };
   }
 
-  // "global" alone — only with apply context and no blocker.
-  for (const sentence of splitSentences(corpus)) {
-    if (!OPEN_GLOBAL_WORD.test(sentence)) continue;
-    if (!isApplyContextSentence(sentence)) continue;
-    if (hasBlocker(sentence) || hasBlocker(corpus)) continue;
+  // Generic worldwide/global/international — only with hiring-location context.
+  const generic = findGenericOpenWithHiringContext(corpus);
+  if (
+    generic &&
+    isAcceptableOpenEvidence(generic) &&
+    !hasBlocker(generic) &&
+    !hasBlocker(corpus)
+  ) {
     return {
       india_eligibility: "open",
-      eligibility_evidence: [sentence],
-      remote_scope: "worldwide",
+      eligibility_evidence: [generic],
+      remote_scope: inferRemoteScope(corpus, "open", generic),
     };
   }
 
