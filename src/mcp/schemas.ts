@@ -1,0 +1,87 @@
+import { z } from "zod";
+
+export const EligibilityFilterSchema = z.enum([
+  "open",
+  "india_remote",
+  "india_onsite",
+  "region_locked",
+  "unclear",
+]);
+
+export type EligibilityFilter = z.infer<typeof EligibilityFilterSchema>;
+
+export const SearchJobsInputSchema = z.object({
+  query: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Free-text search against job title (case-insensitive)"),
+  eligibility: z
+    .array(EligibilityFilterSchema)
+    .min(1)
+    .default(["open", "india_remote"])
+    .describe(
+      "India eligibility labels to include. Default: open + india_remote",
+    ),
+  role_keywords: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Optional keywords matched against title (e.g. backend, SRE)"),
+  company: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Filter by company name (case-insensitive substring)"),
+  posted_within_days: z
+    .number()
+    .int()
+    .positive()
+    .max(365)
+    .optional()
+    .describe("Only jobs posted within this many days"),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .default(20)
+    .describe("Max results (1–50, default 20)"),
+  cursor: z
+    .string()
+    .optional()
+    .describe("Opaque pagination cursor from a previous search_jobs response"),
+});
+
+export const GetJobInputSchema = z.object({
+  id: z.string().uuid().describe("Job UUID"),
+});
+
+export const ListCompaniesInputSchema = z.object({
+  query: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Filter by company name (case-insensitive substring)"),
+  ats: z
+    .enum(["ashby", "greenhouse", "lever", "workable", "recruitee", "personio"])
+    .optional()
+    .describe("Filter by ATS provider"),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(25)
+    .describe("Max companies to return (default 25)"),
+});
+
+export const StatsInputSchema = z.object({}).default({});
+
+export const SubmitCompanyInputSchema = z.object({
+  name: z.string().min(1).max(200).describe("Company display name"),
+  careers_url: z
+    .string()
+    .url()
+    .describe("Public careers or ATS board URL (http/https)"),
+});

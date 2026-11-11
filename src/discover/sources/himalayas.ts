@@ -65,10 +65,10 @@ export async function discoverHimalayas(
   let cursor: string | null = null;
 
   for (let page = 0; page < maxPages; page += 1) {
-    const url = cursor
+    const url: string = cursor
       ? `https://himalayas.app/jobs/api?limit=100&cursor=${encodeURIComponent(cursor)}`
       : "https://himalayas.app/jobs/api?limit=100";
-    const data = await fetchJson<HimalayasResponse>(url);
+    const data: HimalayasResponse = await fetchJson<HimalayasResponse>(url);
     const jobs = data.jobs ?? [];
     all.push(...jobs);
     cursor = data.nextCursor ?? null;

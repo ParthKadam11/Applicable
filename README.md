@@ -1,11 +1,10 @@
 # CaniApply
 
 TypeScript (Node 20) backend that collects startup job postings from public ATS
-job-board APIs, stores them in Postgres, and will expose them through an MCP
+job-board APIs, stores them in Postgres, and exposes them through a hosted MCP
 server. No UI.
 
-**Current milestone:** classification (rules → guarded LLM), on top of ingestion.
-Company research and MCP come next.
+**Current milestone:** hosted MCP (Streamable HTTP) on top of ingest + classify.
 
 ## Stack
 
@@ -50,7 +49,10 @@ See `.env.example`. Required for local ingest:
 | `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 1; raise if not rate-limited) |
 | `LLM_RPM` | Token-bucket for LLM calls (default 6; Groq free ~8k TPM) |
 
-Search / MCP vars are reserved for later phases.
+| `MCP_HTTP_PORT` | Streamable HTTP listen port (default 3100) |
+| `MCP_RATE_LIMIT_RPM` | Per-IP rate limit (default 60) |
+| `MCP_PUBLIC_URL` | Public MCP URL for docs / clients |
+| `MCP_DOMAIN` | Hostname for Caddy TLS (`docker compose --profile tls`) |
 
 ## Adding companies
 
@@ -119,24 +121,95 @@ npm run classify:once
 npm run stats
 ```
 
-## MCP (planned)
+## MCP (hosted)
 
-Not wired yet. Planned tools: `search_jobs`, `get_job`, `list_companies`,
-`research_company`, `stats`. Connecting to Claude Desktop / Cursor will be
-documented when the MCP server lands.
+Read-only Streamable HTTP MCP server against Postgres. Tools:
+`search_jobs`, `get_job`, `list_companies`, `stats`, `submit_company`.
+
+```bash
+npm run mcp:http          # http://localhost:3100/mcp
+npm run mcp:stdio         # local stdio for Cursor/Claude Desktop
+npm run mcp:smoke         # call each tool once against the DB
+docker compose up -d --build mcp
+curl -s http://localhost:3100/health
+```
+
+For HTTPS on a Contabo VPS (Let's Encrypt via Caddy):
+
+```bash
+export MCP_DOMAIN=mcp.yourdomain.com
+docker compose --profile tls up -d --build
+```
+
+### Connect in 30 seconds
+
+Replace the URL with your deployed endpoint (local example shown).
+
+**Claude Desktop** (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "caniapply": {
+      "url": "https://mcp.yourdomain.com/mcp"
+    }
+  }
+}
+```
+
+If your Claude build only supports stdio locally:
+
+```json
+{
+  "mcpServers": {
+    "caniapply": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.yourdomain.com/mcp"]
+    }
+  }
+}
+```
+
+**Cursor** (Settings → MCP → Add server):
+
+```json
+{
+  "mcpServers": {
+    "caniapply": {
+      "url": "https://mcp.yourdomain.com/mcp"
+    }
+  }
+}
+```
+
+**curl** (initialize):
+
+```bash
+curl -s http://localhost:3100/health
+curl -s -X POST http://localhost:3100/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"0.0.1"}}}'
+```
 
 ## Project layout
 
 ```
 src/
   ats/           # ATS adapters (ashby, greenhouse, lever)
+  classify/      # rules + LLM eligibility
+  discover/      # YC/HN/remote company discovery
+  mcp/           # Streamable HTTP + stdio MCP server
   db/            # Drizzle schema, client, migrate
   ingestion/     # upsert, fetch-company, pg-boss
-  scripts/       # seed, detect-ats, ingest-once
+  scripts/       # seed, detect-ats, ingest-once, mcp-smoke
   utils/         # http, html strip, content hash
 tests/
   ats/           # adapter unit tests + fixtures
+  mcp/           # MCP schema + tool tests
   integration/   # docker Postgres ingestion test
 companies.yaml
 drizzle/         # SQL migrations
+Dockerfile       # mcp image
+Caddyfile        # TLS reverse proxy for mcp.<domain>
 ```

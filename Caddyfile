@@ -1,0 +1,14 @@
+{$MCP_DOMAIN:mcp.example.com} {
+	encode gzip
+	reverse_proxy mcp:3100
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

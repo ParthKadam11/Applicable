@@ -52,6 +52,12 @@ const envSchema = z.object({
   TAVILY_API_KEY: z.string().optional().default(""),
   BRAVE_API_KEY: z.string().optional().default(""),
   MCP_HTTP_PORT: z.coerce.number().int().positive().default(3100),
+  MCP_RATE_LIMIT_RPM: z.coerce.number().int().positive().default(60),
+  MCP_PUBLIC_URL: z
+    .string()
+    .optional()
+    .default("https://mcp.example.com/mcp"),
+  MCP_DOMAIN: z.string().optional().default("mcp.example.com"),
 
   // Company discovery
   DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),
