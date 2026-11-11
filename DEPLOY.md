@@ -161,35 +161,18 @@ Workflows:
 ### One-time setup on the VPS
 
 1. Ensure the app is already cloned and running under `/opt/caniapply` (sections 1–3).
-2. Make sure `git pull` works **non-interactively** on the VPS (deploy key recommended):
+2. Create an SSH key so GitHub Actions can log into the VPS (no passphrase):
 
 ```bash
-# On your laptop — create a deploy key (no passphrase)
+# On your laptop
 ssh-keygen -t ed25519 -C "caniapply-github-deploy" -f caniapply_gha_deploy -N ""
 
-# Install the *private* key as a GitHub Actions secret (VPS_SSH_KEY) — see below.
+# Install the *private* key as GitHub secret VPS_SSH_KEY (see below).
 # Install the *public* key on the VPS for SSH login:
 ssh-copy-id -i caniapply_gha_deploy.pub USER@YOUR_VPS_IP
-
-# On the VPS — read-only deploy key so `git pull` works without a password:
-ssh-keygen -t ed25519 -C "caniapply-vps-git" -f ~/.ssh/caniapply_github -N ""
-cat ~/.ssh/caniapply_github.pub
-# → GitHub repo → Settings → Deploy keys → Add (read-only)
-
-# Point origin at SSH if you cloned via HTTPS:
-cd /opt/caniapply
-git remote set-url origin git@github.com:ParthKadam11/CaniApply.git
-# ~/.ssh/config host github.com → IdentityFile ~/.ssh/caniapply_github
-printf '%s\n' \
-  'Host github.com' \
-  '  HostName github.com' \
-  '  User git' \
-  '  IdentityFile ~/.ssh/caniapply_github' \
-  '  IdentitiesOnly yes' >> ~/.ssh/config
-chmod 600 ~/.ssh/config
-ssh -T git@github.com   # should say "successfully authenticated"
-git pull
 ```
+
+The deploy workflow uses `GITHUB_TOKEN` for `git fetch` on the VPS, so you do **not** need a separate GitHub deploy key for pulls (HTTPS remotes are fine).
 
 ### GitHub Actions secrets
 
