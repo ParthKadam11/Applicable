@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Geist } from "next/font/google";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -43,14 +32,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html lang="en" className="font-sans">
       <head>
         <link
           href="https://fonts.cdnfonts.com/css/morrison"
           rel="stylesheet"
         />
       </head>
-      <body className={`${mono.variable} antialiased`}>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

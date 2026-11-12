@@ -13,7 +13,7 @@ export function IconApplicable({ className = "" }: IconProps) {
         fill="#0f9bc8"
         fontSize="13"
         fontWeight="700"
-        fontFamily="system-ui,sans-serif"
+        fontFamily="Morrison, Libre Franklin, system-ui, sans-serif"
       >
         A
       </text>
