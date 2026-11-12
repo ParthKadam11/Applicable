@@ -11,7 +11,7 @@ import {
   parseQueryString,
 } from "./public-api.js";
 import { IpRateLimiter } from "./rate-limit.js";
-import { createCaniApplyMcpServer } from "./server.js";
+import { createApplicableMcpServer } from "./server.js";
 import { getMcpStats } from "./tools.js";
 
 const rateLimiter = new IpRateLimiter(config.MCP_RATE_LIMIT_RPM);
@@ -20,6 +20,8 @@ const STATS_CACHE_TTL_MS = 5 * 60_000;
 const JOBS_CACHE_TTL_MS = 60_000;
 
 const ALLOWED_ORIGINS = new Set([
+  "https://applicable.parthkadam.tech",
+  // legacy domain during rename
   "https://caniapply.parthkadam.tech",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
@@ -68,7 +70,7 @@ export function createMcpHttpApp() {
   app.get("/health", (_req, res) => {
     res.status(200).json({
       ok: true,
-      service: "caniapply-mcp",
+      service: "applicable-mcp",
       version: "0.1.0",
       ts: new Date().toISOString(),
     });
@@ -208,7 +210,7 @@ export function createMcpHttpApp() {
   });
 
   const handleMcp = async (req: Request, res: Response) => {
-    const server = createCaniApplyMcpServer(db);
+    const server = createApplicableMcpServer(db);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });

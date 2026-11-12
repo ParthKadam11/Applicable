@@ -88,7 +88,7 @@ async function fetchOk(
       const res = await fetch(url, {
         headers: {
           "User-Agent":
-            "CaniApply/0.1 (+https://github.com/ParthKadam11/CaniApply; research bot)",
+            "Applicable/0.1 (+https://github.com/ParthKadam11/Applicable; research bot)",
           ...(opts?.headers ?? {}),
         },
         signal: AbortSignal.timeout(120_000),

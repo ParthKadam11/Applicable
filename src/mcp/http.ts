@@ -7,7 +7,7 @@ async function main() {
   const port = config.MCP_HTTP_PORT;
   const server = app.listen(port, () => {
     console.log(
-      `CaniApply MCP (Streamable HTTP) listening on :${port}  POST/GET /mcp  GET /health`,
+      `Applicable MCP (Streamable HTTP) listening on :${port}  POST/GET /mcp  GET /health`,
     );
   });
 

@@ -14,7 +14,7 @@ import {
 import { AgentLogo } from "./agent-logo";
 import { AgentsStrip } from "./agents-strip";
 import { CopyButton } from "./copy-button";
-import { IconCanIApply } from "./connector-icons";
+import { IconApplicable } from "./connector-icons";
 
 type Cta =
   | { kind: "link"; label: string; href: string }
@@ -25,7 +25,7 @@ const CONNECTORS = [
   {
     id: "claude",
     label: "Claude",
-    headline: "Add CanIApply to Claude",
+    headline: "Add Applicable to Claude",
     body: "One click opens Claude’s connector dialog with our URL filled in. Ask in plain English — get live roles with the quote that proves you can apply from India.",
     tag: "1-click",
     cta: {
@@ -42,8 +42,8 @@ const CONNECTORS = [
   {
     id: "codex",
     label: "Codex",
-    headline: "Wire CanIApply into Codex",
-    body: "One click copies the endpoint and opens ChatGPT Plugins — create a custom MCP server for Codex / ChatGPT with CanIApply.",
+    headline: "Wire Applicable into Codex",
+    body: "One click copies the endpoint and opens ChatGPT Plugins — create a custom MCP server for Codex / ChatGPT with Applicable.",
     tag: "1-click",
     cta: {
       kind: "copy-open",
@@ -59,7 +59,7 @@ const CONNECTORS = [
   {
     id: "cursor",
     label: "Cursor",
-    headline: "Install CanIApply in Cursor",
+    headline: "Install Applicable in Cursor",
     body: "One click hands off to Cursor and installs the server globally. Search the corpus while you code — no JSON editing, no terminal.",
     tag: "1-click",
     cta: {
@@ -76,7 +76,7 @@ const CONNECTORS = [
   {
     id: "windsurf",
     label: "Windsurf",
-    headline: "Connect Windsurf to CanIApply",
+    headline: "Connect Windsurf to Applicable",
     body: "One click copies the endpoint and opens Windsurf’s MCP docs — paste as serverUrl in Cascade MCP settings.",
     tag: "1-click",
     cta: {
@@ -93,7 +93,7 @@ const CONNECTORS = [
   {
     id: "cline",
     label: "Cline",
-    headline: "Use CanIApply inside Cline",
+    headline: "Use Applicable inside Cline",
     body: "One click opens VS Code’s MCP install flow. Confirm, then enable the same remote URL in Cline’s MCP panel if you use Cline specifically.",
     tag: "1-click",
     cta: {
@@ -127,7 +127,7 @@ const CONNECTORS = [
   {
     id: "grok",
     label: "Grokbot",
-    headline: "Hook Grokbot into CanIApply",
+    headline: "Hook Grokbot into Applicable",
     body: "One click copies the endpoint and opens Grok — paste into MCP / connectors settings.",
     tag: "1-click",
     cta: {
@@ -153,7 +153,7 @@ const CONNECTORS = [
     } satisfies Cta,
     steps: [
       "Copy the endpoint URL.",
-      "In your client’s MCP config, add a remote server named caniapply.",
+      "In your client’s MCP config, add a remote server named applicable.",
       "Set url to the endpoint, save, then query search_jobs / stats.",
     ],
   },
@@ -211,7 +211,7 @@ export function McpSetup() {
 
   const snippet = `{
   "mcpServers": {
-    "caniapply": {
+    "applicable": {
       "url": "${MCP_URL}"
     }
   }
@@ -231,7 +231,7 @@ export function McpSetup() {
               Plug into the agent you already use
             </h2>
             <p className="mt-3 max-w-xl text-pretty text-[15px] leading-relaxed text-mute">
-              Same India-eligibility corpus everywhere — pick a client and
+              Same India-eligibility corpus everywhere. Pick a client and
               connect in one click.
             </p>
           </div>
@@ -298,7 +298,7 @@ export function McpSetup() {
             <div className="flex flex-col items-center gap-8">
               <div className="flex items-center justify-center">
                 <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
-                  <IconCanIApply className="size-10" />
+                  <IconApplicable className="size-10" />
                 </div>
                 <Rail />
                 <div className="relative">
@@ -309,7 +309,7 @@ export function McpSetup() {
                 </div>
               </div>
               <p className="max-w-xs text-center text-pretty text-sm text-mute">
-                CanIApply ↔ {c.label}
+                Applicable ↔ {c.label}
                 <span className="mt-1 block font-mono text-[10px] uppercase tracking-wide text-[#8aa0b4]">
                   Streamable HTTP · 5 tools
                 </span>

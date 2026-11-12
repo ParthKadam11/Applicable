@@ -1,6 +1,6 @@
-# CanIApply web
+# Applicable web
 
-Landing + dashboard for [caniapply.parthkadam.tech](https://caniapply.parthkadam.tech).
+Landing + dashboard for [applicable.parthkadam.tech](https://applicable.parthkadam.tech).
 
 - Next.js 15 App Router + Tailwind CSS v4
 - Data only from `NEXT_PUBLIC_API_BASE` (`/api/stats`, `/api/stats/history`, `/api/jobs`, `/api/companies/top`)
@@ -20,7 +20,7 @@ Point `NEXT_PUBLIC_API_BASE` at a local MCP (`http://127.0.0.1:3100`) if the pro
 
 1. Import this repo in Vercel; set **Root Directory** to `web`.
 2. Env: `NEXT_PUBLIC_API_BASE=https://mcp.parthkadam.tech`
-3. Add domain `caniapply.parthkadam.tech` → CNAME to `cname.vercel-dns.com` (or A records Vercel shows).
+3. Add domain `applicable.parthkadam.tech` → CNAME to `cname.vercel-dns.com` (or A records Vercel shows).
 4. Deploy. ISR/revalidate uses Vercel’s cache.
 
 ## Deploy (Cloudflare Pages)

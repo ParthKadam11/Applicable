@@ -30,8 +30,8 @@ export class OpenRouterProvider implements LlmProvider {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
         "User-Agent": config.USER_AGENT,
-        "HTTP-Referer": "https://github.com/ParthKadam11/CaniApply",
-        "X-Title": "CaniApply",
+        "HTTP-Referer": "https://github.com/ParthKadam11/Applicable",
+        "X-Title": "Applicable",
       },
       body: JSON.stringify({
         model: this.model,

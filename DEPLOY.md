@@ -1,4 +1,4 @@
-# Deploy CaniApply on a Contabo VPS
+# Deploy Applicable on a Contabo VPS
 
 Single-VPS production stack: **Postgres + worker (ingest/pg-boss) + MCP + Caddy (HTTPS)**.
 
@@ -44,31 +44,31 @@ sudo ufw status
 ## 2. Clone and configure
 
 ```bash
-sudo mkdir -p /opt/caniapply
-sudo chown "$USER":"$USER" /opt/caniapply
-cd /opt/caniapply
-git clone https://github.com/ParthKadam11/CaniApply.git .
+sudo mkdir -p /opt/applicable
+sudo chown "$USER":"$USER" /opt/applicable
+cd /opt/applicable
+git clone https://github.com/ParthKadam11/Applicable.git .
 # or: git clone <your-fork-url> .
 
 cp .env.example .env
 nano .env   # required: POSTGRES_PASSWORD, MCP_HOST, optional LLM_* keys
 ```
 
-Minimum `.env` values (**must exist on the VPS** at `/opt/caniapply/.env` — compose fails without them):
+Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` — compose fails without them):
 
 | Variable | Example |
 |---|---|
 | `POSTGRES_PASSWORD` | long random string |
 | `MCP_HOST` | `mcp.yourdomain.com` |
 | `MCP_PUBLIC_URL` | `https://mcp.yourdomain.com/mcp` |
-| `POSTGRES_USER` / `POSTGRES_DB` | `caniapply` / `caniapply` |
+| `POSTGRES_USER` / `POSTGRES_DB` | `applicable` / `applicable` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` / … | optional (rules-only if empty) |
 
 If deploy fails with `MCP_HOST is missing`, SSH once and fix:
 
 ```bash
 ssh USER@VPS
-cd /opt/caniapply
+cd /opt/applicable
 grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
 # MCP_HOST=mcp.yourdomain.com
 # POSTGRES_PASSWORD=...
@@ -76,22 +76,31 @@ grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
 
 `DATABASE_URL` on the host is for local scripts; **inside Docker**, compose builds it from `POSTGRES_*` → `postgres:5432`.
 
-### Local volume naming (`jobfit` vs `caniapply`)
+### Local volume naming (`jobfit` vs `applicable`)
 
-Prod compose uses `caniapply_pgdata` / `caniapply_*` credentials. Local `docker-compose.yml` **intentionally keeps** the Docker volume name `jobfit_pgdata` and DB user/db `jobfit` so existing local data is not orphaned. Renaming that volume in compose would attach a **new empty** volume — dump/restore first if you ever want local naming to match prod.
+Prod compose uses `applicable_pgdata` / `applicable_*` credentials. Local `docker-compose.yml` **intentionally keeps** the Docker volume name `jobfit_pgdata` and DB user/db `jobfit` so existing local data is not orphaned. Renaming that volume in compose would attach a **new empty** volume — dump/restore first if you ever want local naming to match prod.
+
+### Migrating an existing CaniApply VPS
+
+If the stack was previously under `/opt/caniapply` with `caniapply_*` volumes/containers:
+
+1. Stop the old stack, then move the checkout: `sudo mv /opt/caniapply /opt/applicable`
+2. Rename Docker volumes (or dump/restore into new names), e.g. `docker volume create applicable_pgdata` then copy data, **or** temporarily keep the old volume keys in compose until you migrate.
+3. Update GitHub Actions `VPS_DEPLOY_PATH` to `/opt/applicable` and point DNS / Vercel at `applicable.parthkadam.tech` when ready.
+4. Re-add MCP clients with server name `applicable` (old `caniapply` configs will stop matching after deploy).
 
 ---
 
 ## 3. Start the stack
 
 ```bash
-cd /opt/caniapply
+cd /opt/applicable
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 What runs:
 
-1. **postgres** — volume `caniapply_pgdata`, not published
+1. **postgres** — volume `applicable_pgdata`, not published
 2. **migrate** — one-shot Drizzle migrations, then exits
 3. **app** — ingestion + discover workers (pg-boss)
 4. **mcp** — Streamable HTTP on `:3100` (internal)
@@ -124,7 +133,7 @@ Connect Cursor / Claude with:
 ```json
 {
   "mcpServers": {
-    "caniapply": {
+    "applicable": {
       "url": "https://mcp.yourdomain.com/mcp"
     }
   }
@@ -135,31 +144,31 @@ Connect Cursor / Claude with:
 
 ## 5. Daily Postgres backups
 
-Script: `scripts/backup-postgres.sh` → `/root/backups/caniapply-*.sql.gz`, keeps **7 days**.
+Script: `scripts/backup-postgres.sh` → `/root/backups/applicable-*.sql.gz`, keeps **7 days**.
 
 ```bash
 sudo mkdir -p /root/backups
-sudo cp /opt/caniapply/scripts/backup-postgres.sh /usr/local/bin/caniapply-backup.sh
-sudo chmod +x /usr/local/bin/caniapply-backup.sh
+sudo cp /opt/applicable/scripts/backup-postgres.sh /usr/local/bin/applicable-backup.sh
+sudo chmod +x /usr/local/bin/applicable-backup.sh
 
 # Load POSTGRES_USER / POSTGRES_DB from .env when dumping
-sudo tee /etc/cron.d/caniapply-backup >/dev/null <<'EOF'
+sudo tee /etc/cron.d/applicable-backup >/dev/null <<'EOF'
 # Daily 03:00 UTC
-0 3 * * * root set -a; . /opt/caniapply/.env; set +a; /usr/local/bin/caniapply-backup.sh >> /var/log/caniapply-backup.log 2>&1
+0 3 * * * root set -a; . /opt/applicable/.env; set +a; /usr/local/bin/applicable-backup.sh >> /var/log/applicable-backup.log 2>&1
 EOF
 ```
 
 Manual run:
 
 ```bash
-sudo BACKUP_DIR=/root/backups /opt/caniapply/scripts/backup-postgres.sh
+sudo BACKUP_DIR=/root/backups /opt/applicable/scripts/backup-postgres.sh
 ```
 
 Restore (destructive):
 
 ```bash
-gunzip -c /root/backups/caniapply-YYYYMMDD….sql.gz \
-  | docker exec -i caniapply-postgres psql -U caniapply -d caniapply
+gunzip -c /root/backups/applicable-YYYYMMDD….sql.gz \
+  | docker exec -i applicable-postgres psql -U applicable -d applicable
 ```
 
 ---
@@ -175,16 +184,16 @@ Workflows:
 
 ### One-time setup on the VPS
 
-1. Ensure the app is already cloned and running under `/opt/caniapply` (sections 1–3).
+1. Ensure the app is already cloned and running under `/opt/applicable` (sections 1–3).
 2. Create an SSH key so GitHub Actions can log into the VPS (no passphrase):
 
 ```bash
 # On your laptop
-ssh-keygen -t ed25519 -C "caniapply-github-deploy" -f caniapply_gha_deploy -N ""
+ssh-keygen -t ed25519 -C "applicable-github-deploy" -f applicable_gha_deploy -N ""
 
 # Install the *private* key as GitHub secret VPS_SSH_KEY (see below).
 # Install the *public* key on the VPS for SSH login:
-ssh-copy-id -i caniapply_gha_deploy.pub USER@YOUR_VPS_IP
+ssh-copy-id -i applicable_gha_deploy.pub USER@YOUR_VPS_IP
 ```
 
 The deploy workflow uses `GITHUB_TOKEN` for `git fetch` on the VPS, so you do **not** need a separate GitHub deploy key for pulls (HTTPS remotes are fine).
@@ -197,15 +206,15 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 |---|---|
 | `VPS_HOST` | `123.45.67.89` or `mcp.yourdomain.com` |
 | `VPS_USER` | `root` or your deploy user |
-| `VPS_SSH_KEY` | full **private** key contents of `caniapply_gha_deploy` (see format below) |
-| `VPS_DEPLOY_PATH` | `/opt/caniapply` (optional; this is the default) |
+| `VPS_SSH_KEY` | full **private** key contents of `applicable_gha_deploy` (see format below) |
+| `VPS_DEPLOY_PATH` | `/opt/applicable` (optional; this is the default) |
 | `MCP_SMOKE_URL` | `https://mcp.yourdomain.com` (optional; enables post-deploy smoke) |
 
 **`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines — not the `.pub` file, not one long line, no quotes.
 
 ```bash
 # On the machine where you generated the key — copy this exact output into the secret:
-cat caniapply_gha_deploy
+cat applicable_gha_deploy
 # Must start with: -----BEGIN OPENSSH PRIVATE KEY-----
 # Must end with:   -----END OPENSSH PRIVATE KEY-----
 ```
@@ -214,9 +223,9 @@ Then on the VPS, the matching public key must be authorized:
 
 ```bash
 # From your laptop
-ssh-copy-id -i caniapply_gha_deploy.pub USER@VPS_HOST
+ssh-copy-id -i applicable_gha_deploy.pub USER@VPS_HOST
 # or append manually:
-# cat caniapply_gha_deploy.pub >> ~/.ssh/authorized_keys
+# cat applicable_gha_deploy.pub >> ~/.ssh/authorized_keys
 ```
 
 If deploy fails with `ssh: no key found` / `unable to authenticate`, the secret is wrong — delete and re-add `VPS_SSH_KEY`.
@@ -230,7 +239,7 @@ After secrets are set: push to `master` (or **Actions → Deploy → Run workflo
 Still works anytime without CI:
 
 ```bash
-cd /opt/caniapply
+cd /opt/applicable
 git pull
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml logs -f --tail=50 migrate mcp app

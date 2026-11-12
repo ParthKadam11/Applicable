@@ -1,4 +1,4 @@
-# CaniApply
+# Applicable
 
 TypeScript (Node 20) backend that collects startup job postings from public ATS
 job-board APIs, stores them in Postgres, and exposes them through a hosted MCP
@@ -38,7 +38,7 @@ See `.env.example`. Required for local ingest:
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Postgres connection string |
-| `USER_AGENT` | Identifies CaniApply on outbound HTTP |
+| `USER_AGENT` | Identifies Applicable on outbound HTTP |
 | `PER_HOST_DELAY_MS` | Polite per-host delay between requests |
 | `INGEST_CRON` | Cron expression (default every 6 hours UTC) |
 | `INGEST_CONCURRENCY` | Max concurrent company fetches (default 5) |
@@ -132,12 +132,12 @@ npm run stats:daily
 
 Read-only Streamable HTTP MCP server against Postgres. Tools:
 `search_jobs`, `get_job`, `list_companies`, `stats` (optional `history` days),
-`submit_company`. Public REST (CORS for `https://caniapply.parthkadam.tech` +
+`submit_company`. Public REST (CORS for `https://applicable.parthkadam.tech` +
 localhost, cached ~5 minutes): `GET /api/stats`, `GET /api/stats/history`,
 `GET /api/jobs`, `GET /api/companies/top`.
 
 Landing + dashboard live in `web/` (Next.js) → deploy to
-`caniapply.parthkadam.tech` (see `web/README.md`). Host nginx must proxy `/api/`
+`applicable.parthkadam.tech` (see `web/README.md`). Host nginx must proxy `/api/`
 to the MCP container (see `infra/nginx/mcp.parthkadam.tech.conf`).
 
 ```bash
@@ -164,7 +164,7 @@ Replace the URL with your deployed endpoint (local example shown).
 ```json
 {
   "mcpServers": {
-    "caniapply": {
+    "applicable": {
       "url": "https://mcp.yourdomain.com/mcp"
     }
   }
@@ -176,7 +176,7 @@ If your Claude build only supports stdio locally:
 ```json
 {
   "mcpServers": {
-    "caniapply": {
+    "applicable": {
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://mcp.yourdomain.com/mcp"]
     }
@@ -189,7 +189,7 @@ If your Claude build only supports stdio locally:
 ```json
 {
   "mcpServers": {
-    "caniapply": {
+    "applicable": {
       "url": "https://mcp.yourdomain.com/mcp"
     }
   }

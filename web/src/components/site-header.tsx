@@ -66,7 +66,7 @@ export function SiteHeader({ active }: { active?: "home" | "dashboard" }) {
             href="/"
             className="font-display text-[17px] tracking-tight text-ink"
           >
-            CanIApply
+            Applicable
           </Link>
           <nav className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wide sm:gap-1.5">
             <Link

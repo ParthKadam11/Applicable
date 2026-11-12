@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke-test a deployed CaniApply MCP endpoint.
+# Smoke-test a deployed Applicable MCP endpoint.
 # Usage: scripts/smoke.sh https://mcp.example.com
 #        scripts/smoke.sh http://localhost
 set -euo pipefail
@@ -56,8 +56,8 @@ INIT_RAW="$("${CURL[@]}" -X POST "${BASE}/mcp" \
   -H 'Accept: application/json, text/event-stream' \
   -d "${INIT_BODY}" || true)"
 INIT_JSON="$(extract_json "${INIT_RAW}")"
-if grep -q '"serverInfo"' <<<"${INIT_JSON}" && grep -q 'caniapply' <<<"${INIT_JSON}"; then
-  ok "initialize → caniapply"
+if grep -q '"serverInfo"' <<<"${INIT_JSON}" && grep -q 'applicable' <<<"${INIT_JSON}"; then
+  ok "initialize → applicable"
 else
   bad "initialize → ${INIT_JSON:-empty}"
 fi

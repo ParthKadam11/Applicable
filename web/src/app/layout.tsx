@@ -16,22 +16,22 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "CanIApply — Can I apply from India?",
-    template: "%s · CanIApply",
+    default: "Applicable — Can I apply from India?",
+    template: "%s · Applicable",
   },
   description:
     "Every live remote tech job, checked for whether you can actually apply from India — with the line from the posting that proves it.",
   openGraph: {
-    title: "CanIApply",
+    title: "Applicable",
     description:
       "Live remote tech jobs classified for India eligibility, with quoted proof.",
     url: SITE_URL,
-    siteName: "CanIApply",
+    siteName: "Applicable",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "CanIApply",
+    title: "Applicable",
     description:
       "Live remote tech jobs classified for India eligibility, with quoted proof.",
   },

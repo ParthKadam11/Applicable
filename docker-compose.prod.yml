@@ -8,13 +8,13 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: caniapply-postgres
+    container_name: applicable-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-caniapply}
+      POSTGRES_USER: ${POSTGRES_USER:-applicable}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:-caniapply}
+      POSTGRES_DB: ${POSTGRES_DB:-applicable}
     volumes:
-      - caniapply_pgdata:/var/lib/postgresql/data
+      - applicable_pgdata:/var/lib/postgresql/data
     # Not published to the host — app/mcp reach it on the Docker network only.
     expose:
       - "5432"
@@ -22,7 +22,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-caniapply} -d ${POSTGRES_DB:-caniapply}",
+          "pg_isready -U ${POSTGRES_USER:-applicable} -d ${POSTGRES_DB:-applicable}",
         ]
       interval: 5s
       timeout: 5s
@@ -30,32 +30,32 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - caniapply
+      - applicable
 
   migrate:
     build: .
-    container_name: caniapply-migrate
+    container_name: applicable-migrate
     command: ["node", "dist/db/migrate.js"]
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+      DATABASE_URL: postgres://${POSTGRES_USER:-applicable}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-applicable}
     depends_on:
       postgres:
         condition: service_healthy
     restart: "on-failure"
     networks:
-      - caniapply
+      - applicable
 
   app:
     build: .
-    container_name: caniapply-app
+    container_name: applicable-app
     command: ["node", "dist/index.js"]
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+      DATABASE_URL: postgres://${POSTGRES_USER:-applicable}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-applicable}
       LLM_STATE_PATH: /data/.llm-state.json
     volumes:
-      - caniapply_appdata:/data
+      - applicable_appdata:/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,19 +63,19 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
     networks:
-      - caniapply
+      - applicable
 
   mcp:
     build: .
-    container_name: caniapply-mcp
+    container_name: applicable-mcp
     command: ["node", "dist/mcp/http.js"]
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-caniapply}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-caniapply}
+      DATABASE_URL: postgres://${POSTGRES_USER:-applicable}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-applicable}
       MCP_HTTP_PORT: "3100"
       MCP_RATE_LIMIT_RPM: ${MCP_RATE_LIMIT_RPM:-60}
-      USER_AGENT: ${USER_AGENT:-CaniApply/0.1}
+      USER_AGENT: ${USER_AGENT:-Applicable/0.1}
     # Published for host nginx (this VPS). Caddy profile is optional for dedicated boxes.
     expose:
       - "3100"
@@ -98,7 +98,7 @@ services:
       start_period: 20s
     restart: unless-stopped
     networks:
-      - caniapply
+      - applicable
 
   # Only for a dedicated VPS with free :80/:443.
   # This Contabo box already runs host nginx — leave the profile off:
@@ -108,7 +108,7 @@ services:
   caddy:
     profiles: ["caddy"]
     image: caddy:2-alpine
-    container_name: caniapply-caddy
+    container_name: applicable-caddy
     ports:
       - "80:80"
       - "443:443"
@@ -117,21 +117,21 @@ services:
       MCP_HOST: ${MCP_HOST:?MCP_HOST is required (e.g. mcp.example.com)}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caniapply_caddy_data:/data
-      - caniapply_caddy_config:/config
+      - applicable_caddy_data:/data
+      - applicable_caddy_config:/config
     depends_on:
       mcp:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - caniapply
+      - applicable
 
 networks:
-  caniapply:
+  applicable:
     driver: bridge
 
 volumes:
-  caniapply_pgdata:
-  caniapply_appdata:
-  caniapply_caddy_data:
-  caniapply_caddy_config:
+  applicable_pgdata:
+  applicable_appdata:
+  applicable_caddy_data:
+  applicable_caddy_config:

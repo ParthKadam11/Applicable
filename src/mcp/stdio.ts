@@ -1,9 +1,9 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { db, pool } from "../db/client.js";
-import { createCaniApplyMcpServer } from "./server.js";
+import { createApplicableMcpServer } from "./server.js";
 
 async function main() {
-  const server = createCaniApplyMcpServer(db);
+  const server = createApplicableMcpServer(db);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Keep process alive for stdio; pool closes on exit.

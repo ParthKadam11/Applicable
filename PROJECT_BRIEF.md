@@ -1,6 +1,6 @@
-# CaniApply / jobfit — Project Brief
+# Applicable / jobfit — Project Brief
 
-Factual snapshot for an engineer reviewing the repo and planning next steps. Based on reading the code and querying the local Postgres volume used by this workspace (`jobfit` DB via `caniapply-jobfit-pg`). **No secrets or env values.**
+Factual snapshot for an engineer reviewing the repo and planning next steps. Based on reading the code and querying the local Postgres volume used by this workspace (`jobfit` DB via `applicable-jobfit-pg`). **No secrets or env values.**
 
 Generated: 2026-11-11.
 
@@ -8,7 +8,7 @@ Generated: 2026-11-11.
 
 ## 1. Purpose
 
-**CaniApply** (npm package `caniapply`, historically “jobfit”) is a Node 20 + Postgres pipeline that discovers companies with public ATS job boards (Ashby, Greenhouse, Lever), ingests open postings, classifies each job for **India remote eligibility** (rules first, optional free-tier LLM when unclear), and exposes the corpus via a **Model Context Protocol (MCP)** server (`search_jobs`, `get_job`, `list_companies`, `stats`, `submit_company`). A weekly discovery cron and a 6-hour ingest cron run under pg-boss; Common Crawl board discovery is a separate CLI (`discover:cc`).
+**Applicable** (npm package `applicable`, historically “jobfit”) is a Node 20 + Postgres pipeline that discovers companies with public ATS job boards (Ashby, Greenhouse, Lever), ingests open postings, classifies each job for **India remote eligibility** (rules first, optional free-tier LLM when unclear), and exposes the corpus via a **Model Context Protocol (MCP)** server (`search_jobs`, `get_job`, `list_companies`, `stats`, `submit_company`). A weekly discovery cron and a 6-hour ingest cron run under pg-boss; Common Crawl board discovery is a separate CLI (`discover:cc`).
 
 ---
 
@@ -307,7 +307,7 @@ Guard after merge; negative eligibility sentences stripped from LLM evidence (`i
 | Item | Detail |
 |---|---|
 | Transports | **Streamable HTTP** (`src/mcp/http.ts` + `app.ts`): `POST/GET /mcp`, `GET /health`. **stdio** (`src/mcp/stdio.ts`). |
-| Server factory | `createCaniApplyMcpServer` in `server.ts` |
+| Server factory | `createApplicableMcpServer` in `server.ts` |
 | Rate limit | `IpRateLimiter` — `MCP_RATE_LIMIT_RPM` (default 60) per IP sliding 60s window on `/mcp` |
 | Logging | `logToolCall` — tool name, latency, result count, ok |
 
@@ -343,7 +343,7 @@ Connection: `DATABASE_URL`. Boss created in `ingestion/boss.ts` (`createBoss`).
 
 ### Prod compose (`docker-compose.prod.yml`)
 
-Services: `postgres` → `migrate` → `app` + `mcp`; optional `caddy` (`profiles: [tls]`). MCP published to host `127.0.0.1:3110`. Volumes: `caniapply_pgdata`, `caniapply_appdata`, caddy data/config.
+Services: `postgres` → `migrate` → `app` + `mcp`; optional `caddy` (`profiles: [tls]`). MCP published to host `127.0.0.1:3110`. Volumes: `applicable_pgdata`, `applicable_appdata`, caddy data/config.
 
 ### Caddy
 
@@ -460,7 +460,7 @@ From code review + `TODO|FIXME|@deprecated|not implemented|Reserved`:
 12. **Deprecated env**: `LLM_PROVIDER`, `MCP_DOMAIN` (prefer `LLM_PROVIDERS`, `MCP_HOST`).
 13. **YC Algolia default key** embedded in source (public frontend key; may rotate) — `sources/yc.ts`.
 14. **`promote-pending.ts`** exists but is **not** wired in `package.json` scripts.
-15. Dual compose naming (`jobfit` vs `caniapply`) — easy to point scripts at the wrong volume/DB.
+15. Dual compose naming (`jobfit` vs `applicable`) — easy to point scripts at the wrong volume/DB.
 
 No `TODO`/`FIXME` comments beyond the above patterns.
 
@@ -523,4 +523,4 @@ Not commitments — gaps the code itself surfaces:
 - Cap or soft-reject boards near 150 jobs earlier in CC validate?
 - Fix compensation integer bounds before insert?
 - Implement or remove unused ATS enum values / `company_research` / search-provider config?
-- Align naming (`jobfit` vs `caniapply`) across compose and docs?
+- Align naming (`jobfit` vs `applicable`) across compose and docs?

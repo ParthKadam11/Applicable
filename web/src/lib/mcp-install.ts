@@ -8,7 +8,7 @@ export function encodeMcpConfig(config: Record<string, unknown>): string {
 }
 
 const remoteConfig = { url: MCP_URL } as const;
-const SERVER = "caniapply";
+const SERVER = "applicable";
 
 /** One-click Cursor install (https handoff → app deeplink). */
 export function cursorInstallHref(name = SERVER): string {
@@ -17,7 +17,7 @@ export function cursorInstallHref(name = SERVER): string {
 }
 
 /** Prefills Claude’s “Add custom connector” dialog. */
-export function claudeConnectorHref(name = "CanIApply"): string {
+export function claudeConnectorHref(name = "Applicable"): string {
   const params = new URLSearchParams({
     modal: "add-custom-connector",
     connectorName: name,

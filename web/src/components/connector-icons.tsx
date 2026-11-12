@@ -2,7 +2,7 @@
 
 type IconProps = { className?: string; mono?: boolean };
 
-export function IconCanIApply({ className = "" }: IconProps) {
+export function IconApplicable({ className = "" }: IconProps) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
       <rect width="32" height="32" rx="8" fill="#06203a" />
@@ -15,7 +15,7 @@ export function IconCanIApply({ className = "" }: IconProps) {
         fontWeight="700"
         fontFamily="system-ui,sans-serif"
       >
-        CA
+        A
       </text>
     </svg>
   );

@@ -56,10 +56,10 @@ async function timed<T>(
   }
 }
 
-/** Create a fresh MCP server instance with read-only CaniApply tools. */
-export function createCaniApplyMcpServer(db: Db): McpServer {
+/** Create a fresh MCP server instance with read-only Applicable tools. */
+export function createApplicableMcpServer(db: Db): McpServer {
   const server = new McpServer({
-    name: "caniapply",
+    name: "applicable",
     version: "0.1.0",
   });
 

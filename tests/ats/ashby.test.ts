@@ -61,7 +61,7 @@ describe("AshbyAdapter", () => {
     expect(url).toBe(
       "https://api.ashbyhq.com/posting-api/job-board/notion?includeCompensation=true",
     );
-    expect(init.headers["User-Agent"]).toContain("CaniApply");
+    expect(init.headers["User-Agent"]).toContain("Applicable");
     expect(jobs).toHaveLength(2);
     expect(jobs[0]!.sourceAts).toBe("ashby");
   });

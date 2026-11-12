@@ -1,13 +1,13 @@
 # Local / simple stack.
 # NOTE: Postgres volume stays named `jobfit_pgdata` and DB creds stay `jobfit`
 # so existing local data is not orphaned. Renaming the Docker volume would create
-# an empty DB — dump/restore first if you ever want caniapply_* naming locally.
-# Prod uses caniapply_* volumes (docker-compose.prod.yml).
+# an empty DB — dump/restore first if you ever want applicable_* naming locally.
+# Prod uses applicable_* volumes (docker-compose.prod.yml).
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: caniapply-postgres
+    container_name: applicable-postgres
     environment:
       POSTGRES_USER: jobfit
       POSTGRES_PASSWORD: jobfit
@@ -25,7 +25,7 @@ services:
 
   mcp:
     build: .
-    container_name: caniapply-mcp
+    container_name: applicable-mcp
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
       MCP_HTTP_PORT: "3100"
       MCP_RATE_LIMIT_RPM: "60"
       MCP_HTTP_ENTRY: "1"
-      USER_AGENT: CaniApply/0.1 (+https://github.com/ParthKadam11/CaniApply; MCP)
+      USER_AGENT: Applicable/0.1 (+https://github.com/ParthKadam11/Applicable; MCP)
     expose:
       - "3100"
     # Host 3100 is taken; nginx proxies mcp.parthkadam.tech → 3110.
@@ -54,7 +54,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: caniapply-caddy
+    container_name: applicable-caddy
     depends_on:
       - mcp
     ports:
