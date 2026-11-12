@@ -97,3 +97,36 @@ export const SubmitCompanyInputSchema = z.object({
     .url()
     .describe("Public careers or ATS board URL (http/https)"),
 });
+
+export const SaveJobInputSchema = z.object({
+  job_id: z.string().uuid().describe("Job UUID to save"),
+});
+
+export const UnsaveJobInputSchema = z.object({
+  job_id: z.string().uuid().describe("Job UUID to remove from saved"),
+});
+
+export const MySavedJobsInputSchema = z.object({
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(50)
+    .describe("Max saved jobs to return (default 50)"),
+});
+
+/** Client-side AI search: LLM must emit this shape (no cursor). */
+export const AiSearchFilterSchema = z.object({
+  query: z.string().min(1).optional(),
+  eligibility: z
+    .array(EligibilityFilterSchema)
+    .min(1)
+    .default(["open", "india_remote"]),
+  role_keywords: z.string().min(1).optional(),
+  company: z.string().min(1).optional(),
+  posted_within_days: z.number().int().positive().max(365).optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export type AiSearchFilter = z.infer<typeof AiSearchFilterSchema>;

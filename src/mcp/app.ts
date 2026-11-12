@@ -8,9 +8,11 @@ import {
   getPublicJobs,
   getTopCompaniesHiringIndia,
   parseEligibilityParam,
+  parsePositiveInt,
   parseQueryString,
 } from "./public-api.js";
 import { getLlmPublicStatus } from "../classify/llm/public-status.js";
+import { resolveMcpAuth } from "./auth-context.js";
 import { IpRateLimiter } from "./rate-limit.js";
 import { createApplicableMcpServer } from "./server.js";
 import { getMcpStats } from "./tools.js";
@@ -28,6 +30,8 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:3000",
   "http://localhost:3001",
   "http://127.0.0.1:3001",
+  "http://localhost:3010",
+  "http://127.0.0.1:3010",
 ]);
 
 type CacheEntry<T> = { at: number; value: T; key?: string };
@@ -62,6 +66,15 @@ function cacheControl(ttlMs = STATS_CACHE_TTL_MS): string {
   return `public, max-age=${Math.floor(ttlMs / 1000)}`;
 }
 
+function rateLimitApi(req: Request, res: Response, next: NextFunction): void {
+  const ip = clientIp(req);
+  if (!rateLimiter.allow(ip)) {
+    res.status(429).json({ ok: false, error: "rate_limit_exceeded" });
+    return;
+  }
+  next();
+}
+
 /** Express app: health, public /api/*, MCP. */
 export function createMcpHttpApp() {
   const app = express();
@@ -78,6 +91,7 @@ export function createMcpHttpApp() {
   });
 
   app.use("/api", allowCors);
+  app.use("/api", rateLimitApi);
 
   app.get("/api/stats", async (_req, res) => {
     try {
@@ -139,6 +153,12 @@ export function createMcpHttpApp() {
     try {
       const query = parseQueryString(req.query.query);
       const eligibility = parseEligibilityParam(req.query.eligibility);
+      const role_keywords = parseQueryString(req.query.role_keywords);
+      const company = parseQueryString(req.query.company);
+      const posted_within_days = parsePositiveInt(
+        req.query.posted_within_days,
+        365,
+      );
       const cursor =
         typeof req.query.cursor === "string" ? req.query.cursor : undefined;
       const limitRaw = Number(req.query.limit ?? 25);
@@ -150,6 +170,9 @@ export function createMcpHttpApp() {
       const value = await getPublicJobs(db, {
         query,
         eligibility,
+        role_keywords,
+        company,
+        posted_within_days,
         cursor,
         limit,
       });
@@ -225,7 +248,14 @@ export function createMcpHttpApp() {
   });
 
   const handleMcp = async (req: Request, res: Response) => {
-    const server = createApplicableMcpServer(db);
+    const auth = await resolveMcpAuth(
+      db,
+      typeof req.headers.authorization === "string"
+        ? req.headers.authorization
+        : undefined,
+      req.query.token,
+    );
+    const server = createApplicableMcpServer(db, { userId: auth.userId });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });

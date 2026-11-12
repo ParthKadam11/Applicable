@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthMenu } from "@/components/auth-menu";
 import { BrandLogo } from "@/components/brand-logo";
 import { LINKS } from "@/lib/constants";
 
@@ -18,7 +19,11 @@ function GlassLayers() {
   );
 }
 
-export function SiteHeader({ active }: { active?: "home" | "dashboard" }) {
+export function SiteHeader({
+  active,
+}: {
+  active?: "home" | "dashboard" | "me";
+}) {
   const link = (on: boolean) =>
     on
       ? "bg-white/70 text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
@@ -58,6 +63,7 @@ export function SiteHeader({ active }: { active?: "home" | "dashboard" }) {
             >
               GitHub
             </a>
+            <AuthMenu />
             <Link
               href="/#mcp"
               className="ml-0.5 inline-flex min-h-9 items-center rounded-full bg-mark px-3 text-[10px] font-semibold uppercase text-ink shadow-[0_6px_18px_color-mix(in_srgb,var(--mark)_35%,transparent)] transition hover:bg-mark-deep hover:text-white sm:ml-1 sm:px-4"

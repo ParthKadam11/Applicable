@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { FontLoader } from "@/components/font-loader";
+import { AppSessionProvider } from "@/components/session-provider";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
@@ -58,7 +59,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <FontLoader />
-        {children}
+        <AppSessionProvider>{children}</AppSessionProvider>
       </body>
     </html>
   );

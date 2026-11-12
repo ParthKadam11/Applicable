@@ -1,13 +1,22 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Db } from "../db/client.js";
+import {
+  listSavedJobs,
+  saveJob,
+  unsaveJob,
+} from "../auth/saved-jobs.js";
+import { SIGN_IN_TO_SAVE } from "./auth-context.js";
 import { logToolCall } from "./logging.js";
 import {
   GetJobInputSchema,
   ListCompaniesInputSchema,
+  MySavedJobsInputSchema,
+  SaveJobInputSchema,
   SearchJobsInputSchema,
   StatsInputObjectSchema,
   StatsInputSchema,
   SubmitCompanyInputSchema,
+  UnsaveJobInputSchema,
 } from "./schemas.js";
 import {
   getJob,
@@ -56,8 +65,16 @@ async function timed<T>(
   }
 }
 
-/** Create a fresh MCP server instance with read-only Applicable tools. */
-export function createApplicableMcpServer(db: Db): McpServer {
+export type McpServerOptions = {
+  userId?: string | null;
+};
+
+/** Create a fresh MCP server instance. Public tools always; save tools need token. */
+export function createApplicableMcpServer(
+  db: Db,
+  opts: McpServerOptions = {},
+): McpServer {
+  const userId = opts.userId ?? null;
   const server = new McpServer({
     name: "applicable",
     version: "0.1.0",
@@ -172,6 +189,89 @@ export function createApplicableMcpServer(db: Db): McpServer {
           () => 1,
         );
         return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "save_job",
+    {
+      title: "Save a job",
+      description:
+        "Save a job to the signed-in user's list. Requires a personal MCP bearer token.",
+      inputSchema: SaveJobInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        if (!userId) {
+          return jsonResult({ ok: false, message: SIGN_IN_TO_SAVE });
+        }
+        const parsed = SaveJobInputSchema.parse(args);
+        const result = await timed(
+          "save_job",
+          () => saveJob(db, userId, parsed.job_id),
+          () => 1,
+        );
+        return jsonResult({ ok: true, ...result });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg === "job_not_found") {
+          return errResult("Job not found");
+        }
+        return errResult(msg);
+      }
+    },
+  );
+
+  server.registerTool(
+    "unsave_job",
+    {
+      title: "Unsave a job",
+      description:
+        "Remove a job from the signed-in user's saved list. Requires a personal MCP bearer token.",
+      inputSchema: UnsaveJobInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        if (!userId) {
+          return jsonResult({ ok: false, message: SIGN_IN_TO_SAVE });
+        }
+        const parsed = UnsaveJobInputSchema.parse(args);
+        const result = await timed(
+          "unsave_job",
+          () => unsaveJob(db, userId, parsed.job_id),
+          () => 1,
+        );
+        return jsonResult({ ok: true, ...result });
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "my_saved_jobs",
+    {
+      title: "List my saved jobs",
+      description:
+        "List jobs saved by the signed-in user. Requires a personal MCP bearer token.",
+      inputSchema: MySavedJobsInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        if (!userId) {
+          return jsonResult({ ok: false, message: SIGN_IN_TO_SAVE });
+        }
+        const parsed = MySavedJobsInputSchema.parse(args ?? {});
+        const all = await timed(
+          "my_saved_jobs",
+          () => listSavedJobs(db, userId),
+          (r) => r.length,
+        );
+        const results = all.slice(0, parsed.limit);
+        return jsonResult({ results, count: results.length });
       } catch (err) {
         return errResult(err instanceof Error ? err.message : String(err));
       }

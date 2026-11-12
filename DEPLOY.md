@@ -63,6 +63,26 @@ Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` - com
 | `MCP_PUBLIC_URL` | `https://mcp.yourdomain.com/mcp` |
 | `POSTGRES_USER` / `POSTGRES_DB` | `applicable` / `applicable` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` / … | optional (rules-only if empty) |
+| `AUTH_SECRET` | long random string (Next.js / Vercel) |
+| `AUTH_URL` | `https://applicable.parthkadam.tech` (prod) or `http://localhost:3010` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth web client (Next.js / Vercel) |
+
+### Web (Vercel) Auth.js env
+
+Set on the Vercel project (root = `web`), in addition to `NEXT_PUBLIC_API_BASE` and `DATABASE_URL` (same Postgres the MCP stack uses; allow Vercel egress / use a public DB host or tunnel):
+
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Required for `/api/me/*`, saved jobs, MCP tokens, account delete |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_URL` | Site origin, e.g. `https://applicable.parthkadam.tech` |
+| `GOOGLE_CLIENT_ID` | Google Cloud OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client secret |
+
+Google authorized redirect URIs:
+
+- `http://localhost:3010/api/auth/callback/google`
+- `https://applicable.parthkadam.tech/api/auth/callback/google`
 
 If deploy fails with `MCP_HOST is missing`, SSH once and fix:
 

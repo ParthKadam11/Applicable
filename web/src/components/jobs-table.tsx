@@ -1,7 +1,11 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { AiSearchBar } from "@/components/ai-search-bar";
+import { SaveJobButton } from "@/components/save-job-button";
 import type { JobRow } from "@/lib/api";
+import type { AiSearchFilter } from "@/lib/ai-search";
 import { API_BASE, ELIGIBILITY_LABELS } from "@/lib/constants";
 import { evidenceQuote } from "@/lib/format";
 
@@ -13,10 +17,18 @@ type Page = {
 async function loadJobs(opts: {
   query: string;
   eligibility: string;
+  role_keywords?: string;
+  company?: string;
+  posted_within_days?: number;
   cursor?: string;
 }): Promise<Page | null> {
   const sp = new URLSearchParams();
   if (opts.query.trim()) sp.set("query", opts.query.trim());
+  if (opts.role_keywords) sp.set("role_keywords", opts.role_keywords);
+  if (opts.company) sp.set("company", opts.company);
+  if (opts.posted_within_days != null) {
+    sp.set("posted_within_days", String(opts.posted_within_days));
+  }
   sp.set("eligibility", opts.eligibility);
   sp.set("limit", "25");
   if (opts.cursor) sp.set("cursor", opts.cursor);
@@ -32,24 +44,58 @@ async function loadJobs(opts: {
 }
 
 export function JobsTable({ initial }: { initial: Page | null }) {
+  const { data: session } = useSession();
   const [query, setQuery] = useState("");
   const [eligibility, setEligibility] = useState("open,india_remote");
+  const [roleKeywords, setRoleKeywords] = useState<string | undefined>();
+  const [company, setCompany] = useState<string | undefined>();
+  const [postedWithin, setPostedWithin] = useState<number | undefined>();
   const [page, setPage] = useState<Page | null>(initial);
   const [stack, setStack] = useState<(string | undefined)[]>([undefined]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(!initial);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const skipFirst = useRef(true);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setSavedIds(new Set());
+      return;
+    }
+    void (async () => {
+      try {
+        const res = await fetch("/api/me/saved?ids=1");
+        if (!res.ok) return;
+        const body = (await res.json()) as { ids?: string[] };
+        setSavedIds(new Set(body.ids ?? []));
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [session?.user]);
 
   function run(
     q: string,
     elig: string,
     cursor: string | undefined,
     index: number,
+    extra?: {
+      role_keywords?: string;
+      company?: string;
+      posted_within_days?: number;
+    },
   ) {
     startTransition(() => {
       void (async () => {
-        const next = await loadJobs({ query: q, eligibility: elig, cursor });
+        const next = await loadJobs({
+          query: q,
+          eligibility: elig,
+          role_keywords: extra?.role_keywords ?? roleKeywords,
+          company: extra?.company ?? company,
+          posted_within_days: extra?.posted_within_days ?? postedWithin,
+          cursor,
+        });
         if (!next) {
           setFailed(true);
           setPage(null);
@@ -77,10 +123,30 @@ export function JobsTable({ initial }: { initial: Page | null }) {
       run(query, eligibility, undefined, 0);
     }, 300);
     return () => window.clearTimeout(t);
-  }, [query, eligibility]);
+  }, [query, eligibility, roleKeywords, company, postedWithin]);
+
+  function applyAiFilters(f: AiSearchFilter) {
+    setQuery(f.query ?? "");
+    setEligibility(f.eligibility.join(","));
+    setRoleKeywords(f.role_keywords);
+    setCompany(f.company);
+    setPostedWithin(f.posted_within_days);
+    setStack([undefined]);
+    run(f.query ?? "", f.eligibility.join(","), undefined, 0, {
+      role_keywords: f.role_keywords,
+      company: f.company,
+      posted_within_days: f.posted_within_days,
+    });
+  }
 
   return (
     <div className="space-y-4">
+      <AiSearchBar
+        onFilters={(f) => {
+          applyAiFilters(f);
+        }}
+      />
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="search"
@@ -117,6 +183,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
               <th className="hidden px-3 py-2.5 font-medium lg:table-cell">
                 Evidence
               </th>
+              <th className="px-3 py-2.5 font-medium">Save</th>
               <th className="px-3 py-2.5 font-medium">Apply</th>
             </tr>
           </thead>
@@ -124,7 +191,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
             {failed || !page ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-3 py-10 text-center font-mono text-mute"
                 >
                   -
@@ -133,7 +200,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
             ) : page.results.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-3 py-10 text-center font-mono text-mute"
                 >
                   No jobs match.
@@ -170,6 +237,20 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                       ) : (
                         "-"
                       )}
+                    </td>
+                    <td className="px-3 py-3">
+                      <SaveJobButton
+                        jobId={job.id}
+                        saved={savedIds.has(job.id)}
+                        onSavedChange={(s) => {
+                          setSavedIds((prev) => {
+                            const next = new Set(prev);
+                            if (s) next.add(job.id);
+                            else next.delete(job.id);
+                            return next;
+                          });
+                        }}
+                      />
                     </td>
                     <td className="px-3 py-3">
                       <a

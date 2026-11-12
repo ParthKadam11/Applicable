@@ -20,6 +20,9 @@ function techOpenBase() {
 export type PublicJobsQuery = {
   query?: string;
   eligibility?: EligibilityFilter[];
+  role_keywords?: string;
+  company?: string;
+  posted_within_days?: number;
   cursor?: string;
   limit?: number;
 };
@@ -31,9 +34,22 @@ export async function getPublicJobs(db: Db, q: PublicJobsQuery) {
       q.eligibility && q.eligibility.length > 0
         ? q.eligibility
         : DEFAULT_ELIGIBILITY,
+    role_keywords: q.role_keywords,
+    company: q.company,
+    posted_within_days: q.posted_within_days,
     cursor: q.cursor,
     limit: q.limit ?? 25,
   });
+}
+
+export function parsePositiveInt(
+  raw: unknown,
+  max: number,
+): number | undefined {
+  if (typeof raw !== "string" && typeof raw !== "number") return undefined;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return Math.min(max, Math.floor(n));
 }
 
 export async function getTopCompaniesHiringIndia(
