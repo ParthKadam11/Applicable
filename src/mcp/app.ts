@@ -4,6 +4,12 @@ import type { NextFunction, Request, Response } from "express";
 import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { getDailyStatsHistory } from "../stats/daily.js";
+import {
+  getPublicJobs,
+  getTopCompaniesHiringIndia,
+  parseEligibilityParam,
+  parseQueryString,
+} from "./public-api.js";
 import { IpRateLimiter } from "./rate-limit.js";
 import { createCaniApplyMcpServer } from "./server.js";
 import { getMcpStats } from "./tools.js";
@@ -11,11 +17,20 @@ import { getMcpStats } from "./tools.js";
 const rateLimiter = new IpRateLimiter(config.MCP_RATE_LIMIT_RPM);
 
 const STATS_CACHE_TTL_MS = 5 * 60_000;
-const LANDING_ORIGIN = "https://caniapply.parthkadam.tech";
+const JOBS_CACHE_TTL_MS = 60_000;
 
-type CacheEntry<T> = { at: number; value: T };
+const ALLOWED_ORIGINS = new Set([
+  "https://caniapply.parthkadam.tech",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
+]);
+
+type CacheEntry<T> = { at: number; value: T; key?: string };
 let statsCache: CacheEntry<unknown> | null = null;
 let historyCache: CacheEntry<unknown> | null = null;
+let topCompaniesCache: CacheEntry<unknown> | null = null;
 
 function clientIp(req: Request): string {
   const xf = req.headers["x-forwarded-for"];
@@ -27,8 +42,8 @@ function clientIp(req: Request): string {
 
 function allowCors(req: Request, res: Response, next: NextFunction): void {
   const origin = req.headers.origin;
-  if (origin === LANDING_ORIGIN) {
-    res.setHeader("Access-Control-Allow-Origin", LANDING_ORIGIN);
+  if (typeof origin === "string" && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.setHeader("Vary", "Origin");
@@ -40,11 +55,11 @@ function allowCors(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
-function cacheControl(): string {
-  return `public, max-age=${Math.floor(STATS_CACHE_TTL_MS / 1000)}`;
+function cacheControl(ttlMs = STATS_CACHE_TTL_MS): string {
+  return `public, max-age=${Math.floor(ttlMs / 1000)}`;
 }
 
-/** Express app: GET /health, /api/stats, /api/stats/history, POST/GET /mcp. */
+/** Express app: health, public /api/*, MCP. */
 export function createMcpHttpApp() {
   const app = express();
   app.set("trust proxy", 1);
@@ -59,7 +74,7 @@ export function createMcpHttpApp() {
     });
   });
 
-  app.use("/api/stats", allowCors);
+  app.use("/api", allowCors);
 
   app.get("/api/stats", async (_req, res) => {
     try {
@@ -95,7 +110,7 @@ export function createMcpHttpApp() {
       const cacheKeyOk =
         historyCache &&
         now - historyCache.at < STATS_CACHE_TTL_MS &&
-        (historyCache.value as { days?: number }).days === days;
+        historyCache.key === String(days);
       if (cacheKeyOk && historyCache) {
         res.setHeader("Cache-Control", cacheControl());
         res.setHeader("X-Cache", "HIT");
@@ -104,7 +119,7 @@ export function createMcpHttpApp() {
       }
       const history = await getDailyStatsHistory(db, days);
       const value = { days, history };
-      historyCache = { at: now, value };
+      historyCache = { at: now, value, key: String(days) };
       res.setHeader("Cache-Control", cacheControl());
       res.setHeader("X-Cache", "MISS");
       res.status(200).json(value);
@@ -114,6 +129,68 @@ export function createMcpHttpApp() {
         err instanceof Error ? err.message : err,
       );
       res.status(500).json({ ok: false, error: "stats_history_failed" });
+    }
+  });
+
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      const query = parseQueryString(req.query.query);
+      const eligibility = parseEligibilityParam(req.query.eligibility);
+      const cursor =
+        typeof req.query.cursor === "string" ? req.query.cursor : undefined;
+      const limitRaw = Number(req.query.limit ?? 25);
+      const limit =
+        Number.isFinite(limitRaw) && limitRaw > 0
+          ? Math.min(50, Math.floor(limitRaw))
+          : 25;
+
+      const value = await getPublicJobs(db, {
+        query,
+        eligibility,
+        cursor,
+        limit,
+      });
+      res.setHeader("Cache-Control", cacheControl(JOBS_CACHE_TTL_MS));
+      res.status(200).json(value);
+    } catch (err) {
+      console.error(
+        "[api/jobs] error:",
+        err instanceof Error ? err.message : err,
+      );
+      res.status(500).json({ ok: false, error: "jobs_failed" });
+    }
+  });
+
+  app.get("/api/companies/top", async (req, res) => {
+    try {
+      const limitRaw = Number(req.query.limit ?? 15);
+      const limit =
+        Number.isFinite(limitRaw) && limitRaw > 0
+          ? Math.min(50, Math.floor(limitRaw))
+          : 15;
+      const now = Date.now();
+      const key = String(limit);
+      if (
+        topCompaniesCache &&
+        now - topCompaniesCache.at < STATS_CACHE_TTL_MS &&
+        topCompaniesCache.key === key
+      ) {
+        res.setHeader("Cache-Control", cacheControl());
+        res.setHeader("X-Cache", "HIT");
+        res.status(200).json(topCompaniesCache.value);
+        return;
+      }
+      const value = await getTopCompaniesHiringIndia(db, limit);
+      topCompaniesCache = { at: now, value, key };
+      res.setHeader("Cache-Control", cacheControl());
+      res.setHeader("X-Cache", "MISS");
+      res.status(200).json(value);
+    } catch (err) {
+      console.error(
+        "[api/companies/top] error:",
+        err instanceof Error ? err.message : err,
+      );
+      res.status(500).json({ ok: false, error: "companies_top_failed" });
     }
   });
 

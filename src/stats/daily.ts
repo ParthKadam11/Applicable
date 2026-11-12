@@ -32,6 +32,7 @@ export type DailyStatsRow = {
   };
   new_jobs_24h: number;
   closed_jobs_24h: number;
+  is_backfill: boolean;
 };
 
 function techOpenActive() {
@@ -133,6 +134,7 @@ export async function computeDailyStatsSnapshot(
     by_eligibility: eligibility,
     new_jobs_24h: Number(newJobs),
     closed_jobs_24h: Number(closedJobs),
+    is_backfill: false,
   };
 }
 
@@ -205,5 +207,6 @@ export async function getDailyStatsHistory(
     },
     new_jobs_24h: r.newJobs24h,
     closed_jobs_24h: r.closedJobs24h,
+    is_backfill: Boolean(r.isBackfill),
   }));
 }
