@@ -30,9 +30,8 @@ function GlassLayers() {
           />
         </filter>
       </svg>
-      {/* Blur + liquid refraction */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        className="pointer-events-none absolute inset-0"
         style={{
           backdropFilter: "blur(14px) saturate(180%)",
           WebkitBackdropFilter: "blur(14px) saturate(180%)",
@@ -40,14 +39,12 @@ function GlassLayers() {
         }}
         aria-hidden
       />
-      {/* Tint */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-[inherit] bg-white/35"
+        className="pointer-events-none absolute inset-0 bg-white/40"
         aria-hidden
       />
-      {/* Specular edge */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_1px_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(255,255,255,0.25),0_8px_32px_rgba(6,32,58,0.08)] ring-1 ring-white/50"
+        className="pointer-events-none absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ring-1 ring-inset ring-white/40"
         aria-hidden
       />
     </>
@@ -61,46 +58,44 @@ export function SiteHeader({ active }: { active?: "home" | "dashboard" }) {
       : "text-mute hover:bg-white/35 hover:text-ink";
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 sm:pt-5">
-      <div className="pointer-events-auto relative mx-auto max-w-5xl">
-        <div className="relative overflow-hidden rounded-2xl">
-          <GlassLayers />
-          <div className="relative z-10 flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+    <header className="sticky top-0 z-50">
+      <div className="relative border-b border-white/30">
+        <GlassLayers />
+        <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+          <Link
+            href="/"
+            className="font-display text-[17px] tracking-tight text-ink"
+          >
+            CanIApply
+          </Link>
+          <nav className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wide sm:gap-1.5">
             <Link
               href="/"
-              className="font-display text-[17px] tracking-tight text-ink"
+              className={`rounded-full px-3 py-1.5 transition ${link(active === "home")}`}
             >
-              CanIApply
+              Home
             </Link>
-            <nav className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wide sm:gap-1.5">
-              <Link
-                href="/"
-                className={`rounded-full px-3 py-1.5 transition ${link(active === "home")}`}
-              >
-                Home
-              </Link>
-              <Link
-                href="/dashboard"
-                className={`rounded-full px-3 py-1.5 transition ${link(active === "dashboard")}`}
-              >
-                Dashboard
-              </Link>
-              <a
-                href={LINKS.github}
-                className={`hidden rounded-full px-3 py-1.5 transition sm:inline ${link(false)}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub
-              </a>
-              <Link
-                href="/#mcp"
-                className="ml-1 inline-flex min-h-9 items-center rounded-full bg-ink/90 px-4 font-mono text-[10px] font-semibold uppercase text-white shadow-[0_6px_18px_rgba(6,32,58,0.22)] backdrop-blur-sm transition hover:bg-ink"
-              >
-                Add MCP
-              </Link>
-            </nav>
-          </div>
+            <Link
+              href="/dashboard"
+              className={`rounded-full px-3 py-1.5 transition ${link(active === "dashboard")}`}
+            >
+              Dashboard
+            </Link>
+            <a
+              href={LINKS.github}
+              className={`hidden rounded-full px-3 py-1.5 transition sm:inline ${link(false)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+            <Link
+              href="/#mcp"
+              className="ml-1 inline-flex min-h-9 items-center rounded-full bg-ink/90 px-4 font-mono text-[10px] font-semibold uppercase text-white shadow-[0_6px_18px_rgba(6,32,58,0.22)] transition hover:bg-ink"
+            >
+              Add MCP
+            </Link>
+          </nav>
         </div>
       </div>
     </header>

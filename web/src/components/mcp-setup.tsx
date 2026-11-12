@@ -3,24 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MCP_URL } from "@/lib/constants";
-import { claudeConnectorHref, cursorInstallHref } from "@/lib/mcp-install";
+import {
+  chatgptPluginsHref,
+  claudeConnectorHref,
+  cursorInstallHref,
+  grokHref,
+  vscodeInstallHref,
+  windsurfMcpHref,
+} from "@/lib/mcp-install";
+import { AgentLogo } from "./agent-logo";
 import { AgentsStrip } from "./agents-strip";
 import { CopyButton } from "./copy-button";
-import {
-  IconCanIApply,
-  IconChatGPT,
-  IconClaude,
-  IconCline,
-  IconCodex,
-  IconCursor,
-  IconGrok,
-  IconMcp,
-  IconWindsurf,
-} from "./connector-icons";
+import { IconCanIApply } from "./connector-icons";
 
 type Cta =
   | { kind: "link"; label: string; href: string }
-  | { kind: "copy-url"; label: string; openUrl?: string };
+  | { kind: "copy-open"; label: string; openUrl: string }
+  | { kind: "copy-url"; label: string };
 
 const CONNECTORS = [
   {
@@ -39,24 +38,23 @@ const CONNECTORS = [
       "Sign in if needed, then confirm Add / Connect.",
       "Ask: “Show me open India-remote engineering roles.”",
     ],
-    Icon: IconClaude,
   },
   {
     id: "codex",
     label: "Codex",
     headline: "Wire CanIApply into Codex",
-    body: "Point Codex at the same remote MCP endpoint. Eligibility labels and evidence quotes land next to the work you’re already doing.",
-    tag: "Easy",
+    body: "One click copies the endpoint and opens ChatGPT Plugins — create a custom MCP server for Codex / ChatGPT with CanIApply.",
+    tag: "1-click",
     cta: {
-      kind: "copy-url",
-      label: "Copy MCP link",
+      kind: "copy-open",
+      label: "Add to Codex",
+      openUrl: chatgptPluginsHref(),
     } satisfies Cta,
     steps: [
-      "Copy the MCP link.",
-      "In Codex, open MCP / connectors and add a remote server.",
-      "Paste the link, save, then ask for india_remote roles with evidence.",
+      "Click Add to Codex — we copy the URL and open Plugins.",
+      "Add → Create custom MCP server, paste the URL, save.",
+      "Ask for india_remote roles with evidence quotes.",
     ],
-    Icon: IconCodex,
   },
   {
     id: "cursor",
@@ -74,77 +72,74 @@ const CONNECTORS = [
       "Confirm Install. You’re done.",
       "In chat: “Find india_remote jobs with evidence quotes.”",
     ],
-    Icon: IconCursor,
   },
   {
     id: "windsurf",
     label: "Windsurf",
     headline: "Connect Windsurf to CanIApply",
-    body: "Drop the Streamable HTTP URL into Windsurf’s MCP settings. Same corpus, same proof lines — available while you ship.",
-    tag: "Easy",
+    body: "One click copies the endpoint and opens Windsurf’s MCP docs — paste as serverUrl in Cascade MCP settings.",
+    tag: "1-click",
     cta: {
-      kind: "copy-url",
-      label: "Copy MCP link",
+      kind: "copy-open",
+      label: "Add to Windsurf",
+      openUrl: windsurfMcpHref(),
     } satisfies Cta,
     steps: [
-      "Copy the MCP link.",
-      "Open Windsurf → MCP / Cascade settings → add remote server.",
-      "Paste, save, then ask who is hiring from India.",
+      "Click Add to Windsurf — we copy the URL and open MCP setup.",
+      "In Cascade → MCP, add a remote server with serverUrl set to the copied link.",
+      "Ask who is hiring from India.",
     ],
-    Icon: IconWindsurf,
   },
   {
     id: "cline",
     label: "Cline",
     headline: "Use CanIApply inside Cline",
-    body: "Add the remote MCP URL in Cline’s settings. Query open and india_remote roles without leaving your editor agent.",
-    tag: "Easy",
+    body: "One click opens VS Code’s MCP install flow. Confirm, then enable the same remote URL in Cline’s MCP panel if you use Cline specifically.",
+    tag: "1-click",
     cta: {
-      kind: "copy-url",
-      label: "Copy MCP link",
+      kind: "link",
+      label: "Add to Cline",
+      href: vscodeInstallHref(),
     } satisfies Cta,
     steps: [
-      "Copy the MCP link.",
-      "In Cline, open MCP servers and add a remote HTTP endpoint.",
-      "Paste the link, enable it, then ask for India-eligible roles.",
+      "Click Add to Cline — VS Code opens the MCP install prompt.",
+      "Confirm install. In Cline → MCP Servers, ensure the remote URL is enabled (Streamable HTTP).",
+      "Ask for India-eligible roles with evidence.",
     ],
-    Icon: IconCline,
   },
   {
     id: "chatgpt",
     label: "ChatGPT",
     headline: "Connect ChatGPT to live India checks",
-    body: "We copy the connection link for you. Paste it into ChatGPT’s custom connector field — same proof lines as every other agent.",
-    tag: "Easy",
+    body: "One click copies the endpoint and opens ChatGPT Plugins — add a custom MCP server and paste.",
+    tag: "1-click",
     cta: {
-      kind: "copy-url",
-      label: "Copy link & open ChatGPT",
-      openUrl: "https://chatgpt.com/",
+      kind: "copy-open",
+      label: "Add to ChatGPT",
+      openUrl: chatgptPluginsHref(),
     } satisfies Cta,
     steps: [
-      "Click the button — we copy the link and open ChatGPT.",
-      "Settings → Connectors → Add custom / remote MCP.",
-      "Paste, save, then ask who’s hiring from India.",
+      "Click Add to ChatGPT — we copy the URL and open Plugins.",
+      "Add → Create custom MCP server, paste, save.",
+      "Ask who’s hiring from India.",
     ],
-    Icon: IconChatGPT,
   },
   {
     id: "grok",
     label: "Grokbot",
     headline: "Hook Grokbot into CanIApply",
-    body: "Same Streamable HTTP MCP. Filter for open and india_remote, pull evidence quotes, move fast.",
-    tag: "Easy",
+    body: "One click copies the endpoint and opens Grok — paste into MCP / connectors settings.",
+    tag: "1-click",
     cta: {
-      kind: "copy-url",
-      label: "Copy link for Grokbot",
-      openUrl: "https://grok.x.ai/",
+      kind: "copy-open",
+      label: "Add to Grokbot",
+      openUrl: grokHref(),
     } satisfies Cta,
     steps: [
-      "Copy the CanIApply MCP link.",
-      "In Grokbot, open MCP / connectors and add a remote server.",
-      "Paste, save, then ask for open + india_remote roles.",
+      "Click Add to Grokbot — we copy the URL and open Grok.",
+      "Open MCP / connectors and add a remote server with the pasted URL.",
+      "Ask for open + india_remote roles.",
     ],
-    Icon: IconGrok,
   },
   {
     id: "mcp",
@@ -161,7 +156,6 @@ const CONNECTORS = [
       "In your client’s MCP config, add a remote server named caniapply.",
       "Set url to the endpoint, save, then query search_jobs / stats.",
     ],
-    Icon: IconMcp,
   },
 ] as const;
 
@@ -199,7 +193,9 @@ function ConnectCta({ cta }: { cta: Cta }) {
         void navigator.clipboard.writeText(MCP_URL).then(() => {
           setCopied(true);
           window.setTimeout(() => setCopied(false), 1800);
-          if (cta.openUrl) window.open(cta.openUrl, "_blank", "noopener,noreferrer");
+          if (cta.kind === "copy-open") {
+            window.open(cta.openUrl, "_blank", "noopener,noreferrer");
+          }
         });
       }}
     >
@@ -212,7 +208,6 @@ export function McpSetup() {
   const [active, setActive] = useState<ConnectorId>("cursor");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const c = CONNECTORS.find((x) => x.id === active) ?? CONNECTORS[2]!;
-  const ActiveIcon = c.Icon;
 
   const snippet = `{
   "mcpServers": {
@@ -228,7 +223,6 @@ export function McpSetup() {
 
       <section id="mcp" className="scroll-mt-24 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          {/* Section lead */}
           <div className="max-w-2xl">
             <p className="font-mono text-[11px] uppercase text-mute">
               Integrations
@@ -238,18 +232,16 @@ export function McpSetup() {
             </h2>
             <p className="mt-3 max-w-xl text-pretty text-[15px] leading-relaxed text-mute">
               Same India-eligibility corpus everywhere — pick a client and
-              connect in a minute.
+              connect in one click.
             </p>
           </div>
 
-          {/* Agent picker — matches agents strip promise */}
           <div
             role="tablist"
             aria-label="Agents"
             className="mt-10 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {CONNECTORS.map((item) => {
-              const Icon = item.Icon;
               const on = active === item.id;
               return (
                 <button
@@ -267,18 +259,21 @@ export function McpSetup() {
                       : "border-line bg-white text-mute hover:border-[#9eb6c9] hover:text-ink"
                   }`}
                 >
-                  <Icon className="size-5" mono />
+                  <span className="overflow-hidden rounded-md">
+                    <AgentLogo id={item.id} label={item.label} size="sm" />
+                  </span>
                   <span className="whitespace-nowrap">{item.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Detail + visual — one job each */}
           <div className="mt-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
-              <div className="flex items-center gap-2">
-                <ActiveIcon className="size-8" />
+              <div className="flex items-center gap-3">
+                <span className="overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5">
+                  <AgentLogo id={c.id} label={c.label} size="md" />
+                </span>
                 <span className="rounded-full bg-[#f0f4f8] px-2.5 py-0.5 font-mono text-[10px] uppercase text-mute">
                   {c.tag}
                 </span>
@@ -302,14 +297,14 @@ export function McpSetup() {
 
             <div className="flex flex-col items-center gap-8">
               <div className="flex items-center justify-center">
-                <div className="flex size-16 items-center justify-center rounded-2xl border border-line bg-white shadow-sm">
+                <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
                   <IconCanIApply className="size-10" />
                 </div>
                 <Rail />
                 <div className="relative">
                   <span className="logo-orbit" aria-hidden />
-                  <div className="relative z-[1] flex size-16 items-center justify-center rounded-2xl border border-line bg-white shadow-sm">
-                    <ActiveIcon className="size-10" />
+                  <div className="relative z-[1] size-16 overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                    <AgentLogo id={c.id} label={c.label} fill />
                   </div>
                 </div>
               </div>
@@ -322,7 +317,6 @@ export function McpSetup() {
             </div>
           </div>
 
-          {/* Steps — proximity group, no nested card clutter */}
           <ol className="mt-16 grid gap-8 border-t border-line pt-12 sm:grid-cols-3 sm:gap-10">
             {c.steps.map((step, i) => (
               <li key={step} className="min-w-0">

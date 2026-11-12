@@ -1,39 +1,33 @@
 "use client";
 
 import { LogosWithBlurFlip, type LogoItem } from "@/components/ui/logos-with-blur-flip";
-import {
-  IconChatGPT,
-  IconClaude,
-  IconCline,
-  IconCodex,
-  IconCursor,
-  IconGrok,
-  IconMcp,
-  IconWindsurf,
-} from "./connector-icons";
+import { AgentLogo } from "./agent-logo";
 
 const SETS: LogoItem[][] = [
   [
-    { name: "Claude", node: <IconClaude className="size-5 sm:size-6" mono /> },
-    { name: "Codex", node: <IconCodex className="size-5 sm:size-6" mono /> },
-    { name: "Cursor", node: <IconCursor className="size-5 sm:size-6" mono /> },
+    { name: "Claude", node: <AgentLogo id="claude" label="Claude" size="sm" /> },
+    { name: "Codex", node: <AgentLogo id="codex" label="Codex" size="sm" /> },
+    { name: "Cursor", node: <AgentLogo id="cursor" label="Cursor" size="sm" /> },
     {
       name: "Windsurf",
-      node: <IconWindsurf className="size-5 sm:size-6" mono />,
+      node: <AgentLogo id="windsurf" label="Windsurf" size="sm" />,
     },
-    { name: "Cline", node: <IconCline className="size-5 sm:size-6" mono /> },
-    { name: "MCP", node: <IconMcp className="size-5 sm:size-6" mono /> },
+    { name: "Cline", node: <AgentLogo id="cline" label="Cline" size="sm" /> },
+    { name: "MCP", node: <AgentLogo id="mcp" label="MCP" size="sm" /> },
   ],
   [
-    { name: "Claude", node: <IconClaude className="size-5 sm:size-6" mono /> },
+    { name: "Claude", node: <AgentLogo id="claude" label="Claude" size="sm" /> },
     {
       name: "ChatGPT",
-      node: <IconChatGPT className="size-5 sm:size-6" mono />,
+      node: <AgentLogo id="chatgpt" label="ChatGPT" size="sm" />,
     },
-    { name: "Cursor", node: <IconCursor className="size-5 sm:size-6" mono /> },
-    { name: "Grokbot", node: <IconGrok className="size-5 sm:size-6" mono /> },
-    { name: "Cline", node: <IconCline className="size-5 sm:size-6" mono /> },
-    { name: "MCP", node: <IconMcp className="size-5 sm:size-6" mono /> },
+    { name: "Cursor", node: <AgentLogo id="cursor" label="Cursor" size="sm" /> },
+    {
+      name: "Grokbot",
+      node: <AgentLogo id="grok" label="Grokbot" size="sm" />,
+    },
+    { name: "Cline", node: <AgentLogo id="cline" label="Cline" size="sm" /> },
+    { name: "MCP", node: <AgentLogo id="mcp" label="MCP" size="sm" /> },
   ],
 ];
 

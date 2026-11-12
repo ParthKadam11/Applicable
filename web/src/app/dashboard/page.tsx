@@ -42,7 +42,7 @@ export default async function DashboardPage() {
     <div className="min-h-dvh bg-paper">
       <div className="sky">
         <SiteHeader active="dashboard" />
-        <div className="mx-auto max-w-5xl px-5 pb-6 pt-24 sm:px-8 sm:pt-28">
+        <div className="mx-auto max-w-5xl px-5 pb-6 pt-10 sm:px-8 sm:pt-12">
           <p className="font-mono text-[11px] uppercase text-mark-deep">
             Dashboard
           </p>
