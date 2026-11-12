@@ -91,7 +91,7 @@ export function SiteHeader({ active }: { active?: "home" | "dashboard" }) {
             </a>
             <Link
               href="/#mcp"
-              className="ml-1 inline-flex min-h-9 items-center rounded-full bg-ink/90 px-4 font-mono text-[10px] font-semibold uppercase text-white shadow-[0_6px_18px_rgba(6,32,58,0.22)] transition hover:bg-ink"
+              className="ml-1 inline-flex min-h-9 items-center rounded-full bg-mark px-4 font-mono text-[10px] font-semibold uppercase text-ink shadow-[0_6px_18px_rgba(76,201,240,0.35)] transition hover:bg-mark-deep hover:text-white"
             >
               Add MCP
             </Link>

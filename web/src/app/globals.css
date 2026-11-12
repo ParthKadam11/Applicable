@@ -5,13 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --paper: #f4fbff;
+  --paper: #f5f9fc;
   --paper-2: #ffffff;
   --ink: #06203a;
   --mute: #5a7188;
-  --line: #cfe3f2;
-  --mark: #00b39a;
-  --mark-deep: #008f7a;
+  --line: #d0e4f4;
+  --mark: #4cc9f0;
+  --mark-deep: #1aa3d4;
   --sun: #ffc43a;
   --sun-soft: #fff3c4;
   --panel: #ffffff;
@@ -131,9 +131,9 @@ body {
 /* soft sky wash — bright, not beige */
 .sky {
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0, 179, 154, 0.18), transparent 50%),
-    radial-gradient(ellipse 70% 45% at 95% 0%, rgba(255, 196, 58, 0.22), transparent 45%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(120, 190, 255, 0.16), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76, 201, 240, 0.22), transparent 50%),
+    radial-gradient(ellipse 70% 45% at 95% 0%, rgba(255, 196, 58, 0.14), transparent 45%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(76, 201, 240, 0.16), transparent 50%),
     var(--paper);
 }
 
@@ -151,7 +151,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  box-shadow: 0 8px 20px rgba(0, 179, 154, 0.28);
+  box-shadow: 0 8px 20px rgba(76, 201, 240, 0.32);
   transition: transform 160ms ease-out, background-color 160ms ease-out,
     box-shadow 160ms ease-out;
 }
@@ -179,11 +179,11 @@ body {
   .btn-ink:hover {
     background: var(--mark-deep);
     color: #fff;
-    box-shadow: 0 10px 24px rgba(0, 143, 122, 0.32);
+    box-shadow: 0 10px 24px rgba(26, 163, 212, 0.34);
   }
   .btn-ghost:hover {
     border-color: var(--mark);
-    background: #eafffa;
+    background: #eaf4ff;
   }
   .btn-ink:active,
   .btn-ghost:active {
@@ -198,7 +198,7 @@ button:focus-visible {
 }
 
 ::selection {
-  background: rgba(0, 179, 154, 0.25);
+  background: rgba(76, 201, 240, 0.28);
   color: var(--ink);
 }
 

@@ -10,10 +10,10 @@ export function Hero() {
         variant="isometric"
         cellSize={52}
         gap={0.035}
-        topColor="#f4fbff"
-        leftColor="#d7ebf7"
-        rightColor="#b8d4e8"
-        glowColor="#00b39a"
+        topColor="#f5f9fc"
+        leftColor="#d9eaf8"
+        rightColor="#b7d4ec"
+        glowColor="#4cc9f0"
         glow={0.4}
         amplitude={0.55}
       />

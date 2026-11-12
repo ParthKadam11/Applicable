@@ -175,7 +175,7 @@ function Rail() {
 function ConnectCta({ cta }: { cta: Cta }) {
   const [copied, setCopied] = useState(false);
   const className =
-    "inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-6 text-sm font-semibold text-white transition hover:bg-[#0a2a4a]";
+    "inline-flex min-h-11 items-center justify-center rounded-full bg-mark px-6 text-sm font-semibold text-ink shadow-[0_8px_20px_rgba(76,201,240,0.32)] transition hover:bg-mark-deep hover:text-white";
 
   if (cta.kind === "link") {
     return (
@@ -255,8 +255,8 @@ export function McpSetup() {
                   }}
                   className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition ${
                     on
-                      ? "border-ink bg-ink text-white"
-                      : "border-line bg-white text-mute hover:border-[#9eb6c9] hover:text-ink"
+                      ? "border-mark bg-mark text-ink shadow-[0_4px_14px_rgba(76,201,240,0.35)]"
+                      : "border-line bg-white text-mute hover:border-mark hover:text-ink"
                   }`}
                 >
                   <span className="overflow-hidden rounded-md">
@@ -288,7 +288,7 @@ export function McpSetup() {
                 <ConnectCta cta={c.cta} />
                 <Link
                   href="/dashboard"
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:border-[#9eb6c9]"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:border-mark hover:bg-[#eaf4ff]"
                 >
                   Open dashboard
                 </Link>

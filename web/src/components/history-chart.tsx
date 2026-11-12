@@ -64,7 +64,7 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
             type="monotone"
             dataKey="applicable"
             name="Open + India remote"
-            stroke="#00b39a"
+            stroke="#4cc9f0"
             strokeWidth={2.5}
             dot={false}
           />

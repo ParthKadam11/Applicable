@@ -22,8 +22,8 @@ export const ELIGIBILITY_LABELS: Record<string, string> = {
 };
 
 export const ELIGIBILITY_COLORS: Record<string, string> = {
-  open: "#00b39a",
-  india_remote: "#2f9bff",
+  open: "#4cc9f0",
+  india_remote: "#1aa3d4",
   india_onsite: "#ffc43a",
   region_locked: "#ff6b6b",
   unclear: "#8aa0b4",
