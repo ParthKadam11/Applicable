@@ -258,36 +258,8 @@ button:focus-visible {
   }
 }
 
-@keyframes logo-sheen {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .rail-pulse {
   animation: rail-shimmer 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.logo-orbit {
-  position: absolute;
-  inset: -6px;
-  border-radius: 1.05rem;
-  background: conic-gradient(
-    from 210deg,
-    transparent 0%,
-    transparent 62%,
-    rgba(255, 255, 255, 0.95) 70%,
-    rgba(6, 32, 58, 0.18) 78%,
-    transparent 88%,
-    transparent 100%
-  );
-  animation: logo-sheen 5.5s linear infinite;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  padding: 1px;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -298,8 +270,7 @@ button:focus-visible {
   .btn-ghost {
     transition: none;
   }
-  .rail-pulse,
-  .logo-orbit {
+  .rail-pulse {
     animation: none;
   }
 }

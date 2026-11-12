@@ -184,14 +184,11 @@ function IntegrationBeams({
         <BrandLogo fill />
       </div>
 
-      <div className="relative z-[1]">
-        <span className="logo-orbit" aria-hidden />
-        <div
-          ref={toRef}
-          className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16"
-        >
-          <AgentLogo id={agentId} label={agentLabel} fill />
-        </div>
+      <div
+        ref={toRef}
+        className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16"
+      >
+        <AgentLogo id={agentId} label={agentLabel} fill />
       </div>
 
       <AnimatedBeam
