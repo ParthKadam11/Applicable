@@ -15,9 +15,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-applicable}
     volumes:
       - applicable_pgdata:/var/lib/postgresql/data
-    # Not published to the host — app/mcp reach it on the Docker network only.
+    # Loopback only — host Next.js (PM2) needs DATABASE_URL for Auth.js upserts.
     expose:
       - "5432"
+    ports:
+      - "127.0.0.1:5436:5432"
     healthcheck:
       test:
         [
