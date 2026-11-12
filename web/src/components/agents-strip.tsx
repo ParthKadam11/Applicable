@@ -35,12 +35,12 @@ const SETS: LogoItem[][] = [
 export function AgentsStrip() {
   return (
     <section className="border-t border-line bg-soft">
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-12">
-        <p className="mx-auto max-w-xl text-center text-pretty text-sm text-mute sm:text-[15px]">
+      <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-8 sm:pb-10 sm:pt-14">
+        <p className="mx-auto max-w-lg text-center text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
           One India-eligibility corpus, available through MCP wherever your
           agents work.
         </p>
-        <div className="mt-8">
+        <div className="mt-7">
           <LogosWithBlurFlip sets={SETS} />
         </div>
       </div>

@@ -21,10 +21,12 @@ const JOBS_CACHE_TTL_MS = 60_000;
 
 const ALLOWED_ORIGINS = new Set([
   "https://applicable.parthkadam.tech",
+  // legacy domain during rename
+  "https://caniapply.parthkadam.tech",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "http://localhost:3010",
-  "http://127.0.0.1:3010",
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
 ]);
 
 type CacheEntry<T> = { at: number; value: T; key?: string };

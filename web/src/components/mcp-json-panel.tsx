@@ -62,7 +62,7 @@ export function McpJsonPanel({ snippet }: { snippet: string }) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="mt-10">
+    <div className="mt-12 border-t border-line pt-8 sm:mt-14 sm:pt-10">
       <button
         type="button"
         aria-expanded={open}

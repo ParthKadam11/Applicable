@@ -5,7 +5,7 @@ import { LINKS } from "@/lib/constants";
 export function SiteFooter() {
   return (
     <footer className="border-t border-line bg-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-5 py-9 sm:flex-row sm:items-end sm:justify-between sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-8">
         <div>
           <Link
             href="/"
