@@ -1,4 +1,4 @@
-/** Real brand assets in /public — paths for next/image */
+/** Real brand assets in /public - paths for next/image */
 
 export const AGENT_LOGOS = {
   claude: "/claudecode.jpg",

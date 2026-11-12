@@ -1,4 +1,4 @@
-# Applicable / jobfit — Project Brief
+# Applicable / jobfit - Project Brief
 
 Factual snapshot for an engineer reviewing the repo and planning next steps. Based on reading the code and querying the local Postgres volume used by this workspace (`jobfit` DB via `applicable-jobfit-pg`). **No secrets or env values.**
 
@@ -19,7 +19,7 @@ Generated: 2026-11-11.
 | Compose file | Role |
 |---|---|
 | `docker-compose.yml` | Local/simple: `postgres` (host `127.0.0.1:5435`), `mcp` (`127.0.0.1:3110→3100`), optional `caddy` profile `tls`. DB creds hard-coded `jobfit/jobfit`. |
-| `docker-compose.prod.yml` | Prod Contabo: `postgres` (internal only), `migrate` (one-shot), `app` (`node dist/index.js` — worker), `mcp` (`node dist/mcp/http.js`, published `127.0.0.1:3110`), optional `caddy` (profile `tls`, `:80`/`:443`). |
+| `docker-compose.prod.yml` | Prod Contabo: `postgres` (internal only), `migrate` (one-shot), `app` (`node dist/index.js` - worker), `mcp` (`node dist/mcp/http.js`, published `127.0.0.1:3110`), optional `caddy` (profile `tls`, `:80`/`:443`). |
 
 Host nginx may also terminate TLS and proxy to `3110` (`infra/nginx/`). The Dockerfile default CMD is MCP HTTP; compose overrides for `app` / `migrate`.
 
@@ -93,7 +93,7 @@ Schema: `src/db/schema.ts`. Client: `src/db/client.ts` (node-postgres + drizzle)
 
 ### Enums
 
-- `ats`: `ashby | greenhouse | lever | workable | recruitee | personio` — **only first three have adapters**.
+- `ats`: `ashby | greenhouse | lever | workable | recruitee | personio` - **only first three have adapters**.
 - `candidate_status`: `pending | verified | rejected`.
 
 ### Tables
@@ -139,12 +139,12 @@ Unique `(source, name)`.
 
 #### `job_tags`
 1:1 with `jobs` by `job_id` PK. Eligibility + interview + compensation + `role_family` + `classifier`/`model`/`classified_at`/`content_hash`.  
-Comment in schema still says “Reserved for phase 2 — classification” but **classification is fully implemented and writing this table**.  
+Comment in schema still says “Reserved for phase 2 - classification” but **classification is fully implemented and writing this table**.  
 **Writes:** `classifyAndStoreJob`. **Reads:** MCP, stats, enqueue unclear jobs.
 
 #### `company_research`
 Funding/headcount/India presence/news/interview reports + `expires_at`.  
-**No application writers found** — schema-only / unused.
+**No application writers found** - schema-only / unused.
 
 #### `ats_board_checks`
 CC probe cache: `(ats, slug)` unique, `status` (`valid|not_found|empty|error`), `job_count`, `checked_at`, `error`.  
@@ -152,9 +152,9 @@ CC probe cache: `(ats, slug)` unique, `status` (`valid|not_found|empty|error`), 
 
 ### Migrations (order)
 
-1. `drizzle/0000_colorful_the_order.sql` — base enums + `companies`/`jobs`/`fetch_runs`/`job_tags`/`company_research`.
-2. `drizzle/0001_company_candidates.sql` — candidates table + enum.
-3. `drizzle/0002_ats_board_checks.sql` — board check cache.
+1. `drizzle/0000_colorful_the_order.sql` - base enums + `companies`/`jobs`/`fetch_runs`/`job_tags`/`company_research`.
+2. `drizzle/0001_company_candidates.sql` - candidates table + enum.
+3. `drizzle/0002_ats_board_checks.sql` - board check cache.
 
 Journal: `drizzle/meta/_journal.json`.
 
@@ -204,7 +204,7 @@ Default sources: **`yc`, `hn_hiring`, `himalayas`, `remoteok`**. (`common_crawl`
 ### Common Crawl (`discover:cc` CLI)
 
 - `src/discover/sources/common-crawl.ts` + `cc-validate.ts` + `run-cc.ts` + `scripts/discover-cc.ts`.
-- Pulls CDX **byte ranges** from `data.commoncrawl.org` (known offsets for latest crawl; `cluster.idx`-derived). Public `index.commoncrawl.org` query API is too flaky for bulk wildcards — code documents this and uses index files instead.
+- Pulls CDX **byte ranges** from `data.commoncrawl.org` (known offsets for latest crawl; `cluster.idx`-derived). Public `index.commoncrawl.org` query API is too flaky for bulk wildcards - code documents this and uses index files instead.
 - Patterns covered: `boards.greenhouse.io/*`, `job-boards.greenhouse.io/*`, `jobs.lever.co/*`, `jobs.ashbyhq.com/*`.
 - Junk slug filter (`embed`, `api`, `assets`, …); validate via public jobs APIs; cache in `ats_board_checks` (skip if checked &lt; 7 days); then same `upsertCandidates` → `verifyAndPromote` path (**does not bypass filters**).
 
@@ -247,7 +247,7 @@ Then `guardEvidence` (`guard.ts`). Then optional LLM if unclear + tech role.
 ### Rules order (`classifyIndiaEligibility`)
 
 1. Strip HTML; **`stripBenefitsSections`** (drop Benefits/Perks headings so perk bullets cannot become open evidence).
-2. **`classifyLocationRaw(location_raw)`** — India cities → india_remote/onsite; bare Remote → ignore; LOCATION_OPEN without specific geo → open; named region / locked geo → region_locked.
+2. **`classifyLocationRaw(location_raw)`** - India cities → india_remote/onsite; bare Remote → ignore; LOCATION_OPEN without specific geo → open; named region / locked geo → region_locked.
 3. Title geo (`TITLE_COUNTRY_CODE`, `TITLE_GEO_PIPE`, SPECIFIC_GEO) can force region_locked even if location says Anywhere.
 4. If geo lock: only **`STRONG_HIRE_ANYWHERE`** may override to `open` (never perk phrases); hard `REGION_LOCKED_PHRASES` still win.
 5. Scan corpus for `REGION_LOCKED_PHRASES` (US auth, US/UK/EU only, timezone overlap without IST exception, …).
@@ -260,7 +260,7 @@ Then `guardEvidence` (`guard.ts`). Then optional LLM if unclear + tech role.
 
 | Constant | Role |
 |---|---|
-| `ELIGIBILITY_NEGATIVE_PHRASES` | Marketing “global team/customers worldwide” — never open evidence |
+| `ELIGIBILITY_NEGATIVE_PHRASES` | Marketing “global team/customers worldwide” - never open evidence |
 | `HIRING_LOCATION_CONTEXT` / `APPLY_CONTEXT` | remote, hire, candidates, authorized to work, … |
 | `REGION_LOCKED_PHRASES` | US/UK/EU-only, visa, must reside, PST/EST overlap, … |
 | `SPECIFIC_GEO` | Large set of countries/cities/regions (US, UK, EU cities, APAC, LATAM, …) |
@@ -293,7 +293,7 @@ Job hash: title + description + location + employmentType + applyUrl (`utils/has
 - Providers: rotation from `LLM_PROVIDERS` (`ollama`, `groq`, `gemini`, `openrouter`) via `classify/llm/rotation.ts` + per-provider modules; state in `LLM_STATE_PATH` (daily exhaustion).
 - Runs when rules leave `india_eligibility=unclear` **and** role is tech (`llmOnlyIfUnclear` in workers).
 - Rate: `TokenBucket(LLM_RPM)` default 30; worker concurrency `CLASSIFY_CONCURRENCY` default 4.
-- Schema: `LlmClassificationSchema` — eligibility + evidence quotes (+ optional remote_scope); merge only overwrites unclear India fields.
+- Schema: `LlmClassificationSchema` - eligibility + evidence quotes (+ optional remote_scope); merge only overwrites unclear India fields.
 - If all providers exhausted: keep rules (`unclear`), do not fail the job.
 
 ### Cross-check
@@ -308,8 +308,8 @@ Guard after merge; negative eligibility sentences stripped from LLM evidence (`i
 |---|---|
 | Transports | **Streamable HTTP** (`src/mcp/http.ts` + `app.ts`): `POST/GET /mcp`, `GET /health`. **stdio** (`src/mcp/stdio.ts`). |
 | Server factory | `createApplicableMcpServer` in `server.ts` |
-| Rate limit | `IpRateLimiter` — `MCP_RATE_LIMIT_RPM` (default 60) per IP sliding 60s window on `/mcp` |
-| Logging | `logToolCall` — tool name, latency, result count, ok |
+| Rate limit | `IpRateLimiter` - `MCP_RATE_LIMIT_RPM` (default 60) per IP sliding 60s window on `/mcp` |
+| Logging | `logToolCall` - tool name, latency, result count, ok |
 
 ### Tools
 
@@ -319,7 +319,7 @@ Guard after merge; negative eligibility sentences stripped from LLM evidence (`i
 | `get_job` | `{ id: uuid }` | `{ found, job: {…eligibility, evidence, remote_scope, interview_*, compensation, description_excerpt, classification_source, …} }` |
 | `list_companies` | `query?`, `ats?`, `limit` default 25 | `{ companies: [{id,name,website,ats,ats_slug,open_job_count,india_eligible_count}], count }` |
 | `stats` | `{}` | `{ companies_active, tech_open_jobs, by_eligibility, last_ingestion_at }` |
-| `submit_company` | `{ name, careers_url }` | `{ ok, deduped, candidate_id, status, message }` — queues `mcp_submit`, no auto-promote |
+| `submit_company` | `{ name, careers_url }` | `{ ok, deduped, candidate_id, status, message }` - queues `mcp_submit`, no auto-promote |
 
 ---
 
@@ -353,17 +353,17 @@ Services: `postgres` → `migrate` → `app` + `mcp`; optional `caddy` (`profile
 
 `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `MCP_HOST`, `MCP_DOMAIN`, `MCP_PUBLIC_URL`, `MCP_HTTP_PORT`, `MCP_RATE_LIMIT_RPM`, `USER_AGENT`, `HTTP_TIMEOUT_MS`, `PER_HOST_DELAY_MS`, `INGEST_CRON`, `INGEST_CONCURRENCY`, `INGEST_COMPANY_TIMEOUT_MS`, `LLM_PROVIDERS`, `LLM_PROVIDER`, `OLLAMA_URL`, `OLLAMA_MODEL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `CLASSIFY_CONCURRENCY`, `LLM_RPM`, `LLM_STATE_PATH`, `SEARCH_PROVIDER`, `SEARXNG_URL`, `TAVILY_API_KEY`, `BRAVE_API_KEY`, `DISCOVER_CRON`, `DISCOVER_PROMOTE_LIMIT`, `DISCOVER_PROMOTE_CONCURRENCY`, `YC_ALGOLIA_API_KEY`.
 
-Search-provider keys are config-parsed but **company research is unused** — no runtime consumer found.
+Search-provider keys are config-parsed but **company research is unused** - no runtime consumer found.
 
 ### GitHub Actions
 
-- **`ci.yml`**: on PR/push to main/master — `npm ci`, `tsc --noEmit`, `npm test`.
+- **`ci.yml`**: on PR/push to main/master - `npm ci`, `tsc --noEmit`, `npm test`.
 - **`deploy.yml`**: after tests, SSH to VPS (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_DEPLOY_PATH`), git fetch with `GITHUB_TOKEN`, `docker compose -f docker-compose.prod.yml up -d --build`; optional smoke via `MCP_SMOKE_URL`.
 
 ### Smoke / backup
 
-- `scripts/smoke.sh <base-url>` — health + MCP tool smoke.
-- `scripts/backup-postgres.sh` — `pg_dump` gzip, keep 7 days (intended host cron).
+- `scripts/smoke.sh <base-url>` - health + MCP tool smoke.
+- `scripts/backup-postgres.sh` - `pg_dump` gzip, keep 7 days (intended host cron).
 
 ---
 
@@ -373,7 +373,7 @@ Search-provider keys are config-parsed but **company research is unused** — no
 - Areas covered: ATS normalizers (ashby/greenhouse/lever), eligibility/rules/roles/guard/llm helpers, discover URL/slug/hardware/sources/CC helpers, ingest upsert, MCP schemas/tools/rate-limit, detect-ats, optional integration ingestion.
 - **Not covered / thin:** full promote against live ATS, pg-boss cron wiring, MCP HTTP transport E2E, Common Crawl network path, company_research, workable/recruitee/personio adapters, deploy scripts, compensation integer overflow on promote path, end-to-end discover→MCP.
 
-Integration: `npm run test:integration` (`vitest.integration.config.ts`) — separate from default CI.
+Integration: `npm run test:integration` (`vitest.integration.config.ts`) - separate from default CI.
 
 ---
 
@@ -413,10 +413,10 @@ Queried 2026-11-11 against local `jobfit` DB (workspace volume). Prod Contabo DB
 |---|---|---|---|
 | common_crawl | 0 | 1869 | 139 |
 | yc | 489 | 382 | 619 |
-| hn_hiring | 235 | — | — |
-| remoteok | 88 | 2 | — |
-| himalayas | 69 | — | — |
-| mcp_submit | 5 | — | — |
+| hn_hiring | 235 | - | - |
+| remoteok | 88 | 2 | - |
+| himalayas | 69 | - | - |
+| mcp_submit | 5 | - | - |
 
 ### Top 15 companies by open job count
 
@@ -446,11 +446,11 @@ Note: many CC-promoted names are slug-humanized with `(greenhouse)` suffix from 
 
 From code review + `TODO|FIXME|@deprecated|not implemented|Reserved`:
 
-1. **ATS enum includes workable/recruitee/personio** but `getAdapter` throws — no implementations (`src/ats/index.ts`).
-2. **`company_research` table unused** — schema comment “phase 2”; no writers in `src/`.
-3. **`job_tags` schema comment still says “Reserved for phase 2”** though classification is live — comment stale.
+1. **ATS enum includes workable/recruitee/personio** but `getAdapter` throws - no implementations (`src/ats/index.ts`).
+2. **`company_research` table unused** - schema comment “phase 2”; no writers in `src/`.
+3. **`job_tags` schema comment still says “Reserved for phase 2”** though classification is live - comment stale.
 4. **Search provider config** (`SEARCH_PROVIDER`, Tavily/Brave/Searx) unused by app logic.
-5. **Compensation parse → DB integer overflow** — promote/classify can fail with `value "…" is out of range for type integer` (4 rejected candidates).
+5. **Compensation parse → DB integer overflow** - promote/classify can fail with `value "…" is out of range for type integer` (4 rejected candidates).
 6. **CC discovery** uses hardcoded CDX byte ranges for one crawl; second crawl fill is mostly a no-op; public CDX query abandoned due to 504s.
 7. **Weekly discover does not run `common_crawl`**; CC is CLI-only.
 8. **`mcp_submit` source** not in `DiscoverSource` TypeScript union (string still stored).
@@ -458,9 +458,9 @@ From code review + `TODO|FIXME|@deprecated|not implemented|Reserved`:
 10. **Tech filter is post-ingest classification**, so non-tech jobs are still stored and counted in raw `jobs`.
 11. **Promote limit** cron default 300 can leave large pending backlogs (currently hundreds of YC/HN/… pending).
 12. **Deprecated env**: `LLM_PROVIDER`, `MCP_DOMAIN` (prefer `LLM_PROVIDERS`, `MCP_HOST`).
-13. **YC Algolia default key** embedded in source (public frontend key; may rotate) — `sources/yc.ts`.
+13. **YC Algolia default key** embedded in source (public frontend key; may rotate) - `sources/yc.ts`.
 14. **`promote-pending.ts`** exists but is **not** wired in `package.json` scripts.
-15. Dual compose naming (`jobfit` vs `applicable`) — easy to point scripts at the wrong volume/DB.
+15. Dual compose naming (`jobfit` vs `applicable`) - easy to point scripts at the wrong volume/DB.
 
 No `TODO`/`FIXME` comments beyond the above patterns.
 
@@ -510,14 +510,14 @@ No `TODO`/`FIXME` comments beyond the above patterns.
 ### `discover:cc` flags
 
 - `--limit N` or `--limit=N` (default 2000)
-- `--dry-run` — discover + validate (cache), skip upsert/promote
-- `--promote-limit N` — optional cap on promote
+- `--dry-run` - discover + validate (cache), skip upsert/promote
+- `--promote-limit N` - optional cap on promote
 
 ---
 
 ## Suggested next-step questions (for the reviewing engineer)
 
-Not commitments — gaps the code itself surfaces:
+Not commitments - gaps the code itself surfaces:
 
 - Should weekly cron include CC or a promote-only drain of pending YC/HN?
 - Cap or soft-reject boards near 150 jobs earlier in CC validate?

@@ -3,7 +3,7 @@ import { formatNumber } from "@/lib/format";
 
 export function TopCompanies({ companies }: { companies: TopCompany[] | null }) {
   if (!companies || companies.length === 0) {
-    return <p className="font-mono text-sm text-mute">—</p>;
+    return <p className="font-mono text-sm text-mute">-</p>;
   }
 
   const max = Math.max(...companies.map((c) => c.total), 1);

@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Coastal clear — one blue family, cool surfaces, navy type */
+  /* Coastal clear - one blue family, cool surfaces, navy type */
   --paper: #f6fafc;
   --paper-2: #ffffff;
   --soft: #e8f6fb;
@@ -129,7 +129,7 @@ body {
   overflow-x: clip;
 }
 
-/* Fast CSS hero — paints before any JS / WebGL */
+/* Fast CSS hero - paints before any JS / WebGL */
 .hero-lite {
   background: var(--paper);
 }
@@ -165,7 +165,7 @@ body {
   font-family: var(--font-morrison);
 }
 
-/* soft sky wash — cool blue atmosphere */
+/* soft sky wash - cool blue atmosphere */
 .sky {
   background:
     radial-gradient(ellipse 80% 50% at 8% -8%, color-mix(in srgb, var(--mark) 22%, transparent), transparent 52%),
@@ -248,7 +248,7 @@ button:focus-visible {
   color: var(--ink);
 }
 
-/* Integration diagram — restrained, metallic motion (not brand-colored) */
+/* Integration diagram - restrained, metallic motion (not brand-colored) */
 @keyframes rail-shimmer {
   0% {
     transform: translateX(-100%);

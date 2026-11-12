@@ -127,7 +127,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                   colSpan={6}
                   className="px-3 py-10 text-center font-mono text-mute"
                 >
-                  —
+                  -
                 </td>
               </tr>
             ) : page.results.length === 0 ? (
@@ -152,14 +152,14 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                     </td>
                     <td className="px-3 py-3 text-mute">{job.company}</td>
                     <td className="hidden px-3 py-3 text-mute md:table-cell">
-                      {job.location ?? "—"}
+                      {job.location ?? "-"}
                     </td>
                     <td className="px-3 py-3">
                       <span className="rounded-full bg-mark-soft px-2 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
                         {job.eligibility
                           ? (ELIGIBILITY_LABELS[job.eligibility] ??
                             job.eligibility)
-                          : "—"}
+                          : "-"}
                       </span>
                     </td>
                     <td className="hidden max-w-xs px-3 py-3 text-mute lg:table-cell">
@@ -168,7 +168,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                           “{quote}”
                         </span>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </td>
                     <td className="px-3 py-3">

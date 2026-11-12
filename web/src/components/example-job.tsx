@@ -6,7 +6,7 @@ export function ExampleJob({ job }: { job: JobRow | null }) {
   const quote = job ? evidenceQuote(job.evidence) : null;
   const label = job?.eligibility
     ? (ELIGIBILITY_LABELS[job.eligibility] ?? job.eligibility)
-    : "—";
+    : "-";
 
   return (
     <section className="border-t border-line bg-white">
@@ -19,7 +19,7 @@ export function ExampleJob({ job }: { job: JobRow | null }) {
         </h2>
 
         {!job ? (
-          <p className="mt-8 font-mono text-sm text-mute">—</p>
+          <p className="mt-8 font-mono text-sm text-mute">-</p>
         ) : (
           <div className="mt-8 max-w-2xl rounded-2xl border border-line bg-paper p-6 sm:p-7">
             <div className="flex flex-wrap items-center gap-2">

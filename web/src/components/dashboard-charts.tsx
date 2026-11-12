@@ -10,7 +10,7 @@ const EligibilityChart = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
-        —
+        -
       </div>
     ),
   },
@@ -22,7 +22,7 @@ const HistoryChart = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
-        —
+        -
       </div>
     ),
   },

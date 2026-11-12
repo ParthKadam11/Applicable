@@ -65,7 +65,7 @@ async function main() {
       `ingest:          jobs=${result.promote.ingestedJobs} classified=${result.promote.classifiedJobs}`,
     );
   } else {
-    console.log(`promoted:        (skipped — dry-run or nothing to upsert)`);
+    console.log(`promoted:        (skipped - dry-run or nothing to upsert)`);
   }
   console.log(
     `tech_open:       before=${result.techOpenBefore} after=${result.techOpenAfter} delta=${result.techOpenAfter - result.techOpenBefore}`,

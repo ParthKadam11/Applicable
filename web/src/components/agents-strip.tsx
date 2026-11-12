@@ -31,10 +31,10 @@ const SETS: LogoItem[][] = [
   ],
 ];
 
-/** Quiet “works wherever your agents work” strip — blur-flip logo cloud. */
+/** Quiet “works wherever your agents work” strip - blur-flip logo cloud. */
 export function AgentsStrip() {
   return (
-    <section className="border-y border-line bg-soft">
+    <section className="border-t border-line bg-soft">
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-12">
         <p className="mx-auto max-w-xl text-center text-pretty text-sm text-mute sm:text-[15px]">
           One India-eligibility corpus, available through MCP wherever your

@@ -11,7 +11,7 @@ import {
 async function dbUp(): Promise<boolean> {
   try {
     await db.execute(sql`select 1`);
-    // table may not exist until migration — probe
+    // table may not exist until migration - probe
     await db.execute(sql`select 1 from daily_stats limit 0`);
     return true;
   } catch {

@@ -86,7 +86,7 @@ describe("MCP tools against live DB", () => {
 });
 
 afterAll(async () => {
-  // Don't end the shared pool here — other test files may still need it.
+  // Don't end the shared pool here - other test files may still need it.
   // Pool is process-scoped; vitest will exit cleanly.
   void pool;
 });

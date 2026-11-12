@@ -308,7 +308,7 @@ async function loadRange(
 
 /**
  * Discover ATS board slugs from Common Crawl (latest crawls via CDX index files).
- * Uses byte-range downloads from data.commoncrawl.org — the public CDX query API
+ * Uses byte-range downloads from data.commoncrawl.org - the public CDX query API
  * is too flaky for bulk wildcard discovery.
  */
 export async function discoverCommonCrawlSlugs(options?: {
@@ -356,7 +356,7 @@ export async function discoverCommonCrawlSlugs(options?: {
     }
   }
 
-  // Second crawl: only if still under limit (same known offsets often N/A — skip quietly)
+  // Second crawl: only if still under limit (same known offsets often N/A - skip quietly)
   if (limit != null && into.size < limit && crawls.length > 1) {
     console.log(
       `[discover:cc] have ${into.size}/${limit}; primary crawl ranges exhausted`,

@@ -6,11 +6,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Applicable — Can I apply from India?",
+    default: "Applicable: Can I apply from India?",
     template: "%s · Applicable",
   },
   description:
-    "Every live remote tech job, checked for whether you can actually apply from India — with the line from the posting that proves it.",
+    "Every live remote tech job, checked for whether you can actually apply from India, with the line from the posting that proves it.",
   icons: {
     icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
     apple: [{ url: "/logo.svg" }],

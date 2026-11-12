@@ -49,7 +49,7 @@ export const NON_SOFTWARE_INDUSTRY_PATTERNS: RegExp[] = [
   /\bfactory\b/i,
   /\bindustrial\s*(?:equip|machinery)\b/i,
   /\bgotion\b/i,
-  // Food / restaurants / delivery ops (not foodtech SaaS alone — need ops signals)
+  // Food / restaurants / delivery ops (not foodtech SaaS alone - need ops signals)
   /\brestaurant\b/i,
   /\bcatering\b/i,
   /\bfood\s*delivery\b/i,

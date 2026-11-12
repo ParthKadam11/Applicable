@@ -40,7 +40,7 @@ export function parseHimalayasJobs(jobs: HimalayasJob[]): DiscoveredCompany[] {
 
     byKey.set(key, {
       name,
-      // Don't invent fake domains — leave null unless we have a real URL.
+      // Don't invent fake domains - leave null unless we have a real URL.
       domain: null,
       source: "himalayas",
       evidenceUrl:

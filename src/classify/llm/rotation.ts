@@ -104,13 +104,13 @@ export class RotatingLlmProvider implements LlmProvider {
       const reset = earliestResetMs(
         this.providers.map((p) => p.name as ProviderName),
       );
-      // Don't block the queue for ages — leave job unclear.
+      // Don't block the queue for ages - leave job unclear.
       if (reset != null && reset > Date.now()) {
         console.warn(
-          `[classify:llm] no providers available (next reset ${new Date(reset).toISOString()}) — skipping LLM`,
+          `[classify:llm] no providers available (next reset ${new Date(reset).toISOString()}) - skipping LLM`,
         );
       } else {
-        console.warn(`[classify:llm] no providers available — skipping LLM`);
+        console.warn(`[classify:llm] no providers available - skipping LLM`);
       }
       throw new Error("ALL_PROVIDERS_EXHAUSTED");
     }
@@ -145,13 +145,13 @@ export class RotatingLlmProvider implements LlmProvider {
             const until = Date.now() + (wait ?? 60 * 60_000);
             markExhausted(provider.name as ProviderName, until);
             console.warn(
-              `[classify:llm] ${provider.name} daily/TPD exhausted until ${new Date(until).toISOString()} — rotating`,
+              `[classify:llm] ${provider.name} daily/TPD exhausted until ${new Date(until).toISOString()} - rotating`,
             );
             continue;
           }
           const rpmWait = Math.min(wait ?? 5_000, 15_000);
           console.warn(
-            `[classify:llm] ${provider.name} RPM — waiting ${rpmWait}ms`,
+            `[classify:llm] ${provider.name} RPM - waiting ${rpmWait}ms`,
           );
           await sleep(rpmWait);
           try {
@@ -173,12 +173,12 @@ export class RotatingLlmProvider implements LlmProvider {
         }
 
         if (isTransientProviderError(message)) {
-          // One soft retry then move on — don't loop 3 rounds.
+          // One soft retry then move on - don't loop 3 rounds.
           await sleep(500);
           continue;
         }
 
-        // Bad response from this provider — try next.
+        // Bad response from this provider - try next.
         continue;
       }
     }

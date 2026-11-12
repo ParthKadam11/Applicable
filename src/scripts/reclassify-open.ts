@@ -81,7 +81,7 @@ async function main() {
   const unclear = await findOpenUnclearJobs(db);
   const llm = createLlmProvider();
   if (!llm) {
-    console.log(`\nNo LLM providers configured — leaving ${unclear.length} unclear.`);
+    console.log(`\nNo LLM providers configured - leaving ${unclear.length} unclear.`);
     stats = await getEligibilityStats(db);
     console.log(formatEligibilityStats(stats));
     await pool.end();
@@ -113,7 +113,7 @@ async function main() {
 
   const secs = ((Date.now() - started) / 1000).toFixed(1);
   console.log(
-    `\nLLM pass done in ${secs}s — ${llmHits}/${unclear.length} resolved by LLM`,
+    `\nLLM pass done in ${secs}s - ${llmHits}/${unclear.length} resolved by LLM`,
   );
 
   stats = await getEligibilityStats(db);

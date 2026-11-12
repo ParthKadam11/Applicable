@@ -18,7 +18,7 @@ Wait until it resolves before `compose up` so Caddy can obtain a Let's Encrypt c
 
 ---
 
-## 1. Fresh Ubuntu VPS — Docker + firewall
+## 1. Fresh Ubuntu VPS - Docker + firewall
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -54,7 +54,7 @@ cp .env.example .env
 nano .env   # required: POSTGRES_PASSWORD, MCP_HOST, optional LLM_* keys
 ```
 
-Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` — compose fails without them):
+Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` - compose fails without them):
 
 | Variable | Example |
 |---|---|
@@ -78,7 +78,7 @@ grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
 
 ### Local volume naming (`jobfit` vs `applicable`)
 
-Prod compose uses `applicable_pgdata` / `applicable_*` credentials. Local `docker-compose.yml` **intentionally keeps** the Docker volume name `jobfit_pgdata` and DB user/db `jobfit` so existing local data is not orphaned. Renaming that volume in compose would attach a **new empty** volume — dump/restore first if you ever want local naming to match prod.
+Prod compose uses `applicable_pgdata` / `applicable_*` credentials. Local `docker-compose.yml` **intentionally keeps** the Docker volume name `jobfit_pgdata` and DB user/db `jobfit` so existing local data is not orphaned. Renaming that volume in compose would attach a **new empty** volume - dump/restore first if you ever want local naming to match prod.
 
 ### Migrating an existing CaniApply VPS
 
@@ -100,11 +100,11 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 What runs:
 
-1. **postgres** — volume `applicable_pgdata`, not published
-2. **migrate** — one-shot Drizzle migrations, then exits
-3. **app** — ingestion + discover workers (pg-boss)
-4. **mcp** — Streamable HTTP on `:3100` (internal)
-5. **caddy** — HTTPS termination → `mcp:3100`
+1. **postgres** - volume `applicable_pgdata`, not published
+2. **migrate** - one-shot Drizzle migrations, then exits
+3. **app** - ingestion + discover workers (pg-boss)
+4. **mcp** - Streamable HTTP on `:3100` (internal)
+5. **caddy** - HTTPS termination → `mcp:3100`
 
 Check:
 
@@ -173,7 +173,7 @@ gunzip -c /root/backups/applicable-YYYYMMDD….sql.gz \
 
 ---
 
-## 6. CI/CD (GitHub Actions) — no more manual SSH
+## 6. CI/CD (GitHub Actions) - no more manual SSH
 
 Workflows:
 
@@ -210,10 +210,10 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 | `VPS_DEPLOY_PATH` | `/opt/applicable` (optional; this is the default) |
 | `MCP_SMOKE_URL` | `https://mcp.yourdomain.com` (optional; enables post-deploy smoke) |
 
-**`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines — not the `.pub` file, not one long line, no quotes.
+**`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines - not the `.pub` file, not one long line, no quotes.
 
 ```bash
-# On the machine where you generated the key — copy this exact output into the secret:
+# On the machine where you generated the key - copy this exact output into the secret:
 cat applicable_gha_deploy
 # Must start with: -----BEGIN OPENSSH PRIVATE KEY-----
 # Must end with:   -----END OPENSSH PRIVATE KEY-----
@@ -228,7 +228,7 @@ ssh-copy-id -i applicable_gha_deploy.pub USER@VPS_HOST
 # cat applicable_gha_deploy.pub >> ~/.ssh/authorized_keys
 ```
 
-If deploy fails with `ssh: no key found` / `unable to authenticate`, the secret is wrong — delete and re-add `VPS_SSH_KEY`.
+If deploy fails with `ssh: no key found` / `unable to authenticate`, the secret is wrong - delete and re-add `VPS_SSH_KEY`.
 
 After secrets are set: push to `master` (or **Actions → Deploy → Run workflow**). Watch the Deploy job; it `git pull`s, `docker compose … up -d --build`s, waits for mcp healthy, then smokes if `MCP_SMOKE_URL` is set.
 
@@ -277,5 +277,5 @@ docker compose -f docker-compose.prod.yml down
 |---|---|
 | Caddy cert fail | DNS A record → VPS; ports 80/443 open in Contabo + ufw |
 | mcp unhealthy | `docker compose -f docker-compose.prod.yml logs mcp migrate` |
-| migrate failed | `POSTGRES_PASSWORD` special chars — prefer alphanumeric; see logs |
+| migrate failed | `POSTGRES_PASSWORD` special chars - prefer alphanumeric; see logs |
 | Empty stats | Run ingest: `docker compose -f docker-compose.prod.yml exec app node dist/scripts/ingest-once.js` |

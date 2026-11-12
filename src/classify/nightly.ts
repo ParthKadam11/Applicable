@@ -29,7 +29,7 @@ export type NightlyLlmResult = {
 
 /**
  * Open tech jobs tagged unclear that have never received an LLM classification.
- * (classifier is null/rules/cache — not llm)
+ * (classifier is null/rules/cache - not llm)
  */
 export async function findUnclearTechJobsWithoutLlm(
   db: Db,
@@ -89,7 +89,7 @@ export async function runNightlyLlmPass(
   };
 
   if (!llm) {
-    console.warn("[classify:nightly] no LLM providers configured — skipping");
+    console.warn("[classify:nightly] no LLM providers configured - skipping");
     result.skippedNoLlm = candidates.length;
     result.stoppedReason = "providers_exhausted";
     return result;
@@ -122,7 +122,7 @@ export async function runNightlyLlmPass(
         stop = true;
         result.stoppedReason = "providers_exhausted";
         console.warn(
-          "[classify:nightly] providers exhausted — stopping cleanly",
+          "[classify:nightly] providers exhausted - stopping cleanly",
         );
         return;
       }
@@ -160,7 +160,7 @@ export async function runNightlyLlmPass(
             stop = true;
             result.stoppedReason = "providers_exhausted";
             console.warn(
-              `[classify:nightly] providers unavailable (${consecutiveNoLlm} consecutive non-LLM) — stopping cleanly`,
+              `[classify:nightly] providers unavailable (${consecutiveNoLlm} consecutive non-LLM) - stopping cleanly`,
             );
             return;
           }
@@ -171,7 +171,7 @@ export async function runNightlyLlmPass(
           stop = true;
           result.stoppedReason = "providers_exhausted";
           console.warn(
-            "[classify:nightly] providers exhausted — stopping cleanly",
+            "[classify:nightly] providers exhausted - stopping cleanly",
           );
           return;
         }
@@ -216,7 +216,7 @@ export async function runNightlyLlmPass(
   return result;
 }
 
-/** Count open tech unclear jobs (any classifier) — for logging deltas. */
+/** Count open tech unclear jobs (any classifier) - for logging deltas. */
 export async function countOpenUnclearTech(db: Db): Promise<number> {
   const [{ n } = { n: 0 }] = await db
     .select({ n: sql<number>`count(*)::int` })

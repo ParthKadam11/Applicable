@@ -1,10 +1,10 @@
 export function formatNumber(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   return new Intl.NumberFormat("en-IN").format(Math.round(n));
 }
 
 export function formatPercent(n: number | null | undefined, digits = 1): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   return `${n.toFixed(digits)}%`;
 }
 
@@ -27,9 +27,9 @@ export function applicablePct(
 }
 
 export function formatIst(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return new Intl.DateTimeFormat("en-IN", {
     timeZone: "Asia/Kolkata",
     dateStyle: "medium",

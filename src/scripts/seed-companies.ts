@@ -21,7 +21,7 @@ const SeedFileSchema = z.object({
 });
 
 /**
- * Manual overrides only — upserts yaml companies.
+ * Manual overrides only - upserts yaml companies.
  * Does NOT deactivate discovered companies missing from yaml.
  */
 async function main() {
@@ -30,7 +30,7 @@ async function main() {
   const { companies: seeds } = SeedFileSchema.parse(raw);
 
   if (seeds.length === 0) {
-    console.log("No companies in companies.yaml — nothing to seed.");
+    console.log("No companies in companies.yaml - nothing to seed.");
     await pool.end();
     return;
   }

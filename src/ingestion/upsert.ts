@@ -183,7 +183,7 @@ async function closeMissingJobs(
   return closed.length;
 }
 
-/** Helper for tests — fetch open job external ids for a company. */
+/** Helper for tests - fetch open job external ids for a company. */
 export async function listOpenExternalIds(
   db: Db,
   companyId: string,

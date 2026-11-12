@@ -1,7 +1,7 @@
 {
   "name": "applicable",
   "version": "0.1.0",
-  "description": "Applicable — collect startup job postings, tag India remote eligibility, expose via MCP",
+  "description": "Applicable - collect startup job postings, tag India remote eligibility, expose via MCP",
   "type": "module",
   "engines": {
     "node": ">=20"

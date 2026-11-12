@@ -18,7 +18,7 @@ function parseLimit(argv: string[]): number | undefined {
     }
     const m = /^--limit=(\d+)$/.exec(a);
     if (m) return Number(m[1]);
-    // Bare number — npm often strips `--limit` (`npm run … -- 100`)
+    // Bare number - npm often strips `--limit` (`npm run … -- 100`)
     if (/^\d+$/.test(a)) {
       const n = Number(a);
       if (n > 0) return Math.floor(n);

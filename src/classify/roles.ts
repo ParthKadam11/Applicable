@@ -18,7 +18,7 @@ export const TECH_ROLE_FAMILIES: ReadonlySet<RoleFamily> = new Set([
 ]);
 
 export function isTechRole(roleFamily: string | null | undefined): boolean {
-  if (!roleFamily) return true; // untagged — treat as eligible until classified
+  if (!roleFamily) return true; // untagged - treat as eligible until classified
   return roleFamily !== "non_tech" && TECH_ROLE_FAMILIES.has(roleFamily as RoleFamily);
 }
 

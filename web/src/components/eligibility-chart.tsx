@@ -34,7 +34,7 @@ export function EligibilityChart({ byEligibility }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
-        —
+        -
       </div>
     );
   }

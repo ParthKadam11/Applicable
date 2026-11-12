@@ -187,7 +187,7 @@ export const atsBoardChecks = pgTable(
   ],
 );
 
-/** One row per calendar day (Asia/Kolkata) — landing page + MCP history. */
+/** One row per calendar day (Asia/Kolkata) - landing page + MCP history. */
 export const dailyStats = pgTable("daily_stats", {
   date: date("date").primaryKey(),
   companiesActive: integer("companies_active").notNull(),
@@ -205,7 +205,7 @@ export const dailyStats = pgTable("daily_stats", {
   eligibilityUnclear: integer("eligibility_unclear").notNull().default(0),
   newJobs24h: integer("new_jobs_24h").notNull().default(0),
   closedJobs24h: integer("closed_jobs_24h").notNull().default(0),
-  /** True for one-shot backfill rows — charts should skip these. */
+  /** True for one-shot backfill rows - charts should skip these. */
   isBackfill: boolean("is_backfill").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { MCP_URL } from "@/lib/constants";
 import {
@@ -11,9 +11,9 @@ import {
   vscodeInstallHref,
   windsurfMcpHref,
 } from "@/lib/mcp-install";
+import { AnimatedBeam } from "@/components/ui/animated-beam";
+import { McpJsonPanel } from "@/components/mcp-json-panel";
 import { AgentLogo } from "./agent-logo";
-import { AgentsStrip } from "./agents-strip";
-import { CopyButton } from "./copy-button";
 import { BrandLogo } from "./brand-logo";
 
 type Cta =
@@ -26,7 +26,7 @@ const CONNECTORS = [
     id: "claude",
     label: "Claude",
     headline: "Add Applicable to Claude",
-    body: "One click opens Claude’s connector dialog with our URL filled in. Ask in plain English — get live roles with the quote that proves you can apply from India.",
+    body: "One click opens Claude’s connector dialog with our URL filled in. Ask in plain English and get live roles with the quote that proves you can apply from India.",
     tag: "1-click",
     cta: {
       kind: "link",
@@ -161,13 +161,63 @@ const CONNECTORS = [
 
 type ConnectorId = (typeof CONNECTORS)[number]["id"];
 
-function Rail() {
+function IntegrationBeams({
+  agentId,
+  agentLabel,
+}: {
+  agentId: string;
+  agentLabel: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fromRef = useRef<HTMLDivElement>(null);
+  const toRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="relative mx-1 h-px w-10 shrink-0 sm:w-14" aria-hidden>
-      <div className="absolute inset-0 bg-line" />
-      <div className="absolute inset-y-0 -top-px h-[2px] w-full overflow-hidden">
-        <div className="rail-pulse h-full w-[40%] bg-gradient-to-r from-transparent via-white to-transparent" />
+    <div
+      ref={containerRef}
+      className="relative flex w-full max-w-[22rem] items-center justify-center gap-10 sm:gap-14"
+    >
+      <div
+        ref={fromRef}
+        className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16"
+      >
+        <BrandLogo fill />
       </div>
+
+      <div className="relative z-[1]">
+        <span className="logo-orbit" aria-hidden />
+        <div
+          ref={toRef}
+          className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16"
+        >
+          <AgentLogo id={agentId} label={agentLabel} fill />
+        </div>
+      </div>
+
+      <AnimatedBeam
+        containerRef={containerRef}
+        fromRef={fromRef}
+        toRef={toRef}
+        curvature={-18}
+        duration={3.8}
+        pathWidth={2}
+        pathOpacity={0.45}
+        gradientStartColor="#4cc9f0"
+        gradientStopColor="#0f9bc8"
+      />
+      <AnimatedBeam
+        containerRef={containerRef}
+        fromRef={fromRef}
+        toRef={toRef}
+        curvature={18}
+        reverse
+        duration={3.8}
+        delay={1.4}
+        pathWidth={2}
+        pathOpacity={0.28}
+        gradientStartColor="#0f9bc8"
+        gradientStopColor="#4cc9f0"
+      />
     </div>
   );
 }
@@ -206,7 +256,6 @@ function ConnectCta({ cta }: { cta: Cta }) {
 
 export function McpSetup() {
   const [active, setActive] = useState<ConnectorId>("cursor");
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const c = CONNECTORS.find((x) => x.id === active) ?? CONNECTORS[2]!;
 
   const snippet = `{
@@ -218,11 +267,8 @@ export function McpSetup() {
 }`;
 
   return (
-    <>
-      <AgentsStrip />
-
-      <section id="mcp" className="cv-auto scroll-mt-24 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-20">
+    <section id="mcp" className="cv-auto scroll-mt-24 bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-20">
           <div className="max-w-2xl">
             <p className="text-[11px] uppercase text-mute">Integrations</p>
             <h2 className="mt-3 text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
@@ -247,10 +293,7 @@ export function McpSetup() {
                   type="button"
                   role="tab"
                   aria-selected={on}
-                  onClick={() => {
-                    setActive(item.id);
-                    setShowAdvanced(false);
-                  }}
+                  onClick={() => setActive(item.id)}
                   className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition ${
                     on
                       ? "border-mark bg-mark text-ink shadow-[0_4px_14px_color-mix(in_srgb,var(--mark)_35%,transparent)]"
@@ -291,18 +334,7 @@ export function McpSetup() {
             </div>
 
             <div className="flex flex-col items-center gap-6 sm:gap-8">
-              <div className="flex items-center justify-center">
-                <div className="size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16">
-                  <BrandLogo fill />
-                </div>
-                <Rail />
-                <div className="relative">
-                  <span className="logo-orbit" aria-hidden />
-                  <div className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16">
-                    <AgentLogo id={c.id} label={c.label} fill />
-                  </div>
-                </div>
-              </div>
+              <IntegrationBeams agentId={c.id} agentLabel={c.label} />
               <p className="max-w-xs px-2 text-center text-pretty text-sm text-mute">
                 Applicable ↔ {c.label}
                 <span className="mt-1 block text-[10px] uppercase tracking-wide text-[#8aa0b4]">
@@ -325,30 +357,8 @@ export function McpSetup() {
             ))}
           </ol>
 
-          <div className="mt-10">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="font-mono text-[11px] uppercase text-mute transition hover:text-ink"
-            >
-              {showAdvanced ? "Hide advanced config" : "Advanced · JSON config"}
-            </button>
-            {showAdvanced ? (
-              <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-soft">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-4 py-3">
-                  <p className="font-mono text-[10px] uppercase text-mute">
-                    mcp.json · {MCP_URL}
-                  </p>
-                  <CopyButton text={snippet} label="Copy" />
-                </div>
-                <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-ink">
-                  <code>{snippet}</code>
-                </pre>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-    </>
+          <McpJsonPanel snippet={snippet} />
+      </div>
+    </section>
   );
 }

@@ -4,7 +4,7 @@ Landing + dashboard for [applicable.parthkadam.tech](https://applicable.parthkad
 
 - Next.js 15 App Router + Tailwind CSS v4
 - Data only from `NEXT_PUBLIC_API_BASE` (`/api/stats`, `/api/stats/history`, `/api/jobs`, `/api/companies/top`)
-- Revalidate every 5 minutes; failed fetches render `—`
+- Revalidate every 5 minutes; failed fetches render `-`
 
 ## Develop
 
@@ -16,7 +16,7 @@ npm run dev                  # http://localhost:3000
 
 Point `NEXT_PUBLIC_API_BASE` at a local MCP (`http://127.0.0.1:3100`) if the prod nginx hasn’t proxied `/api/` yet.
 
-## Deploy (Vercel — recommended)
+## Deploy (Vercel - recommended)
 
 1. Import this repo in Vercel; set **Root Directory** to `web`.
 2. Env: `NEXT_PUBLIC_API_BASE=https://mcp.parthkadam.tech`

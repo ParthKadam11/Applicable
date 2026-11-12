@@ -35,7 +35,7 @@ async function main() {
     const detail = await getJob(db, { id: firstId });
     console.log(trim(detail, 2000));
   } else {
-    console.log("(no search hits — skipped get_job)");
+    console.log("(no search hits - skipped get_job)");
   }
 
   console.log("\n=== list_companies ===");

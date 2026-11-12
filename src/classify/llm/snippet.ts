@@ -6,7 +6,7 @@ const SNIPPET_KEYWORDS =
 const MAX_CHARS = 1_500;
 
 /**
- * Tiny eligibility snippet for LLM — never the full description.
+ * Tiny eligibility snippet for LLM - never the full description.
  * title + location_raw + matching sentences, capped ~1500 chars.
  */
 export function buildEligibilitySnippet(input: {

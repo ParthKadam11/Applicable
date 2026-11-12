@@ -16,7 +16,7 @@ async function main() {
   const count = await enqueueActiveCompanies(boss);
 
   if (count === 0) {
-    console.log("No active companies — seed first with npm run db:seed");
+    console.log("No active companies - seed first with npm run db:seed");
     await boss.stop({ graceful: true, timeout: 5_000 });
     await pool.end();
     return;

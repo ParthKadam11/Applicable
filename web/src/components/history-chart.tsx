@@ -27,7 +27,7 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
   if (rows.length === 0) {
     return (
       <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
-        —
+        -
       </div>
     );
   }

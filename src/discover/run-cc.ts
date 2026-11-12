@@ -52,7 +52,7 @@ export async function runCommonCrawlDiscovery(
   const hits = await discoverCommonCrawlSlugs({
     crawlCount: 2,
     limit,
-    // 100 results/page × 100 pages × 4 patterns × 2 crawls — stop early at limit
+    // 100 results/page × 100 pages × 4 patterns × 2 crawls - stop early at limit
     maxPagesPerPattern: 100,
   });
 
@@ -87,7 +87,7 @@ export async function runCommonCrawlDiscovery(
     });
   } else if (dryRun) {
     console.log(
-      `[discover:cc] dry-run — skipping upsert/promote (${valid.length} would qualify)`,
+      `[discover:cc] dry-run - skipping upsert/promote (${valid.length} would qualify)`,
     );
   }
 
@@ -114,7 +114,7 @@ export function formatCcRejectTop(
   n = 10,
 ): Array<{ reason: string; count: number }> {
   const map: Record<string, number> = { ...stats.byRejectReason };
-  // Promote rejects aren't in validate stats — surface from pending rejected if needed by caller.
+  // Promote rejects aren't in validate stats - surface from pending rejected if needed by caller.
   void promote;
   return Object.entries(map)
     .map(([reason, count]) => ({ reason, count }))

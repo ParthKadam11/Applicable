@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { LINKS } from "@/lib/constants";
 
-/** Light glass — no SVG displacement filter (that costs a lot on phones). */
+/** Light glass - no SVG displacement filter (that costs a lot on phones). */
 function GlassLayers() {
   return (
     <>

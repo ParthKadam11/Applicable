@@ -61,7 +61,7 @@ export async function fetchAtsCompanyName(
       const n = data?.companyName ?? data?.name;
       return typeof n === "string" && n.trim() ? n.trim() : null;
     }
-    // Lever public JSON is postings-only — no reliable company name field.
+    // Lever public JSON is postings-only - no reliable company name field.
     return null;
   } catch (err) {
     if (err instanceof HttpError && (err.status === 404 || err.status === 400)) {

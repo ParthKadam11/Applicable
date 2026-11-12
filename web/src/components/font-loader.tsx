@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** Non-blocking Morrison load — never stalls first paint on 3G. */
+/** Non-blocking Morrison load - never stalls first paint on 3G. */
 export function FontLoader() {
   useEffect(() => {
     const id = "morrison-font";

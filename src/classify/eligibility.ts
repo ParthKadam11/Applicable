@@ -2,7 +2,7 @@ import { stripHtml } from "../utils/html.js";
 import type { IndiaEligibility, RemoteScope } from "./types.js";
 import { sentenceMatching, splitSentences } from "./text.js";
 
-/** Phrases that look "global" but are about the company/customers/team — NOT applicant eligibility. */
+/** Phrases that look "global" but are about the company/customers/team - NOT applicant eligibility. */
 export const ELIGIBILITY_NEGATIVE_PHRASES: RegExp[] = [
   /\bworldwide team\b/i,
   /\bglobal team\b/i,
@@ -61,7 +61,7 @@ const APPLY_CONTEXT: RegExp[] = [
 const TITLE_COUNTRY_CODE =
   /\(\s*(US|USA|UK|AU|NZ|SG|CA|EU|DE|NL|IE|FR|ES|IT|CH|SE|NO|DK|FI|BE|AT|PT|PL|IN)\s*\)/i;
 
-/** Title segments like "| Germany |", "| UK |", "— Spain —". */
+/** Title segments like "| Germany |", "| UK |", "- Spain -". */
 const TITLE_GEO_PIPE =
   /(?:^|[\|\u2013\u2014\-\/:,])\s*(US|USA|UK|U\.S\.A?\.?|United States|United Kingdom|Ireland|Germany|France|Spain|Italy|Netherlands|Canada|Australia|New Zealand|Singapore|Japan|Brazil|Mexico|Sweden|Norway|Denmark|Finland|Belgium|Austria|Switzerland|Portugal|Poland|EMEA|APAC|LATAM|Europe|Americas)\s*(?:[\|\u2013\u2014\-\/:,]|$)/i;
 
@@ -198,7 +198,7 @@ const LOCKED_LOCATION = SPECIFIC_GEO;
 
 /**
  * Hire-location open phrases that MAY override a specific geo lock.
- * Must be about who can be hired / where candidates may be based — not perks.
+ * Must be about who can be hired / where candidates may be based - not perks.
  */
 const STRONG_HIRE_ANYWHERE: RegExp[] = [
   /\bwe hire (?:in |from )?(?:any|all) countr/i,
@@ -217,7 +217,7 @@ const STRONG_HIRE_ANYWHERE: RegExp[] = [
 ];
 
 /**
- * Weaker "anywhere/worldwide" phrases — valid open evidence only when there is
+ * Weaker "anywhere/worldwide" phrases - valid open evidence only when there is
  * NO specific geo in location/title, and never when they look like perks.
  */
 const WEAK_OPEN_ANYWHERE: RegExp[] = [
@@ -404,7 +404,7 @@ function isAcceptableOpenEvidence(sentence: string): boolean {
   if (isNegativeEligibilitySentence(sentence)) return false;
   if (isPerkAnywherePhrase(sentence)) return false;
   if (isCountryScopedAnywhere(sentence)) return false;
-  // "based anywhere in the USA" / similar — specific geo + anywhere is a lock.
+  // "based anywhere in the USA" / similar - specific geo + anywhere is a lock.
   if (
     hasSpecificGeo(sentence) &&
     /\b(?:anywhere|worldwide)\b/i.test(sentence) &&
@@ -433,12 +433,12 @@ function findMatchingOpenSentence(
   return null;
 }
 
-/** Strong hire-anywhere — only these may override a specific geo lock. */
+/** Strong hire-anywhere - only these may override a specific geo lock. */
 function findStrongHireAnywhereSentence(corpus: string): string | null {
   return findMatchingOpenSentence(corpus, STRONG_HIRE_ANYWHERE);
 }
 
-/** Weak anywhere/worldwide — never overrides geo; OK when location is bare Remote. */
+/** Weak anywhere/worldwide - never overrides geo; OK when location is bare Remote. */
 function findWeakOpenAnywhereSentence(corpus: string): string | null {
   return findMatchingOpenSentence(corpus, WEAK_OPEN_ANYWHERE);
 }
@@ -590,7 +590,7 @@ export function classifyIndiaEligibility(input: {
   const fromLoc = classifyLocationRaw(input.locationRaw);
   const titleGeo = findTitleGeoEvidence(title);
 
-  // India / unclear from location alone — decisive.
+  // India / unclear from location alone - decisive.
   // Location "open" (Anywhere/Global) is NOT decisive if the title names a geo.
   if (
     fromLoc &&
@@ -729,7 +729,7 @@ export function classifyIndiaEligibility(input: {
     };
   }
 
-  // Generic worldwide/global/international — only with hiring-location context.
+  // Generic worldwide/global/international - only with hiring-location context.
   const generic = findGenericOpenWithHiringContext(corpus);
   if (
     generic &&

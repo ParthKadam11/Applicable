@@ -119,13 +119,13 @@ export function guardEvidence(
     }
   }
 
-  // compensation has no required quote in schema — leave as-is if present
+  // compensation has no required quote in schema - leave as-is if present
   // (parsed from text, so numbers aren't "evidence quotes")
 
   if (rejections.length > 0) {
     for (const r of rejections) {
       console.warn(
-        `[classify:guard] rejected ${r.field}: ${r.reason} — "${r.evidence.slice(0, 120)}"`,
+        `[classify:guard] rejected ${r.field}: ${r.reason} - "${r.evidence.slice(0, 120)}"`,
       );
     }
   }

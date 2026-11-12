@@ -72,7 +72,7 @@ export async function detectAtsByGuess(
               : `https://jobs.lever.co/${slug}`;
         return { ats, atsSlug: slug, url, jobCount: n };
       } catch (err) {
-        // Transient errors — skip this pair, keep going.
+        // Transient errors - skip this pair, keep going.
         console.warn(
           `[discover:probe] ${ats}/${slug}:`,
           err instanceof Error ? err.message.slice(0, 120) : err,

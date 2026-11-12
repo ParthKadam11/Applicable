@@ -34,7 +34,7 @@ export function vscodeInstallHref(name = SERVER): string {
   return `https://vscode.dev/redirect/mcp/install?name=${encodeURIComponent(name)}&config=${config}`;
 }
 
-/** ChatGPT / Codex — Plugins page (no official prefill deeplink). */
+/** ChatGPT / Codex - Plugins page (no official prefill deeplink). */
 export function chatgptPluginsHref(): string {
   return "https://chatgpt.com/plugins";
 }

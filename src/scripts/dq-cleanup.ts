@@ -156,11 +156,11 @@ async function main() {
 
   console.log("\n=== deactivated (all) ===");
   for (const d of deactivated) {
-    console.log(`  ${d.name}  [${d.ats}/${d.slug}]  — ${d.reason}`);
+    console.log(`  ${d.name}  [${d.ats}/${d.slug}]  - ${d.reason}`);
   }
   console.log("\n=== deactivated (20 examples) ===");
   for (const d of deactivated.slice(0, 20)) {
-    console.log(`  ${d.name}  — ${d.reason}`);
+    console.log(`  ${d.name}  - ${d.reason}`);
   }
 
   const requeued = await requeueRejects();
@@ -201,7 +201,7 @@ async function main() {
 
   console.log("\n=== eligibility (tech open) ===");
   for (const [k, v] of Object.entries(after.byClassifier ?? {})) {
-    // getEligibilityStats doesn't expose byEligibility directly in a simple map —
+    // getEligibilityStats doesn't expose byEligibility directly in a simple map -
     // print jobsScanned / open / india* from the stats object
     void k;
     void v;

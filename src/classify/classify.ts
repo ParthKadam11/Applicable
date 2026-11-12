@@ -64,7 +64,7 @@ function sleep(ms: number): Promise<void> {
 /**
  * Call LLM until success, provider exhaustion, or non-retryable failure.
  * On daily 429: rotation marks provider exhausted and moves on.
- * If all providers exhausted: leave rules (unclear) — do not fail the job.
+ * If all providers exhausted: leave rules (unclear) - do not fail the job.
  */
 async function callLlmWithRetry(
   provider: LlmProvider,
@@ -105,7 +105,7 @@ async function callLlmWithRetry(
 
       if (/ALL_PROVIDERS_EXHAUSTED/i.test(message)) {
         console.warn(
-          `[classify:llm] all free providers exhausted — keeping rules (unclear)`,
+          `[classify:llm] all free providers exhausted - keeping rules (unclear)`,
         );
         return null;
       }
@@ -116,7 +116,7 @@ async function callLlmWithRetry(
           retryAfterMsFromError(message) ??
           Math.min(60_000, 5_000 * Math.min(attempt, 6));
         console.warn(
-          `[classify:llm] rate limited — waiting ${wait}ms (will not drop)`,
+          `[classify:llm] rate limited - waiting ${wait}ms (will not drop)`,
         );
         await sleep(wait);
         continue;
@@ -231,7 +231,7 @@ export async function classifyJobContent(
           model = llmResult.model;
         } else {
           console.log(
-            `[classify] skip llm merge: invalid/exhausted — keeping rules`,
+            `[classify] skip llm merge: invalid/exhausted - keeping rules`,
           );
         }
       }

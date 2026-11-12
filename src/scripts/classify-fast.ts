@@ -7,7 +7,7 @@ import {
 import { db, pool } from "../db/client.js";
 
 /**
- * Rules-only classify — no LLM, no pg-boss. Finishes remaining jobs in seconds.
+ * Rules-only classify - no LLM, no pg-boss. Finishes remaining jobs in seconds.
  * Usage: npm run classify:fast
  */
 async function main() {

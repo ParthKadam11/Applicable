@@ -15,7 +15,7 @@
 	}
 
 	handle {
-		respond "Applicable MCP — POST /mcp  GET /health  GET /api/*" 200
+		respond "Applicable MCP - POST /mcp  GET /health  GET /api/*" 200
 	}
 
 	header {

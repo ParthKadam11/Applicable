@@ -109,7 +109,7 @@ DATABASE_URL=postgres://jobfit:jobfit@127.0.0.1:5435/jobfit npm run test:integra
 ## Classification
 
 - Rules first (`src/classify/rules.ts`): india eligibility, interview style,
-  contractor/EOR, compensation, seniority, role family — each with evidence quotes.
+  contractor/EOR, compensation, seniority, role family - each with evidence quotes.
 - Bare `"Remote"` is never `india_eligibility=open`.
 - Non-tech titles are skipped at ingest (not stored); closed-job detection still
   uses the full board ID set.
