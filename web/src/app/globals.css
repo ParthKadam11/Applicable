@@ -5,36 +5,40 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --paper: #f5f9fc;
+  /* Coastal clear — one blue family, cool surfaces, navy type */
+  --paper: #f6fafc;
   --paper-2: #ffffff;
-  --ink: #06203a;
-  --mute: #5a7188;
-  --line: #d0e4f4;
+  --soft: #e8f6fb;
+  --ink: #0c2438;
+  --mute: #5a7388;
+  --line: #cde6f0;
   --mark: #4cc9f0;
-  --mark-deep: #1aa3d4;
-  --sun: #ffc43a;
-  --sun-soft: #fff3c4;
+  --mark-deep: #0f9bc8;
+  --mark-soft: #e5f6fc;
+  --sun: #f0b429;
+  --sun-soft: #fff4d6;
   --panel: #ffffff;
+  --danger: #e86a6a;
   --font-morrison: "Morrison", "Libre Franklin", ui-sans-serif, system-ui,
     sans-serif;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-2);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-2);
+  --popover-foreground: var(--ink);
+  --primary: var(--mark);
+  --primary-foreground: var(--ink);
+  --secondary: var(--soft);
+  --secondary-foreground: var(--ink);
+  --muted: var(--soft);
+  --muted-foreground: var(--mute);
+  --accent: var(--mark-soft);
+  --accent-foreground: var(--ink);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--mark);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -54,14 +58,17 @@
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
+  --color-soft: var(--soft);
   --color-ink: var(--ink);
   --color-mute: var(--mute);
   --color-line: var(--line);
   --color-mark: var(--mark);
   --color-mark-deep: var(--mark-deep);
+  --color-mark-soft: var(--mark-soft);
   --color-sun: var(--sun);
   --color-sun-soft: var(--sun-soft);
   --color-panel: var(--panel);
+  --color-danger: var(--danger);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-morrison);
@@ -128,12 +135,12 @@ body {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
-/* soft sky wash — bright, not beige */
+/* soft sky wash — cool blue atmosphere */
 .sky {
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76, 201, 240, 0.22), transparent 50%),
-    radial-gradient(ellipse 70% 45% at 95% 0%, rgba(255, 196, 58, 0.14), transparent 45%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(76, 201, 240, 0.16), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 8% -8%, color-mix(in srgb, var(--mark) 22%, transparent), transparent 52%),
+    radial-gradient(ellipse 65% 40% at 100% 0%, color-mix(in srgb, var(--sun) 12%, transparent), transparent 48%),
+    radial-gradient(ellipse 55% 35% at 50% 100%, color-mix(in srgb, var(--mark) 14%, transparent), transparent 50%),
     var(--paper);
 }
 
@@ -145,15 +152,15 @@ body {
   padding: 0 20px;
   border-radius: 999px;
   background: var(--mark);
-  color: #06203a;
+  color: var(--ink);
   font-family: var(--font-morrison);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  box-shadow: 0 8px 20px rgba(76, 201, 240, 0.32);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--mark) 35%, transparent);
   transition: transform 160ms ease-out, background-color 160ms ease-out,
-    box-shadow 160ms ease-out;
+    box-shadow 160ms ease-out, color 160ms ease-out;
 }
 
 .btn-ghost {
@@ -179,11 +186,11 @@ body {
   .btn-ink:hover {
     background: var(--mark-deep);
     color: #fff;
-    box-shadow: 0 10px 24px rgba(26, 163, 212, 0.34);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--mark-deep) 38%, transparent);
   }
   .btn-ghost:hover {
     border-color: var(--mark);
-    background: #eaf4ff;
+    background: var(--mark-soft);
   }
   .btn-ink:active,
   .btn-ghost:active {
@@ -198,7 +205,7 @@ button:focus-visible {
 }
 
 ::selection {
-  background: rgba(76, 201, 240, 0.28);
+  background: color-mix(in srgb, var(--mark) 30%, transparent);
   color: var(--ink);
 }
 

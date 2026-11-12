@@ -23,7 +23,7 @@ export function ExampleJob({ job }: { job: JobRow | null }) {
         ) : (
           <div className="mt-8 max-w-2xl rounded-2xl border border-line bg-paper p-6 sm:p-7">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[#eaf4ff] px-2.5 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
+              <span className="rounded-full bg-mark-soft px-2.5 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
                 {label}
               </span>
               {job.location ? (

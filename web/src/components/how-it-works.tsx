@@ -3,7 +3,7 @@ const STEPS = [
     n: "01",
     title: "Collect",
     body: "Public boards on Greenhouse, Lever, Ashby — open tech roles kept current.",
-    tint: "bg-[#eaf4ff]",
+    tint: "bg-mark-soft",
   },
   {
     n: "02",

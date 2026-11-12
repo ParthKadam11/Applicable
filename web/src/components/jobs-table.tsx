@@ -155,7 +155,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                       {job.location ?? "—"}
                     </td>
                     <td className="px-3 py-3">
-                      <span className="rounded-full bg-[#eaf4ff] px-2 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
+                      <span className="rounded-full bg-mark-soft px-2 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
                         {job.eligibility
                           ? (ELIGIBILITY_LABELS[job.eligibility] ??
                             job.eligibility)

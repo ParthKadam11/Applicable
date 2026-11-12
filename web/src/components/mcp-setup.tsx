@@ -164,7 +164,7 @@ type ConnectorId = (typeof CONNECTORS)[number]["id"];
 function Rail() {
   return (
     <div className="relative mx-1 h-px w-10 shrink-0 sm:w-14" aria-hidden>
-      <div className="absolute inset-0 bg-[#d5e2ec]" />
+      <div className="absolute inset-0 bg-line" />
       <div className="absolute inset-y-0 -top-px h-[2px] w-full overflow-hidden">
         <div className="rail-pulse h-full w-[40%] bg-gradient-to-r from-transparent via-white to-transparent" />
       </div>
@@ -175,7 +175,7 @@ function Rail() {
 function ConnectCta({ cta }: { cta: Cta }) {
   const [copied, setCopied] = useState(false);
   const className =
-    "inline-flex min-h-11 items-center justify-center rounded-full bg-mark px-6 text-sm font-semibold text-ink shadow-[0_8px_20px_rgba(76,201,240,0.32)] transition hover:bg-mark-deep hover:text-white";
+    "btn-ink";
 
   if (cta.kind === "link") {
     return (
@@ -255,8 +255,8 @@ export function McpSetup() {
                   }}
                   className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition ${
                     on
-                      ? "border-mark bg-mark text-ink shadow-[0_4px_14px_rgba(76,201,240,0.35)]"
-                      : "border-line bg-white text-mute hover:border-mark hover:text-ink"
+                      ? "border-mark bg-mark text-ink shadow-[0_4px_14px_color-mix(in_srgb,var(--mark)_35%,transparent)]"
+                      : "border-line bg-white text-mute hover:border-mark hover:bg-mark-soft hover:text-ink"
                   }`}
                 >
                   <span className="overflow-hidden rounded-md">
@@ -274,7 +274,7 @@ export function McpSetup() {
                 <span className="overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5">
                   <AgentLogo id={c.id} label={c.label} size="md" />
                 </span>
-                <span className="rounded-full bg-[#f0f4f8] px-2.5 py-0.5 font-mono text-[10px] uppercase text-mute">
+                <span className="rounded-full bg-mark-soft px-2.5 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
                   {c.tag}
                 </span>
               </div>
@@ -288,7 +288,7 @@ export function McpSetup() {
                 <ConnectCta cta={c.cta} />
                 <Link
                   href="/dashboard"
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-sm font-semibold text-ink transition hover:border-mark hover:bg-[#eaf4ff]"
+                  className="btn-ghost"
                 >
                   Open dashboard
                 </Link>
@@ -339,7 +339,7 @@ export function McpSetup() {
               {showAdvanced ? "Hide advanced config" : "Advanced · JSON config"}
             </button>
             {showAdvanced ? (
-              <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-[#f7fafc]">
+              <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-4 py-3">
                   <p className="font-mono text-[10px] uppercase text-mute">
                     mcp.json · {MCP_URL}

@@ -21,10 +21,11 @@ export const ELIGIBILITY_LABELS: Record<string, string> = {
   unclear: "Unclear",
 };
 
+/** Semantic colors — same blue family for “good”, warm/cool contrast for rest */
 export const ELIGIBILITY_COLORS: Record<string, string> = {
   open: "#4cc9f0",
-  india_remote: "#1aa3d4",
-  india_onsite: "#ffc43a",
-  region_locked: "#ff6b6b",
-  unclear: "#8aa0b4",
+  india_remote: "#3d8fd4",
+  india_onsite: "#f0b429",
+  region_locked: "#e86a6a",
+  unclear: "#8fa3b5",
 };
