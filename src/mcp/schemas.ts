@@ -64,7 +64,7 @@ export const ListCompaniesInputSchema = z.object({
     .optional()
     .describe("Filter by company name (case-insensitive substring)"),
   ats: z
-    .enum(["ashby", "greenhouse", "lever", "workable", "recruitee", "personio"])
+    .enum(["ashby", "greenhouse", "lever"])
     .optional()
     .describe("Filter by ATS provider"),
   limit: z
@@ -76,7 +76,19 @@ export const ListCompaniesInputSchema = z.object({
     .describe("Max companies to return (default 25)"),
 });
 
-export const StatsInputSchema = z.object({}).default({});
+export const StatsInputObjectSchema = z.object({
+  history: z
+    .number()
+    .int()
+    .min(1)
+    .max(365)
+    .optional()
+    .describe(
+      "If set, include up to this many days of daily_stats history (most recent first)",
+    ),
+});
+
+export const StatsInputSchema = StatsInputObjectSchema.default({});
 
 export const SubmitCompanyInputSchema = z.object({
   name: z.string().min(1).max(200).describe("Company display name"),

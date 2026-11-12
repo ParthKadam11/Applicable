@@ -7,12 +7,16 @@ import {
   type ClassifyJobPayload,
 } from "./enqueue.js";
 import { createLlmProvider } from "./llm/index.js";
+import { runNightlyLlmPass } from "./nightly.js";
 import { TokenBucket } from "./rate-limit.js";
 
 export { CLASSIFY_QUEUE } from "./enqueue.js";
 
+export const CLASSIFY_UNCLEAR_NIGHTLY_QUEUE = "classify-unclear-nightly";
+
 export async function registerClassifyWorkers(boss: PgBoss): Promise<void> {
   await boss.createQueue(CLASSIFY_QUEUE);
+  await boss.createQueue(CLASSIFY_UNCLEAR_NIGHTLY_QUEUE);
 
   const rateLimiter = new TokenBucket(config.LLM_RPM);
   const llm = createLlmProvider();
@@ -39,7 +43,30 @@ export async function registerClassifyWorkers(boss: PgBoss): Promise<void> {
     );
   }
 
+  await boss.work(CLASSIFY_UNCLEAR_NIGHTLY_QUEUE, async () => {
+    console.log("[classify:nightly] cron fired");
+    const result = await runNightlyLlmPass(db, {
+      limit: config.CLASSIFY_UNCLEAR_BATCH,
+    });
+    console.log(
+      `[classify:nightly] moved_out_of_unclear=${result.movedOutOfUnclear} ` +
+        `attempted=${result.attempted} stopped=${result.stoppedReason}`,
+    );
+  });
+
   console.log(
     `[classify] ${config.CLASSIFY_CONCURRENCY} workers registered (LLM RPM=${config.LLM_RPM})`,
+  );
+}
+
+export async function scheduleClassifyUnclearCron(boss: PgBoss): Promise<void> {
+  await boss.schedule(
+    CLASSIFY_UNCLEAR_NIGHTLY_QUEUE,
+    config.CLASSIFY_UNCLEAR_CRON,
+    {},
+    { tz: config.CLASSIFY_UNCLEAR_TZ },
+  );
+  console.log(
+    `[classify:nightly] cron scheduled: ${config.CLASSIFY_UNCLEAR_CRON} (${config.CLASSIFY_UNCLEAR_TZ})`,
   );
 }

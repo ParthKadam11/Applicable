@@ -1,3 +1,9 @@
+# Local / simple stack.
+# NOTE: Postgres volume stays named `jobfit_pgdata` and DB creds stay `jobfit`
+# so existing local data is not orphaned. Renaming the Docker volume would create
+# an empty DB — dump/restore first if you ever want caniapply_* naming locally.
+# Prod uses caniapply_* volumes (docker-compose.prod.yml).
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -55,7 +61,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      MCP_HOST: ${MCP_HOST:-${MCP_DOMAIN:-localhost}}
+      MCP_HOST: ${MCP_HOST:-localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -65,6 +71,7 @@ services:
       - tls
 
 volumes:
+  # Intentionally kept as jobfit_pgdata — renaming orphans local data.
   jobfit_pgdata:
   caddy_data:
   caddy_config:

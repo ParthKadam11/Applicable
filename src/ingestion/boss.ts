@@ -1,14 +1,19 @@
 import { eq } from "drizzle-orm";
 import PgBoss from "pg-boss";
-import { registerClassifyWorkers } from "../classify/boss.js";
+import {
+  registerClassifyWorkers,
+  scheduleClassifyUnclearCron,
+} from "../classify/boss.js";
 import { enqueueJobsNeedingClassification } from "../classify/enqueue.js";
 import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { companies } from "../db/schema.js";
+import { writeDailyStats } from "../stats/daily.js";
 import { fetchCompanyJobs } from "./fetch-company.js";
 
 export const INGEST_QUEUE = "ingest-company";
 export const SCHEDULE_QUEUE = "ingest-schedule";
+export const DAILY_STATS_QUEUE = "daily-stats";
 
 export type IngestCompanyJob = {
   companyId: string;
@@ -60,6 +65,7 @@ async function handleIngestJob(
 export async function registerIngestWorkers(boss: PgBoss): Promise<void> {
   await boss.createQueue(INGEST_QUEUE);
   await boss.createQueue(SCHEDULE_QUEUE);
+  await boss.createQueue(DAILY_STATS_QUEUE);
 
   for (let i = 0; i < config.INGEST_CONCURRENCY; i += 1) {
     await boss.work<IngestCompanyJob>(
@@ -73,6 +79,12 @@ export async function registerIngestWorkers(boss: PgBoss): Promise<void> {
 
   await boss.work(SCHEDULE_QUEUE, async () => {
     await enqueueActiveCompanies(boss);
+    // Refresh today's snapshot after each ingest wave is enqueued.
+    await writeDailyStats(db);
+  });
+
+  await boss.work(DAILY_STATS_QUEUE, async () => {
+    await writeDailyStats(db);
   });
 }
 
@@ -106,6 +118,14 @@ export async function scheduleIngestCron(boss: PgBoss): Promise<void> {
     tz: "UTC",
   });
   console.log(`[ingest] cron scheduled: ${config.INGEST_CRON} (UTC)`);
+
+  // Daily stats safety net (after typical IST overnight ingest + nightly LLM).
+  await boss.schedule(DAILY_STATS_QUEUE, "0 4 * * *", {}, {
+    tz: "Asia/Kolkata",
+  });
+  console.log(`[daily_stats] cron scheduled: 0 4 * * * (Asia/Kolkata)`);
+
+  await scheduleClassifyUnclearCron(boss);
 }
 
 export { CLASSIFY_QUEUE } from "../classify/enqueue.js";

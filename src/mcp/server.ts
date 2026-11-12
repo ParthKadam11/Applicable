@@ -5,6 +5,7 @@ import {
   GetJobInputSchema,
   ListCompaniesInputSchema,
   SearchJobsInputSchema,
+  StatsInputObjectSchema,
   StatsInputSchema,
   SubmitCompanyInputSchema,
 } from "./schemas.js";
@@ -136,15 +137,15 @@ export function createCaniApplyMcpServer(db: Db): McpServer {
     {
       title: "Corpus stats",
       description:
-        "Live DB totals: active companies, tech open jobs by India eligibility, and last successful ingestion timestamp. Numbers come straight from Postgres. No inputs required.",
-      inputSchema: {},
+        "Live DB totals: active companies, tech open jobs by India eligibility, and last successful ingestion timestamp. Optional history (days) returns daily_stats rows for the landing dashboard.",
+      inputSchema: StatsInputObjectSchema.shape,
     },
     async (args) => {
       try {
-        StatsInputSchema.parse(args ?? {});
+        const parsed = StatsInputSchema.parse(args ?? {});
         const result = await timed(
           "stats",
-          () => getMcpStats(db),
+          () => getMcpStats(db, parsed),
           () => 1,
         );
         return jsonResult(result);

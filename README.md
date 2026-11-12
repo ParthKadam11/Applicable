@@ -43,16 +43,17 @@ See `.env.example`. Required for local ingest:
 | `INGEST_CRON` | Cron expression (default every 6 hours UTC) |
 | `INGEST_CONCURRENCY` | Max concurrent company fetches (default 5) |
 | `INGEST_COMPANY_TIMEOUT_MS` | Per-company timeout (default 30000) |
-| `LLM_PROVIDER` | `groq` or `gemini` |
+| `LLM_PROVIDERS` | Comma-separated rotation (`groq,gemini,openrouter`) |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` | Optional; rules-only if unset |
 | `GROQ_MODEL` | Default `openai/gpt-oss-20b` (Llama 3.3 IDs are deprecated on Groq) |
-| `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 1; raise if not rate-limited) |
-| `LLM_RPM` | Token-bucket for LLM calls (default 6; Groq free ~8k TPM) |
+| `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 4) |
+| `LLM_RPM` | Token-bucket for LLM calls (default 30) |
+| `CLASSIFY_UNCLEAR_CRON` | Nightly unclear→LLM cron (default `30 2 * * *` Asia/Kolkata) |
 
 | `MCP_HTTP_PORT` | Streamable HTTP listen port (default 3100) |
 | `MCP_RATE_LIMIT_RPM` | Per-IP rate limit (default 60) |
 | `MCP_PUBLIC_URL` | Public MCP URL for docs / clients |
-| `MCP_DOMAIN` | Hostname for Caddy TLS (`docker compose --profile tls`) |
+| `MCP_HOST` | Hostname for Caddy TLS (`docker compose --profile tls`) |
 
 ## Adding companies
 
@@ -62,7 +63,7 @@ Edit `companies.yaml`:
 companies:
   - name: Acme
     website: https://acme.com
-    ats: ashby          # ashby | greenhouse | lever | workable | recruitee | personio
+    ats: ashby          # ashby | greenhouse | lever
     ats_slug: acme
 ```
 
@@ -79,8 +80,7 @@ npm run detect-ats -- https://acme.com/careers
 ```
 
 Prints JSON with detected `ats` + `ats_slug` from known host patterns
-(`jobs.ashbyhq.com`, `boards.greenhouse.io`, `jobs.lever.co`,
-`apply.workable.com`, `*.recruitee.com`, `*.jobs.personio.de`).
+(`jobs.ashbyhq.com`, `boards.greenhouse.io`, `jobs.lever.co`).
 
 ## Ingestion
 
@@ -103,7 +103,7 @@ npm run dev           # worker + schedule
 npm test                         # unit tests (fixtures, no network)
 docker compose up -d
 npm run db:migrate
-DATABASE_URL=postgres://jobfit:jobfit@localhost:5432/jobfit npm run test:integration
+DATABASE_URL=postgres://jobfit:jobfit@127.0.0.1:5435/jobfit npm run test:integration
 ```
 
 ## Classification
@@ -111,20 +111,29 @@ DATABASE_URL=postgres://jobfit:jobfit@localhost:5432/jobfit npm run test:integra
 - Rules first (`src/classify/rules.ts`): india eligibility, interview style,
   contractor/EOR, compensation, seniority, role family — each with evidence quotes.
 - Bare `"Remote"` is never `india_eligibility=open`.
-- LLM only when rules leave eligibility unclear or seniority/role unresolved.
+- Non-tech titles are skipped at ingest (not stored); closed-job detection still
+  uses the full board ID set.
+- LLM only when rules leave eligibility unclear (tech roles). Nightly cron
+  `classify-unclear-nightly` (02:30 Asia/Kolkata) batches unclear jobs with no
+  prior LLM result and stops cleanly when free-tier quotas are exhausted.
 - Evidence guard rejects any quote that is not a whitespace-normalized substring
   of the posting; rejected fields fall back to `unclear` / unknown.
 - After ingest, jobs with new/changed `content_hash` are enqueued on `classify-job`.
+- `daily_stats` is written after each ingest schedule (and 04:00 IST backup cron).
 
 ```bash
 npm run classify:once
+npm run classify:unclear-nightly -- --limit 100
 npm run stats
+npm run stats:daily
 ```
 
 ## MCP (hosted)
 
 Read-only Streamable HTTP MCP server against Postgres. Tools:
-`search_jobs`, `get_job`, `list_companies`, `stats`, `submit_company`.
+`search_jobs`, `get_job`, `list_companies`, `stats` (optional `history` days),
+`submit_company`. Also `GET /api/stats` and `GET /api/stats/history` (CORS for
+`https://caniapply.parthkadam.tech`, cached 5 minutes).
 
 ```bash
 npm run mcp:http          # http://localhost:3100/mcp

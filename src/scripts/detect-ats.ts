@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import { extractAtsUrls } from "../discover/ats-urls.js";
 import { fetchText } from "../utils/http.js";
 import type { Ats } from "../ats/types.js";
@@ -8,28 +9,7 @@ interface Detection {
   url: string;
 }
 
-const EXTRA_PATTERNS: Array<{
-  ats: Ats;
-  regex: RegExp;
-  slugGroup: number;
-}> = [
-  {
-    ats: "workable",
-    regex: /https?:\/\/apply\.workable\.com\/([a-zA-Z0-9_-]+)/gi,
-    slugGroup: 1,
-  },
-  {
-    ats: "recruitee",
-    regex: /https?:\/\/([a-zA-Z0-9_-]+)\.recruitee\.com/gi,
-    slugGroup: 1,
-  },
-  {
-    ats: "personio",
-    regex: /https?:\/\/([a-zA-Z0-9_-]+)\.jobs\.personio\.(?:de|com)/gi,
-    slugGroup: 1,
-  },
-];
-
+/** Detect Ashby / Greenhouse / Lever boards from HTML or a page URL. */
 export function detectAtsFromHtml(html: string, pageUrl?: string): Detection[] {
   const found = new Map<string, Detection>();
 
@@ -47,22 +27,6 @@ export function detectAtsFromHtml(html: string, pageUrl?: string): Detection[] {
         });
       }
     }
-    for (const pattern of EXTRA_PATTERNS) {
-      pattern.regex.lastIndex = 0;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.regex.exec(source)) !== null) {
-        const slug = match[pattern.slugGroup];
-        if (!slug) continue;
-        const key = `${pattern.ats}:${slug.toLowerCase()}`;
-        if (!found.has(key)) {
-          found.set(key, {
-            ats: pattern.ats,
-            ats_slug: slug,
-            url: match[0],
-          });
-        }
-      }
-    }
   }
 
   return [...found.values()];
@@ -78,20 +42,13 @@ async function main() {
   console.error(`Fetching ${careersUrl}…`);
   const html = await fetchText(careersUrl);
   const detections = detectAtsFromHtml(html, careersUrl);
-
-  if (detections.length === 0) {
-    console.log(JSON.stringify({ found: false, detections: [] }, null, 2));
-    process.exit(2);
-  }
-
-  console.log(JSON.stringify({ found: true, detections }, null, 2));
+  console.log(JSON.stringify(detections, null, 2));
 }
 
-const isDirect =
-  process.argv[1]?.includes("detect-ats") ||
-  process.argv[1]?.endsWith("detect-ats.ts");
+const isDirectRun =
+  !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-if (isDirect) {
+if (isDirectRun) {
   main().catch((err) => {
     console.error(err);
     process.exit(1);

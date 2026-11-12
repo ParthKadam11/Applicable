@@ -338,11 +338,24 @@ async function promoteOne(
   }
 }
 
-async function loadPendingBatch(db: Db, batchSize: number): Promise<Cand[]> {
+async function loadPendingBatch(
+  db: Db,
+  batchSize: number,
+  candidateIds?: string[],
+): Promise<Cand[]> {
+  const conditions = [eq(companyCandidates.status, "pending")];
+  if (candidateIds && candidateIds.length > 0) {
+    conditions.push(
+      sql`${companyCandidates.id} in (${sql.join(
+        candidateIds.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})`,
+    );
+  }
   const rows = await db
     .select()
     .from(companyCandidates)
-    .where(eq(companyCandidates.status, "pending"))
+    .where(and(...conditions))
     .orderBy(
       sql`case when ${companyCandidates.ats} is not null then 0 else 1 end`,
       companyCandidates.discoveredAt,
@@ -369,12 +382,15 @@ export async function verifyAndPromote(
     limit?: number;
     concurrency?: number;
     ingest?: boolean;
+    /** When set, only promote these candidate UUIDs (tests / targeted runs). */
+    candidateIds?: string[];
   },
 ): Promise<PromoteStats> {
   const limit = options?.limit ?? config.DISCOVER_PROMOTE_LIMIT;
   const concurrency =
     options?.concurrency ?? config.DISCOVER_PROMOTE_CONCURRENCY;
   const ingest = options?.ingest !== false;
+  const candidateIds = options?.candidateIds;
 
   await deactivateBlocklistedCompanies(db);
 
@@ -396,7 +412,11 @@ export async function verifyAndPromote(
 
   while (stats.attempted < limit) {
     const remaining = limit - stats.attempted;
-    const batch = await loadPendingBatch(db, Math.min(batchSize, remaining));
+    const batch = await loadPendingBatch(
+      db,
+      Math.min(batchSize, remaining),
+      candidateIds,
+    );
     if (batch.length === 0) break;
 
     await mapPool(batch, concurrency, async (cand) => {

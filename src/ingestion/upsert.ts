@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 import type { NormalizedJob } from "../ats/types.js";
+import { classifyRoleFamily } from "../classify/roles.js";
 import type { Db } from "../db/client.js";
 import { jobs } from "../db/schema.js";
 import { contentHash } from "../utils/hash.js";
@@ -7,6 +8,7 @@ import { contentHash } from "../utils/hash.js";
 export interface UpsertResult {
   upserted: number;
   closed: number;
+  skippedNonTech: number;
   hashes: Map<string, string>;
 }
 
@@ -18,12 +20,48 @@ export async function upsertJobs(
   const now = new Date();
   const hashes = new Map<string, string>();
 
+  // All board IDs (tech + non-tech) so closed-job detection stays correct.
+  const allExternalIds = fetched.map((j) => j.externalId);
+
   if (fetched.length === 0) {
     const closed = await closeMissingJobs(db, companyId, [], now);
-    return { upserted: 0, closed, hashes };
+    return { upserted: 0, closed, skippedNonTech: 0, hashes };
   }
 
-  const rows = fetched.map((job) => {
+  const techJobs: NormalizedJob[] = [];
+  const nonTechExternalIds: string[] = [];
+  for (const job of fetched) {
+    const { role_family } = classifyRoleFamily(job.title);
+    if (role_family === "non_tech") {
+      nonTechExternalIds.push(job.externalId);
+      continue;
+    }
+    techJobs.push(job);
+  }
+
+  if (techJobs.length === 0) {
+    // Still mark missing jobs closed, and close any previously stored non-tech.
+    const closedMissing = await closeMissingJobs(
+      db,
+      companyId,
+      allExternalIds,
+      now,
+    );
+    const closedNonTech = await closeByExternalIds(
+      db,
+      companyId,
+      nonTechExternalIds,
+      now,
+    );
+    return {
+      upserted: 0,
+      closed: closedMissing + closedNonTech,
+      skippedNonTech: nonTechExternalIds.length,
+      hashes,
+    };
+  }
+
+  const rows = techJobs.map((job) => {
     const hash = contentHash({
       title: job.title,
       descriptionText: job.descriptionText,
@@ -76,10 +114,49 @@ export async function upsertJobs(
       },
     });
 
-  const externalIds = fetched.map((j) => j.externalId);
-  const closed = await closeMissingJobs(db, companyId, externalIds, now);
+  // Pass every board external_id so jobs still on the board are not closed
+  // just because they were non-tech and skipped from storage.
+  const closedMissing = await closeMissingJobs(
+    db,
+    companyId,
+    allExternalIds,
+    now,
+  );
+  // Drop previously stored non-tech rows from the open corpus.
+  const closedNonTech = await closeByExternalIds(
+    db,
+    companyId,
+    nonTechExternalIds,
+    now,
+  );
 
-  return { upserted: rows.length, closed, hashes };
+  return {
+    upserted: rows.length,
+    closed: closedMissing + closedNonTech,
+    skippedNonTech: nonTechExternalIds.length,
+    hashes,
+  };
+}
+
+async function closeByExternalIds(
+  db: Db,
+  companyId: string,
+  externalIds: string[],
+  now: Date,
+): Promise<number> {
+  if (externalIds.length === 0) return 0;
+  const closed = await db
+    .update(jobs)
+    .set({ closedAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(jobs.companyId, companyId),
+        isNull(jobs.closedAt),
+        inArray(jobs.externalId, externalIds),
+      ),
+    )
+    .returning({ id: jobs.id });
+  return closed.length;
 }
 
 async function closeMissingJobs(

@@ -1,13 +1,6 @@
 import { z } from "zod";
 
-export const AtsSchema = z.enum([
-  "ashby",
-  "greenhouse",
-  "lever",
-  "workable",
-  "recruitee",
-  "personio",
-]);
+export const AtsSchema = z.enum(["ashby", "greenhouse", "lever"]);
 
 export type Ats = z.infer<typeof AtsSchema>;
 

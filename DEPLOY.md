@@ -76,6 +76,10 @@ grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
 
 `DATABASE_URL` on the host is for local scripts; **inside Docker**, compose builds it from `POSTGRES_*` → `postgres:5432`.
 
+### Local volume naming (`jobfit` vs `caniapply`)
+
+Prod compose uses `caniapply_pgdata` / `caniapply_*` credentials. Local `docker-compose.yml` **intentionally keeps** the Docker volume name `jobfit_pgdata` and DB user/db `jobfit` so existing local data is not orphaned. Renaming that volume in compose would attach a **new empty** volume — dump/restore first if you ever want local naming to match prod.
+
 ---
 
 ## 3. Start the stack

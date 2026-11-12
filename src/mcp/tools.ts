@@ -21,11 +21,16 @@ import {
   jobs,
 } from "../db/schema.js";
 import { domainFromUrl } from "../discover/ats-urls.js";
+import {
+  getDailyStatsHistory,
+  type DailyStatsRow,
+} from "../stats/daily.js";
 import type {
   EligibilityFilter,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   SearchJobsInputSchema,
+  StatsInputSchema,
   SubmitCompanyInputSchema,
 } from "./schemas.js";
 import { z } from "zod";
@@ -33,6 +38,7 @@ import { z } from "zod";
 type SearchInput = z.infer<typeof SearchJobsInputSchema>;
 type GetJobInput = z.infer<typeof GetJobInputSchema>;
 type ListCompaniesInput = z.infer<typeof ListCompaniesInputSchema>;
+type StatsInput = z.infer<typeof StatsInputSchema>;
 type SubmitCompanyInput = z.infer<typeof SubmitCompanyInputSchema>;
 
 const DEFAULT_ELIGIBILITY: EligibilityFilter[] = ["open", "india_remote"];
@@ -278,7 +284,18 @@ export async function listCompanies(db: Db, raw: ListCompaniesInput) {
   };
 }
 
-export async function getMcpStats(db: Db) {
+export type McpStatsResult = {
+  companies_active: number;
+  tech_open_jobs: number;
+  by_eligibility: Record<string, number>;
+  last_ingestion_at: string | null;
+  history?: DailyStatsRow[];
+};
+
+export async function getMcpStats(
+  db: Db,
+  raw: StatsInput = {},
+): Promise<McpStatsResult> {
   const openActive = and(isNull(jobs.closedAt), eq(companies.active, true));
   const techOpen = and(
     openActive,
@@ -321,7 +338,7 @@ export async function getMcpStats(db: Db) {
     .orderBy(desc(fetchRuns.finishedAt), desc(fetchRuns.startedAt))
     .limit(1);
 
-  return {
+  const result: McpStatsResult = {
     companies_active: Number(companiesActive),
     tech_open_jobs: techOpenTotal,
     by_eligibility: eligibility,
@@ -330,6 +347,12 @@ export async function getMcpStats(db: Db) {
       lastIngest?.startedAt?.toISOString() ??
       null,
   };
+
+  if (raw.history != null) {
+    result.history = await getDailyStatsHistory(db, raw.history);
+  }
+
+  return result;
 }
 
 export async function submitCompany(db: Db, raw: SubmitCompanyInput) {

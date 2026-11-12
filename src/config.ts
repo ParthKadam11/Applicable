@@ -9,7 +9,7 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .min(1)
-    .default("postgres://jobfit:jobfit@localhost:5432/jobfit"),
+    .default("postgres://jobfit:jobfit@127.0.0.1:5435/jobfit"),
   USER_AGENT: z
     .string()
     .min(1)
@@ -24,12 +24,9 @@ const envSchema = z.object({
 
   // Free-tier LLM providers (comma-separated rotation order)
   LLM_PROVIDERS: z.string().default("groq,gemini,openrouter"),
-  /** @deprecated prefer LLM_PROVIDERS */
-  LLM_PROVIDER: z.string().optional().default(""),
 
   OLLAMA_URL: z.string().default("http://127.0.0.1:11434"),
   OLLAMA_MODEL: z.string().min(1).default("qwen2.5:3b"),
-
 
   GROQ_API_KEY: z.string().optional().default(""),
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
@@ -47,20 +44,19 @@ const envSchema = z.object({
   LLM_RPM: z.coerce.number().int().positive().default(30),
   LLM_STATE_PATH: z.string().default(".llm-state.json"),
 
-  SEARCH_PROVIDER: z.enum(["searxng", "tavily", "brave"]).default("searxng"),
-  SEARXNG_URL: z.string().optional().default("http://localhost:8080"),
-  TAVILY_API_KEY: z.string().optional().default(""),
-  BRAVE_API_KEY: z.string().optional().default(""),
+  /** Nightly unclear→LLM cron (pg-boss). Default 02:30 Asia/Kolkata. */
+  CLASSIFY_UNCLEAR_CRON: z.string().min(1).default("30 2 * * *"),
+  CLASSIFY_UNCLEAR_TZ: z.string().min(1).default("Asia/Kolkata"),
+  CLASSIFY_UNCLEAR_BATCH: z.coerce.number().int().positive().default(500),
+
   MCP_HTTP_PORT: z.coerce.number().int().positive().default(3100),
   MCP_RATE_LIMIT_RPM: z.coerce.number().int().positive().default(60),
   MCP_PUBLIC_URL: z
     .string()
     .optional()
     .default("https://mcp.example.com/mcp"),
-  /** Public hostname for Caddy (prod). Prefer over MCP_DOMAIN. */
+  /** Public hostname for Caddy (prod). */
   MCP_HOST: z.string().optional().default("mcp.example.com"),
-  /** @deprecated prefer MCP_HOST */
-  MCP_DOMAIN: z.string().optional().default("mcp.example.com"),
 
   // Company discovery
   DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),
@@ -78,13 +74,10 @@ export const config: AppConfig = envSchema.parse(process.env);
 export function parseLlmProviders(
   raw: string = config.LLM_PROVIDERS,
 ): Array<z.infer<typeof providerName>> {
-  const fromList = raw
+  const names = raw
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
-
-  const legacy = config.LLM_PROVIDER?.trim().toLowerCase();
-  const names = fromList.length > 0 ? fromList : legacy ? [legacy] : [];
 
   const out: Array<z.infer<typeof providerName>> = [];
   for (const n of names) {

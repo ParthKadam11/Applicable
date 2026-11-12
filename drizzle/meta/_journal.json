@@ -29,6 +29,13 @@
       "when": 1794400000000,
       "tag": "0003_compensation_bigint",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794500000000,
+      "tag": "0004_daily_stats_cleanup",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -13,14 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-export const atsEnum = pgEnum("ats", [
-  "ashby",
-  "greenhouse",
-  "lever",
-  "workable",
-  "recruitee",
-  "personio",
-]);
+export const atsEnum = pgEnum("ats", ["ashby", "greenhouse", "lever"]);
 
 export const candidateStatusEnum = pgEnum("candidate_status", [
   "pending",
@@ -143,7 +137,7 @@ export const companyCandidates = pgTable(
   ],
 );
 
-/** Reserved for phase 2 — classification. */
+/** India eligibility + role tags written by rules/LLM classification. */
 export const jobTags = pgTable("job_tags", {
   jobId: uuid("job_id")
     .primaryKey()
@@ -167,37 +161,6 @@ export const jobTags = pgTable("job_tags", {
   model: text("model"),
   classifiedAt: timestamp("classified_at", { withTimezone: true }),
   contentHash: text("content_hash"),
-});
-
-/** Reserved for phase 2 — company research. */
-export const companyResearch = pgTable("company_research", {
-  companyId: uuid("company_id")
-    .primaryKey()
-    .references(() => companies.id, { onDelete: "cascade" }),
-  funding: jsonb("funding").$type<{
-    amount?: string;
-    round?: string;
-    date?: string;
-    source_url?: string;
-  } | null>(),
-  headcountEstimate: text("headcount_estimate"),
-  headcountSourceUrl: text("headcount_source_url"),
-  indiaPresence: text("india_presence"),
-  indiaPresenceSourceUrl: text("india_presence_source_url"),
-  hqCountry: text("hq_country"),
-  hqCountrySourceUrl: text("hq_country_source_url"),
-  recentNews: jsonb("recent_news")
-    .$type<Array<{ title: string; url: string; date?: string }>>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  interviewReports: jsonb("interview_reports")
-    .$type<Array<{ summary: string; url: string }>>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  researchedAt: timestamp("researched_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
 /**
@@ -224,6 +187,29 @@ export const atsBoardChecks = pgTable(
   ],
 );
 
+/** One row per calendar day (Asia/Kolkata) — landing page + MCP history. */
+export const dailyStats = pgTable("daily_stats", {
+  date: date("date").primaryKey(),
+  companiesActive: integer("companies_active").notNull(),
+  techOpenJobs: integer("tech_open_jobs").notNull(),
+  eligibilityOpen: integer("eligibility_open").notNull().default(0),
+  eligibilityIndiaRemote: integer("eligibility_india_remote")
+    .notNull()
+    .default(0),
+  eligibilityIndiaOnsite: integer("eligibility_india_onsite")
+    .notNull()
+    .default(0),
+  eligibilityRegionLocked: integer("eligibility_region_locked")
+    .notNull()
+    .default(0),
+  eligibilityUnclear: integer("eligibility_unclear").notNull().default(0),
+  newJobs24h: integer("new_jobs_24h").notNull().default(0),
+  closedJobs24h: integer("closed_jobs_24h").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Company = typeof companies.$inferSelect;
 export type NewCompany = typeof companies.$inferInsert;
 export type Job = typeof jobs.$inferSelect;
@@ -232,3 +218,4 @@ export type FetchRun = typeof fetchRuns.$inferSelect;
 export type CompanyCandidate = typeof companyCandidates.$inferSelect;
 export type NewCompanyCandidate = typeof companyCandidates.$inferInsert;
 export type AtsBoardCheck = typeof atsBoardChecks.$inferSelect;
+export type DailyStats = typeof dailyStats.$inferSelect;
