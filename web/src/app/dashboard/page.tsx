@@ -1,3 +1,4 @@
+import { ByokPanel } from "@/components/byok-panel";
 import { DashboardCharts } from "@/components/dashboard-charts";
 import { JobsTable } from "@/components/jobs-table";
 import { SiteFooter } from "@/components/site-footer";
@@ -6,12 +7,13 @@ import { StatsStrip } from "@/components/stats-strip";
 import { TopCompanies } from "@/components/top-companies";
 import {
   fetchJobs,
+  fetchLlmStatus,
   fetchStats,
   fetchStatsHistory,
   fetchTopCompanies,
 } from "@/lib/api";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 function Panel({
   title,
@@ -31,11 +33,12 @@ function Panel({
 }
 
 export default async function DashboardPage() {
-  const [stats, history, jobs, top] = await Promise.all([
+  const [stats, history, jobs, top, llm] = await Promise.all([
     fetchStats(),
     fetchStatsHistory(30),
     fetchJobs({ eligibility: "open,india_remote", limit: 25 }),
     fetchTopCompanies(15),
+    fetchLlmStatus(),
   ]);
 
   return (
@@ -50,8 +53,7 @@ export default async function DashboardPage() {
             Live corpus
           </h1>
           <p className="mt-3 max-w-xl text-pretty text-[15px] text-mute">
-            Eligibility mix, history, India-eligible roles, companies hiring
-            from India.
+            India-eligibility mix, companies, jobs, and BYOK classifier status.
           </p>
         </div>
       </div>
@@ -59,6 +61,7 @@ export default async function DashboardPage() {
       <StatsStrip stats={stats} compact />
 
       <div className="mx-auto max-w-5xl space-y-5 px-5 py-10 sm:px-8">
+        <ByokPanel status={llm} />
         <DashboardCharts
           byEligibility={stats?.by_eligibility}
           history={history}

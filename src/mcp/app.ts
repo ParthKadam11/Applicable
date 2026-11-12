@@ -10,6 +10,7 @@ import {
   parseEligibilityParam,
   parseQueryString,
 } from "./public-api.js";
+import { getLlmPublicStatus } from "../classify/llm/public-status.js";
 import { IpRateLimiter } from "./rate-limit.js";
 import { createApplicableMcpServer } from "./server.js";
 import { getMcpStats } from "./tools.js";
@@ -160,6 +161,20 @@ export function createMcpHttpApp() {
         err instanceof Error ? err.message : err,
       );
       res.status(500).json({ ok: false, error: "jobs_failed" });
+    }
+  });
+
+  app.get("/api/llm", (_req, res) => {
+    try {
+      const value = getLlmPublicStatus();
+      res.setHeader("Cache-Control", "public, max-age=60");
+      res.status(200).json(value);
+    } catch (err) {
+      console.error(
+        "[api/llm] error:",
+        err instanceof Error ? err.message : err,
+      );
+      res.status(500).json({ ok: false, error: "llm_status_failed" });
     }
   });
 

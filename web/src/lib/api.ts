@@ -104,6 +104,29 @@ export async function fetchTopCompanies(
   return body?.companies ?? null;
 }
 
+export type LlmProviderStatus = {
+  id: string;
+  label: string;
+  model: string;
+  configured: boolean;
+  exhausted: boolean;
+  exhausted_until: string | null;
+  calls_today: number;
+};
+
+export type LlmStatus = {
+  mode: "byok";
+  summary: string;
+  any_ready: boolean;
+  providers: LlmProviderStatus[];
+};
+
+export async function fetchLlmStatus(): Promise<LlmStatus | null> {
+  return getJson<LlmStatus>("/api/llm", {
+    next: { revalidate: 60 },
+  });
+}
+
 export async function fetchExampleJob(): Promise<JobRow | null> {
   const body = await fetchJobs({
     eligibility: "open,india_remote",
