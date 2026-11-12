@@ -1,11 +1,47 @@
 "use client";
 
-import { BackgroundCubesGrid } from "@/components/ui/background-cubes-grid";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { HeroLite } from "@/components/hero-lite";
 
-/** Clean hero shell — cubes grid only for now. */
+const BackgroundCubesGrid = dynamic(
+  () =>
+    import("@/components/ui/background-cubes-grid").then(
+      (m) => m.BackgroundCubesGrid,
+    ),
+  {
+    ssr: false,
+    loading: () => <HeroLite />,
+  },
+);
+
+/**
+ * Always run the cube animation. Code-split Three.js so first paint stays
+ * fast; upgrade from the CSS shell as soon as the chunk is ready.
+ */
 export function Hero() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+
+    const start = () => setReady(true);
+    const ric = window.requestIdleCallback?.bind(window);
+    if (ric) {
+      const id = ric(start, { timeout: 900 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(start, 120);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  if (!ready) {
+    return <HeroLite />;
+  }
+
   return (
-    <section className="relative min-h-[72vh] w-full overflow-hidden sm:min-h-[78vh]">
+    <section className="relative min-h-[52vh] w-full overflow-hidden sm:min-h-[72vh] lg:min-h-[78vh]">
       <BackgroundCubesGrid
         variant="isometric"
         cellSize={52}

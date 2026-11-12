@@ -117,6 +117,8 @@ html {
   color-scheme: light;
   scroll-behavior: smooth;
   scroll-padding-top: 4.5rem;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -124,6 +126,34 @@ body {
   color: var(--ink);
   font-family: var(--font-morrison);
   min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* Fast CSS hero — paints before any JS / WebGL */
+.hero-lite {
+  background: var(--paper);
+}
+
+.hero-lite-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 70%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+  opacity: 0.85;
+}
+
+.hero-lite-glow {
+  background:
+    radial-gradient(ellipse 55% 45% at 50% 35%, color-mix(in srgb, var(--mark) 28%, transparent), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 15% 80%, color-mix(in srgb, var(--mark-soft) 90%, transparent), transparent 60%),
+    radial-gradient(ellipse 35% 28% at 90% 20%, color-mix(in srgb, var(--sun) 14%, transparent), transparent 55%);
+}
+
+@media (max-width: 640px) {
+  .hero-lite-grid {
+    background-size: 36px 36px;
+  }
 }
 
 .font-display {
@@ -148,7 +178,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
+  width: 100%;
   padding: 0 20px;
   border-radius: 999px;
   background: var(--mark);
@@ -167,7 +198,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
+  width: 100%;
   padding: 0 20px;
   border-radius: 999px;
   border: 1.5px solid var(--line);
@@ -180,6 +212,13 @@ body {
   text-transform: uppercase;
   transition: transform 160ms ease-out, border-color 160ms ease-out,
     background-color 160ms ease-out;
+}
+
+@media (min-width: 640px) {
+  .btn-ink,
+  .btn-ghost {
+    width: auto;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -252,6 +291,9 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   .btn-ink,
   .btn-ghost {
     transition: none;
@@ -260,6 +302,12 @@ button:focus-visible {
   .logo-orbit {
     animation: none;
   }
+}
+
+/* Defer offscreen paint cost on long pages */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
 }
 
 .dark {

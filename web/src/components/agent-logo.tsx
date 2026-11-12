@@ -14,8 +14,9 @@ type Props = {
   label: string;
   size?: Size;
   className?: string;
-  /** Fill the parent tile edge-to-edge (app-icon style). */
+  /** Edge-to-edge inside a parent tile. */
   fill?: boolean;
+  priority?: boolean;
 };
 
 export function AgentLogo({
@@ -24,6 +25,7 @@ export function AgentLogo({
   size = "md",
   className = "",
   fill = false,
+  priority = false,
 }: Props) {
   const src = AGENT_LOGOS[id as AgentLogoId];
   const dim = SIZE[size];
@@ -37,6 +39,10 @@ export function AgentLogo({
         alt={label}
         width={64}
         height={64}
+        sizes="64px"
+        quality={70}
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
         className={`size-full object-cover ${className}`}
       />
     );
@@ -48,6 +54,10 @@ export function AgentLogo({
       alt={label}
       width={dim.px}
       height={dim.px}
+      sizes={`${dim.px}px`}
+      quality={65}
+      priority={priority}
+      loading={priority ? "eager" : "lazy"}
       className={`${dim.box} rounded-md object-cover ${className}`}
     />
   );

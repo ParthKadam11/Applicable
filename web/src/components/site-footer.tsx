@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { LINKS } from "@/lib/constants";
 
 export function SiteFooter() {
@@ -5,7 +7,13 @@ export function SiteFooter() {
     <footer className="border-t border-line bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-5 py-9 sm:flex-row sm:items-end sm:justify-between sm:px-8">
         <div>
-          <p className="font-display text-xl text-ink">Applicable</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 font-display text-xl text-ink"
+          >
+            <BrandLogo size={28} className="rounded-[7px]" />
+            Applicable
+          </Link>
           <p className="mt-1 font-mono text-[11px] uppercase text-mute">
             Built by{" "}
             <a

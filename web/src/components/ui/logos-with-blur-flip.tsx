@@ -41,7 +41,7 @@ export function LogosWithBlurFlip({
   return (
     <div
       className={cn(
-        "flex min-h-[3.25rem] flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:min-h-[3.5rem] sm:gap-x-10 md:gap-x-12",
+        "flex min-h-[3.25rem] flex-wrap items-center justify-center gap-x-6 gap-y-4 sm:min-h-[3.5rem] sm:gap-x-10 md:gap-x-12",
         className,
       )}
     >

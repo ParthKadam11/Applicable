@@ -14,7 +14,7 @@ import {
 import { AgentLogo } from "./agent-logo";
 import { AgentsStrip } from "./agents-strip";
 import { CopyButton } from "./copy-button";
-import { IconApplicable } from "./connector-icons";
+import { BrandLogo } from "./brand-logo";
 
 type Cta =
   | { kind: "link"; label: string; href: string }
@@ -34,7 +34,7 @@ const CONNECTORS = [
       href: claudeConnectorHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Claude — the connector dialog opens prefilled.",
+      "Click Add to Claude. The connector dialog opens prefilled.",
       "Sign in if needed, then confirm Add / Connect.",
       "Ask: “Show me open India-remote engineering roles.”",
     ],
@@ -43,7 +43,7 @@ const CONNECTORS = [
     id: "codex",
     label: "Codex",
     headline: "Wire Applicable into Codex",
-    body: "One click copies the endpoint and opens ChatGPT Plugins — create a custom MCP server for Codex / ChatGPT with Applicable.",
+    body: "One click copies the endpoint and opens ChatGPT Plugins. Create a custom MCP server for Codex / ChatGPT with Applicable.",
     tag: "1-click",
     cta: {
       kind: "copy-open",
@@ -51,7 +51,7 @@ const CONNECTORS = [
       openUrl: chatgptPluginsHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Codex — we copy the URL and open Plugins.",
+      "Click Add to Codex. We copy the URL and open Plugins.",
       "Add → Create custom MCP server, paste the URL, save.",
       "Ask for india_remote roles with evidence quotes.",
     ],
@@ -60,7 +60,7 @@ const CONNECTORS = [
     id: "cursor",
     label: "Cursor",
     headline: "Install Applicable in Cursor",
-    body: "One click hands off to Cursor and installs the server globally. Search the corpus while you code — no JSON editing, no terminal.",
+    body: "One click hands off to Cursor and installs the server globally. Search the corpus while you code. No JSON editing, no terminal.",
     tag: "1-click",
     cta: {
       kind: "link",
@@ -68,7 +68,7 @@ const CONNECTORS = [
       href: cursorInstallHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Cursor — the browser opens the Cursor install prompt.",
+      "Click Add to Cursor. The browser opens the Cursor install prompt.",
       "Confirm Install. You’re done.",
       "In chat: “Find india_remote jobs with evidence quotes.”",
     ],
@@ -77,7 +77,7 @@ const CONNECTORS = [
     id: "windsurf",
     label: "Windsurf",
     headline: "Connect Windsurf to Applicable",
-    body: "One click copies the endpoint and opens Windsurf’s MCP docs — paste as serverUrl in Cascade MCP settings.",
+    body: "One click copies the endpoint and opens Windsurf’s MCP docs. Paste as serverUrl in Cascade MCP settings.",
     tag: "1-click",
     cta: {
       kind: "copy-open",
@@ -85,7 +85,7 @@ const CONNECTORS = [
       openUrl: windsurfMcpHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Windsurf — we copy the URL and open MCP setup.",
+      "Click Add to Windsurf. We copy the URL and open MCP setup.",
       "In Cascade → MCP, add a remote server with serverUrl set to the copied link.",
       "Ask who is hiring from India.",
     ],
@@ -102,7 +102,7 @@ const CONNECTORS = [
       href: vscodeInstallHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Cline — VS Code opens the MCP install prompt.",
+      "Click Add to Cline. VS Code opens the MCP install prompt.",
       "Confirm install. In Cline → MCP Servers, ensure the remote URL is enabled (Streamable HTTP).",
       "Ask for India-eligible roles with evidence.",
     ],
@@ -111,7 +111,7 @@ const CONNECTORS = [
     id: "chatgpt",
     label: "ChatGPT",
     headline: "Connect ChatGPT to live India checks",
-    body: "One click copies the endpoint and opens ChatGPT Plugins — add a custom MCP server and paste.",
+    body: "One click copies the endpoint and opens ChatGPT Plugins. Add a custom MCP server and paste.",
     tag: "1-click",
     cta: {
       kind: "copy-open",
@@ -119,7 +119,7 @@ const CONNECTORS = [
       openUrl: chatgptPluginsHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to ChatGPT — we copy the URL and open Plugins.",
+      "Click Add to ChatGPT. We copy the URL and open Plugins.",
       "Add → Create custom MCP server, paste, save.",
       "Ask who’s hiring from India.",
     ],
@@ -128,7 +128,7 @@ const CONNECTORS = [
     id: "grok",
     label: "Grokbot",
     headline: "Hook Grokbot into Applicable",
-    body: "One click copies the endpoint and opens Grok — paste into MCP / connectors settings.",
+    body: "One click copies the endpoint and opens Grok. Paste into MCP / connectors settings.",
     tag: "1-click",
     cta: {
       kind: "copy-open",
@@ -136,7 +136,7 @@ const CONNECTORS = [
       openUrl: grokHref(),
     } satisfies Cta,
     steps: [
-      "Click Add to Grokbot — we copy the URL and open Grok.",
+      "Click Add to Grokbot. We copy the URL and open Grok.",
       "Open MCP / connectors and add a remote server with the pasted URL.",
       "Ask for open + india_remote roles.",
     ],
@@ -221,16 +221,14 @@ export function McpSetup() {
     <>
       <AgentsStrip />
 
-      <section id="mcp" className="scroll-mt-24 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+      <section id="mcp" className="cv-auto scroll-mt-24 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-20">
           <div className="max-w-2xl">
-            <p className="font-mono text-[11px] uppercase text-mute">
-              Integrations
-            </p>
-            <h2 className="mt-3 text-balance font-display text-3xl leading-[1.15] text-ink sm:text-4xl">
+            <p className="text-[11px] uppercase text-mute">Integrations</p>
+            <h2 className="mt-3 text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
               Plug into the agent you already use
             </h2>
-            <p className="mt-3 max-w-xl text-pretty text-[15px] leading-relaxed text-mute">
+            <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
               Same India-eligibility corpus everywhere. Pick a client and
               connect in one click.
             </p>
@@ -239,7 +237,7 @@ export function McpSetup() {
           <div
             role="tablist"
             aria-label="Agents"
-            className="mt-10 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-8 flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-10 [&::-webkit-scrollbar]:hidden"
           >
             {CONNECTORS.map((item) => {
               const on = active === item.id;
@@ -268,56 +266,53 @@ export function McpSetup() {
             })}
           </div>
 
-          <div className="mt-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <div className="flex items-center gap-3">
+          <div className="mt-10 grid items-center gap-10 lg:mt-12 lg:grid-cols-2 lg:gap-16">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5">
                   <AgentLogo id={c.id} label={c.label} size="md" />
                 </span>
-                <span className="rounded-full bg-mark-soft px-2.5 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
+                <span className="rounded-full bg-mark-soft px-2.5 py-0.5 text-[10px] uppercase text-mark-deep">
                   {c.tag}
                 </span>
               </div>
-              <h3 className="mt-5 text-balance font-display text-2xl leading-snug text-ink sm:text-3xl">
+              <h3 className="mt-5 text-balance font-display text-xl leading-snug text-ink sm:text-3xl">
                 {c.headline}
               </h3>
-              <p className="mt-4 max-w-md text-pretty text-[15px] leading-relaxed text-mute">
+              <p className="mt-4 max-w-md text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
                 {c.body}
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <ConnectCta cta={c.cta} />
-                <Link
-                  href="/dashboard"
-                  className="btn-ghost"
-                >
+                <Link href="/dashboard" className="btn-ghost w-full sm:w-auto">
                   Open dashboard
                 </Link>
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-8">
+            <div className="flex flex-col items-center gap-6 sm:gap-8">
               <div className="flex items-center justify-center">
-                <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
-                  <IconApplicable className="size-10" />
+                <div className="size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16">
+                  <BrandLogo fill />
                 </div>
                 <Rail />
                 <div className="relative">
                   <span className="logo-orbit" aria-hidden />
-                  <div className="relative z-[1] size-16 overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                  <div className="relative z-[1] size-14 overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:size-16">
                     <AgentLogo id={c.id} label={c.label} fill />
                   </div>
                 </div>
               </div>
-              <p className="max-w-xs text-center text-pretty text-sm text-mute">
+              <p className="max-w-xs px-2 text-center text-pretty text-sm text-mute">
                 Applicable ↔ {c.label}
-                <span className="mt-1 block font-mono text-[10px] uppercase tracking-wide text-[#8aa0b4]">
+                <span className="mt-1 block text-[10px] uppercase tracking-wide text-[#8aa0b4]">
                   Streamable HTTP · 5 tools
                 </span>
               </p>
             </div>
           </div>
 
-          <ol className="mt-16 grid gap-8 border-t border-line pt-12 sm:grid-cols-3 sm:gap-10">
+          <ol className="mt-12 grid gap-8 border-t border-line pt-10 sm:mt-16 sm:grid-cols-3 sm:gap-10 sm:pt-12">
             {c.steps.map((step, i) => (
               <li key={step} className="min-w-0">
                 <span className="font-mono text-[11px] uppercase text-mute">
