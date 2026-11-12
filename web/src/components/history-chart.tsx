@@ -20,15 +20,13 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
     .reverse()
     .map((d) => ({
       date: d.date.slice(5),
-      open: d.by_eligibility.open,
-      india_remote: d.by_eligibility.india_remote,
       applicable: d.by_eligibility.open + d.by_eligibility.india_remote,
       tech: d.tech_open_jobs,
     }));
 
   if (rows.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center text-sm text-zinc-500">
+      <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
         —
       </div>
     );
@@ -38,15 +36,15 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid stroke="#cfe3f2" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            tick={{ fill: "#5a7188", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            tick={{ fill: "#5a7188", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             width={48}
@@ -54,30 +52,27 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
           />
           <Tooltip
             contentStyle={{
-              background: "#0c0c0e",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 8,
+              background: "#fff",
+              border: "1px solid #cfe3f2",
+              borderRadius: 12,
               fontSize: 12,
             }}
             formatter={(value) => formatNumber(Number(value))}
           />
-          <Legend
-            wrapperStyle={{ fontSize: 12, color: "#a1a1aa", paddingTop: 8 }}
-          />
+          <Legend wrapperStyle={{ fontSize: 12, color: "#5a7188", paddingTop: 8 }} />
           <Line
             type="monotone"
             dataKey="applicable"
             name="Open + India remote"
-            stroke="#34d399"
-            strokeWidth={2}
+            stroke="#00b39a"
+            strokeWidth={2.5}
             dot={false}
-            activeDot={{ r: 3 }}
           />
           <Line
             type="monotone"
             dataKey="tech"
             name="Tech jobs"
-            stroke="#71717a"
+            stroke="#2f9bff"
             strokeWidth={1.5}
             strokeDasharray="4 4"
             dot={false}

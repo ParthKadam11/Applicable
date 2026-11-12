@@ -2,36 +2,45 @@ const STEPS = [
   {
     n: "01",
     title: "Collect",
-    body: "We watch public company job boards (Greenhouse, Lever, Ashby) and keep open tech roles fresh.",
+    body: "Public boards on Greenhouse, Lever, Ashby — open tech roles kept current.",
+    tint: "bg-[#e7fff8]",
   },
   {
     n: "02",
     title: "Classify",
-    body: "Each posting is tagged for India eligibility — with the exact line from the JD that proves it.",
+    body: "India eligibility tagged with the exact line from the JD that proves it.",
+    tint: "bg-sun-soft",
   },
   {
     n: "03",
     title: "Query",
-    body: "Ask your AI over MCP, or browse the dashboard. No guesswork — just live boards and quotes.",
+    body: "Ask your AI over MCP, or open the dashboard. Live boards, quoted proof.",
+    tint: "bg-[#e8f4ff]",
   },
 ] as const;
 
 export function HowItWorks() {
   return (
-    <section className="border-t border-white/[0.06]">
-      <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+    <section className="border-t border-line">
+      <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-16">
+        <p className="font-mono text-[11px] uppercase text-mark-deep">
           How it works
         </p>
-        <h2 className="mt-3 font-display text-3xl tracking-tight text-zinc-50 sm:text-4xl">
-          Three steps. No fluff.
+        <h2 className="mt-3 font-display text-3xl text-ink sm:text-4xl">
+          Three steps. Done.
         </h2>
-        <ol className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
+
+        <ol className="mt-10 grid gap-4 sm:grid-cols-3">
           {STEPS.map((s) => (
-            <li key={s.n} className="relative">
-              <span className="font-mono text-xs text-emerald-400/70">{s.n}</span>
-              <h3 className="mt-3 text-lg font-medium text-zinc-50">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <li
+              key={s.n}
+              className={`rounded-2xl border border-line p-5 ${s.tint}`}
+            >
+              <span className="font-mono text-[11px] uppercase text-mark-deep">
+                {s.n}
+              </span>
+              <h3 className="mt-3 font-display text-xl text-ink">{s.title}</h3>
+              <p className="mt-2 text-pretty text-sm leading-relaxed text-mute">
                 {s.body}
               </p>
             </li>

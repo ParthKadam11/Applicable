@@ -41,7 +41,12 @@ export function JobsTable({ initial }: { initial: Page | null }) {
   const [failed, setFailed] = useState(!initial);
   const skipFirst = useRef(true);
 
-  function run(q: string, elig: string, cursor: string | undefined, index: number) {
+  function run(
+    q: string,
+    elig: string,
+    cursor: string | undefined,
+    index: number,
+  ) {
     startTransition(() => {
       void (async () => {
         const next = await loadJobs({ query: q, eligibility: elig, cursor });
@@ -76,18 +81,18 @@ export function JobsTable({ initial }: { initial: Page | null }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="search"
           placeholder="Search titles…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full flex-1 rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/40"
+          className="w-full flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm text-ink outline-none placeholder:text-mute focus:border-mark"
         />
         <select
           value={eligibility}
           onChange={(e) => setEligibility(e.target.value)}
-          className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-400/40"
+          className="rounded-xl border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-mark"
         >
           <option value="open,india_remote">Open + India remote</option>
           <option value="open">Open worldwide</option>
@@ -96,35 +101,41 @@ export function JobsTable({ initial }: { initial: Page | null }) {
       </div>
 
       <div
-        className={`overflow-x-auto rounded-xl border border-white/[0.08] ${
+        className={`overflow-x-auto rounded-xl border border-line ${
           pending ? "opacity-70" : ""
         }`}
       >
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-white/[0.06] bg-white/[0.02] text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+          <thead className="border-b border-line bg-paper font-mono text-[10px] uppercase text-mute">
             <tr>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Company</th>
-              <th className="hidden px-4 py-3 font-medium md:table-cell">
+              <th className="px-3 py-2.5 font-medium">Title</th>
+              <th className="px-3 py-2.5 font-medium">Company</th>
+              <th className="hidden px-3 py-2.5 font-medium md:table-cell">
                 Location
               </th>
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="hidden px-4 py-3 font-medium lg:table-cell">
+              <th className="px-3 py-2.5 font-medium">Label</th>
+              <th className="hidden px-3 py-2.5 font-medium lg:table-cell">
                 Evidence
               </th>
-              <th className="px-4 py-3 font-medium">Apply</th>
+              <th className="px-3 py-2.5 font-medium">Apply</th>
             </tr>
           </thead>
           <tbody>
             {failed || !page ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-zinc-500">
+                <td
+                  colSpan={6}
+                  className="px-3 py-10 text-center font-mono text-mute"
+                >
                   —
                 </td>
               </tr>
             ) : page.results.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-zinc-500">
+                <td
+                  colSpan={6}
+                  className="px-3 py-10 text-center font-mono text-mute"
+                >
                   No jobs match.
                 </td>
               </tr>
@@ -134,24 +145,24 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                 return (
                   <tr
                     key={job.id}
-                    className="border-b border-white/[0.04] align-top last:border-0"
+                    className="border-b border-line/70 align-top last:border-0"
                   >
-                    <td className="max-w-[14rem] px-4 py-3 font-medium text-zinc-100">
+                    <td className="max-w-[14rem] px-3 py-3 font-medium text-ink">
                       {job.title}
                     </td>
-                    <td className="px-4 py-3 text-zinc-400">{job.company}</td>
-                    <td className="hidden px-4 py-3 text-zinc-500 md:table-cell">
+                    <td className="px-3 py-3 text-mute">{job.company}</td>
+                    <td className="hidden px-3 py-3 text-mute md:table-cell">
                       {job.location ?? "—"}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-300">
+                    <td className="px-3 py-3">
+                      <span className="rounded-full bg-[#e7fff8] px-2 py-0.5 font-mono text-[10px] uppercase text-mark-deep">
                         {job.eligibility
                           ? (ELIGIBILITY_LABELS[job.eligibility] ??
                             job.eligibility)
                           : "—"}
                       </span>
                     </td>
-                    <td className="hidden max-w-xs px-4 py-3 text-zinc-400 lg:table-cell">
+                    <td className="hidden max-w-xs px-3 py-3 text-mute lg:table-cell">
                       {quote ? (
                         <span className="line-clamp-2 text-xs leading-relaxed">
                           “{quote}”
@@ -160,12 +171,12 @@ export function JobsTable({ initial }: { initial: Page | null }) {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <a
                         href={job.apply_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-emerald-300 hover:text-emerald-200"
+                        className="font-mono text-[11px] uppercase text-mark-deep hover:underline"
                       >
                         Link
                       </a>
@@ -178,8 +189,8 @@ export function JobsTable({ initial }: { initial: Page | null }) {
         </table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-zinc-500">
-        <span>Page {pageIndex + 1} · 25 / page</span>
+      <div className="flex items-center justify-between font-mono text-[11px] uppercase text-mute">
+        <span className="tabular-nums">Page {pageIndex + 1}</span>
         <div className="flex gap-2">
           <button
             type="button"
@@ -187,7 +198,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
             onClick={() =>
               run(query, eligibility, stack[pageIndex - 1], pageIndex - 1)
             }
-            className="rounded-md px-3 py-1.5 ring-1 ring-white/[0.08] disabled:opacity-40"
+            className="rounded-full border border-line bg-white px-3 py-1.5 text-ink disabled:opacity-40"
           >
             Prev
           </button>
@@ -203,7 +214,7 @@ export function JobsTable({ initial }: { initial: Page | null }) {
               });
               run(query, eligibility, nextCursor, pageIndex + 1);
             }}
-            className="rounded-md px-3 py-1.5 ring-1 ring-white/[0.08] disabled:opacity-40"
+            className="rounded-full border border-line bg-white px-3 py-1.5 text-ink disabled:opacity-40"
           >
             Next
           </button>

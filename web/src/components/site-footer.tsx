@@ -2,41 +2,34 @@ import { LINKS } from "@/lib/constants";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-white/[0.06]">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <p className="text-sm text-zinc-500">
-          Built by{" "}
-          <a
-            href={LINKS.portfolio}
-            className="text-zinc-300 transition hover:text-white"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Parth Kadam
-          </a>
-        </p>
-        <div className="flex items-center gap-5 text-sm text-zinc-500">
-          <a
-            href={LINKS.github}
-            className="transition hover:text-zinc-200"
-            target="_blank"
-            rel="noreferrer"
-          >
+    <footer className="border-t border-line bg-white">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-5 py-9 sm:flex-row sm:items-end sm:justify-between sm:px-8">
+        <div>
+          <p className="font-display text-xl text-ink">CanIApply</p>
+          <p className="mt-1 font-mono text-[11px] uppercase text-mute">
+            Built by{" "}
+            <a
+              href={LINKS.portfolio}
+              className="text-mark-deep underline-offset-2 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Parth Kadam
+            </a>
+          </p>
+        </div>
+        <div className="flex gap-5 font-mono text-[11px] uppercase text-mute">
+          <a href={LINKS.github} target="_blank" rel="noreferrer" className="hover:text-ink">
             GitHub
           </a>
-          <a
-            href={LINKS.x}
-            className="transition hover:text-zinc-200"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href={LINKS.x} target="_blank" rel="noreferrer" className="hover:text-ink">
             X
           </a>
           <a
             href={LINKS.portfolio}
-            className="transition hover:text-zinc-200"
             target="_blank"
             rel="noreferrer"
+            className="hover:text-ink"
           >
             Portfolio
           </a>

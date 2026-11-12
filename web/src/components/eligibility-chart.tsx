@@ -28,12 +28,12 @@ export function EligibilityChart({ byEligibility }: Props) {
       key: k,
       name: ELIGIBILITY_LABELS[k] ?? k,
       value: byEligibility?.[k] ?? 0,
-      color: ELIGIBILITY_COLORS[k] ?? "#71717a",
+      color: ELIGIBILITY_COLORS[k] ?? "#8aa0b4",
     }));
 
   if (data.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-zinc-500">
+      <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
         —
       </div>
     );
@@ -48,10 +48,11 @@ export function EligibilityChart({ byEligibility }: Props) {
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius="58%"
+              innerRadius="55%"
               outerRadius="82%"
               paddingAngle={2}
-              stroke="none"
+              stroke="#fff"
+              strokeWidth={3}
             >
               {data.map((d) => (
                 <Cell key={d.key} fill={d.color} />
@@ -59,27 +60,25 @@ export function EligibilityChart({ byEligibility }: Props) {
             </Pie>
             <Tooltip
               contentStyle={{
-                background: "#0c0c0e",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 8,
+                background: "#fff",
+                border: "1px solid #cfe3f2",
+                borderRadius: 12,
                 fontSize: 12,
+                color: "#06203a",
               }}
               formatter={(value) => formatNumber(Number(value))}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <ul className="space-y-2.5 text-sm">
+      <ul className="space-y-2 text-sm">
         {data.map((d) => (
           <li key={d.key} className="flex items-center justify-between gap-6">
-            <span className="flex items-center gap-2 text-zinc-400">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: d.color }}
-              />
+            <span className="flex items-center gap-2 text-mute">
+              <span className="size-2 rounded-full" style={{ background: d.color }} />
               {d.name}
             </span>
-            <span className="font-mono text-zinc-200">
+            <span className="font-mono tabular-nums text-ink">
               {formatNumber(d.value)}
             </span>
           </li>

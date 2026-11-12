@@ -11,64 +11,39 @@ type Props = {
   compact?: boolean;
 };
 
-function Stat({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-        {label}
-      </p>
-      <p className="mt-2 font-mono text-2xl tracking-tight text-zinc-50 sm:text-[1.75rem]">
-        {value}
-      </p>
-      {hint ? <p className="mt-1 text-xs text-zinc-500">{hint}</p> : null}
-    </div>
-  );
-}
-
-export function StatsStrip({ stats, compact }: Props) {
+export function StatsStrip({ stats }: Props) {
   const open = stats?.by_eligibility?.open;
   const indiaRemote = stats?.by_eligibility?.india_remote;
   const pct = applicablePct(open, indiaRemote, stats?.tech_open_jobs);
 
+  const cells = [
+    { k: "Tech jobs", v: formatNumber(stats?.tech_open_jobs) },
+    { k: "Companies", v: formatNumber(stats?.companies_active) },
+    { k: "Open worldwide", v: formatNumber(open) },
+    { k: "India remote", v: formatNumber(indiaRemote) },
+    { k: "Applicable", v: formatPercent(pct), hot: true },
+  ];
+
   return (
-    <section
-      className={
-        compact
-          ? "border-b border-white/[0.06] bg-zinc-950/40"
-          : "border-y border-white/[0.06] bg-zinc-950/50"
-      }
-    >
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
-          <Stat
-            label="Tech jobs"
-            value={formatNumber(stats?.tech_open_jobs)}
-          />
-          <Stat
-            label="Companies"
-            value={formatNumber(stats?.companies_active)}
-          />
-          <Stat label="Open worldwide" value={formatNumber(open)} />
-          <Stat label="India remote" value={formatNumber(indiaRemote)} />
-          <Stat
-            label="Applicable"
-            value={formatPercent(pct)}
-            hint="(open + india remote) / tech"
-          />
+    <section className="border-y border-line bg-white/80">
+      <div className="mx-auto max-w-5xl px-5 sm:px-8">
+        <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-5">
+          {cells.map((c) => (
+            <div key={c.k} className="bg-white px-4 py-5 sm:px-5">
+              <p className="font-mono text-[10px] uppercase text-mute">{c.k}</p>
+              <p
+                className={`mt-2 font-mono text-2xl tabular-nums sm:text-[1.65rem] ${
+                  c.hot ? "text-mark-deep" : "text-ink"
+                }`}
+              >
+                {c.v}
+              </p>
+            </div>
+          ))}
         </div>
-        <p className="mt-6 text-xs text-zinc-600">
-          Last updated{" "}
-          <span className="text-zinc-400">
-            {formatIst(stats?.last_ingestion_at)} IST
-          </span>
+        <p className="py-3 font-mono text-[10px] uppercase text-mute">
+          Updated {formatIst(stats?.last_ingestion_at)} IST · (open + india
+          remote) / tech
         </p>
       </div>
     </section>

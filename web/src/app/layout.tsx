@@ -1,24 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { IBM_Plex_Mono, Geist } from "next/font/google";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = IBM_Plex_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const instrument = Instrument_Serif({
-  variable: "--font-instrument",
-  subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -52,12 +43,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${instrument.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html lang="en" className={cn("font-sans", geist.variable)}>
+      <head>
+        <link
+          href="https://fonts.cdnfonts.com/css/morrison"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={`${mono.variable} antialiased`}>{children}</body>
     </html>
   );
 }

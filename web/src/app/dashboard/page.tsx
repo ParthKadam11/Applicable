@@ -15,22 +15,17 @@ export const revalidate = 300;
 
 function Panel({
   title,
-  subtitle,
   children,
 }: {
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-white/[0.08] bg-[#0c0c0e]/70 p-5 sm:p-6">
-      <div className="mb-5">
-        <h2 className="text-base font-medium text-zinc-50">{title}</h2>
-        {subtitle ? (
-          <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
-        ) : null}
+    <section className="rounded-2xl border border-line bg-white">
+      <div className="border-b border-line px-4 py-3 sm:px-5">
+        <h2 className="font-display text-lg text-ink">{title}</h2>
       </div>
-      {children}
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   );
 }
@@ -44,42 +39,34 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="min-h-screen">
-      <div className="atmosphere">
+    <div className="min-h-dvh bg-paper">
+      <div className="sky">
         <SiteHeader active="dashboard" />
-        <div className="mx-auto max-w-6xl px-5 pb-8 pt-12 sm:px-8 sm:pt-16">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-400/80">
+        <div className="mx-auto max-w-5xl px-5 pb-6 pt-24 sm:px-8 sm:pt-28">
+          <p className="font-mono text-[11px] uppercase text-mark-deep">
             Dashboard
           </p>
-          <h1 className="mt-3 font-display text-4xl tracking-tight text-zinc-50 sm:text-5xl">
+          <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">
             Live corpus
           </h1>
-          <p className="mt-3 max-w-xl text-base text-zinc-400">
-            Eligibility mix, history, searchable India-eligible roles, and the
-            companies hiring from India right now.
+          <p className="mt-3 max-w-xl text-pretty text-[15px] text-mute">
+            Eligibility mix, history, India-eligible roles, companies hiring
+            from India.
           </p>
         </div>
       </div>
 
       <StatsStrip stats={stats} compact />
 
-      <div className="mx-auto max-w-6xl space-y-6 px-5 py-10 sm:px-8 sm:py-14">
+      <div className="mx-auto max-w-5xl space-y-5 px-5 py-10 sm:px-8">
         <DashboardCharts
           byEligibility={stats?.by_eligibility}
           history={history}
         />
-
-        <Panel
-          title="Top companies hiring from India"
-          subtitle="Ranked by open + india_remote tech roles"
-        >
+        <Panel title="Top companies">
           <TopCompanies companies={top} />
         </Panel>
-
-        <Panel
-          title="India-eligible jobs"
-          subtitle="Search open + india_remote · 25 per page"
-        >
+        <Panel title="India-eligible jobs">
           <JobsTable initial={jobs} />
         </Panel>
       </div>

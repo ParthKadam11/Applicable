@@ -5,11 +5,9 @@ import { useState } from "react";
 export function CopyButton({
   text,
   label = "Copy",
-  className = "",
 }: {
   text: string;
   label?: string;
-  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -27,11 +25,11 @@ export function CopyButton({
     <button
       type="button"
       onClick={() => void onCopy()}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+      className={`inline-flex h-9 min-w-[4.75rem] items-center justify-center rounded-full px-3 font-mono text-[11px] uppercase transition ${
         copied
-          ? "bg-emerald-400/15 text-emerald-300"
-          : "bg-white/[0.04] text-zinc-300 ring-1 ring-white/[0.08] hover:bg-white/[0.07] hover:text-white"
-      } ${className}`}
+          ? "bg-mark text-ink"
+          : "border border-line bg-white text-ink hover:border-mark hover:bg-[#eafffa]"
+      }`}
     >
       {copied ? "Copied" : label}
     </button>

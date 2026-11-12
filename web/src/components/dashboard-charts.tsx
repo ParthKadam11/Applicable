@@ -9,7 +9,7 @@ const EligibilityChart = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-64 items-center justify-center text-sm text-zinc-500">
+      <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
         —
       </div>
     ),
@@ -21,7 +21,7 @@ const HistoryChart = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-72 items-center justify-center text-sm text-zinc-500">
+      <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
         —
       </div>
     ),
@@ -36,24 +36,22 @@ export function DashboardCharts({
   history: DailyStats[] | null;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section className="rounded-xl border border-white/[0.08] bg-[#0c0c0e]/70 p-5 sm:p-6">
-        <div className="mb-5">
-          <h2 className="text-base font-medium text-zinc-50">By eligibility</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Tech open jobs across labels
-          </p>
+    <div className="grid gap-5 lg:grid-cols-2">
+      <section className="rounded-2xl border border-line bg-white">
+        <div className="border-b border-line px-4 py-3 sm:px-5">
+          <h2 className="font-display text-lg text-ink">By eligibility</h2>
         </div>
-        <EligibilityChart byEligibility={byEligibility} />
+        <div className="p-4 sm:p-5">
+          <EligibilityChart byEligibility={byEligibility} />
+        </div>
       </section>
-      <section className="rounded-xl border border-white/[0.08] bg-[#0c0c0e]/70 p-5 sm:p-6">
-        <div className="mb-5">
-          <h2 className="text-base font-medium text-zinc-50">Trend</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Open + India remote vs tech jobs (backfill days skipped)
-          </p>
+      <section className="rounded-2xl border border-line bg-white">
+        <div className="border-b border-line px-4 py-3 sm:px-5">
+          <h2 className="font-display text-lg text-ink">Trend</h2>
         </div>
-        <HistoryChart history={history} />
+        <div className="p-4 sm:p-5">
+          <HistoryChart history={history} />
+        </div>
       </section>
     </div>
   );
