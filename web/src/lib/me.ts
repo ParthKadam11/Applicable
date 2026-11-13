@@ -5,13 +5,21 @@ import {
   companies,
   jobTags,
   jobs,
+  labelReports,
   mcpTokens,
   savedJobs,
   users,
 } from "@/db/schema";
 import type { McpTokenPublic, SavedJobRow } from "@/lib/me-types";
+import {
+  DEFAULT_PREFERENCES,
+  mergePreferences,
+  normalizePreferences,
+  type PatchPreferences,
+  type UserPreferences,
+} from "@/lib/preferences";
 
-export type { McpTokenPublic, SavedJobRow };
+export type { McpTokenPublic, SavedJobRow, UserPreferences };
 
 const TOKEN_PREFIX = "app_mcp_";
 
@@ -200,7 +208,119 @@ export async function revokeMcpTokens(userId: string, tokenId?: string) {
   return { revoked: updated.length };
 }
 
+export async function getUserProfile(userId: string) {
+  const [row] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      createdAt: users.createdAt,
+      preferences: users.preferences,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row) return null;
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    avatarUrl: row.avatarUrl,
+    createdAt: row.createdAt.toISOString(),
+    preferences: normalizePreferences(row.preferences),
+  };
+}
+
+export async function getPreferences(userId: string): Promise<UserPreferences> {
+  const [row] = await db
+    .select({ preferences: users.preferences })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row) return { ...DEFAULT_PREFERENCES };
+  return normalizePreferences(row.preferences);
+}
+
+export async function updatePreferences(
+  userId: string,
+  patch: PatchPreferences,
+): Promise<UserPreferences | null> {
+  const current = await getPreferences(userId);
+  const next = mergePreferences(current, patch);
+  const updated = await db
+    .update(users)
+    .set({ preferences: next })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id, preferences: users.preferences });
+  if (!updated[0]) return null;
+  return normalizePreferences(updated[0].preferences);
+}
+
+export async function exportUserData(userId: string) {
+  const profile = await getUserProfile(userId);
+  if (!profile) return null;
+
+  const saved = await db
+    .select({
+      jobId: savedJobs.jobId,
+      savedAt: savedJobs.createdAt,
+      labelAtSave: savedJobs.labelAtSave,
+      appliedAt: savedJobs.appliedAt,
+      title: jobs.title,
+      company: companies.name,
+      applyUrl: jobs.applyUrl,
+      closedAt: jobs.closedAt,
+      eligibility: jobTags.indiaEligibility,
+    })
+    .from(savedJobs)
+    .leftJoin(jobs, eq(jobs.id, savedJobs.jobId))
+    .leftJoin(companies, eq(companies.id, jobs.companyId))
+    .leftJoin(jobTags, eq(jobTags.jobId, jobs.id))
+    .where(eq(savedJobs.userId, userId))
+    .orderBy(desc(savedJobs.createdAt));
+
+  const tokens = await listMcpTokens(userId);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    profile: {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      avatarUrl: profile.avatarUrl,
+      memberSince: profile.createdAt,
+    },
+    preferences: profile.preferences,
+    savedJobs: saved.map((r) => ({
+      jobId: r.jobId,
+      title: r.title ?? null,
+      company: r.company ?? null,
+      applyUrl: r.applyUrl ?? null,
+      eligibility: r.eligibility ?? null,
+      labelAtSave: r.labelAtSave ?? null,
+      savedAt: r.savedAt.toISOString(),
+      appliedAt: r.appliedAt?.toISOString() ?? null,
+      isClosed: r.closedAt != null,
+    })),
+    mcpTokens: tokens.map((t) => ({
+      id: t.id,
+      createdAt: t.created_at,
+      lastUsedAt: t.last_used_at,
+      revokedAt: t.revoked_at,
+      active: t.active,
+    })),
+  };
+}
+
 export async function deleteAccount(userId: string) {
+  // Anonymize reports first (FK is ON DELETE SET NULL, but be explicit).
+  await db
+    .update(labelReports)
+    .set({ userId: null })
+    .where(eq(labelReports.userId, userId));
+
+  // saved_jobs + mcp_tokens cascade on user delete
   const deleted = await db
     .delete(users)
     .where(eq(users.id, userId))

@@ -176,6 +176,11 @@ async function baseConditions(q: JobsListQuery): Promise<SQL[]> {
 
   if (q.role) {
     conditions.push(inArray(jobTags.roleFamily, ROLE_FAMILY_MAP[q.role]));
+  } else if (q.roles?.length) {
+    const families = q.roles.flatMap((r) => ROLE_FAMILY_MAP[r] ?? []);
+    if (families.length > 0) {
+      conditions.push(inArray(jobTags.roleFamily, families));
+    }
   }
 
   if (q.ats) {

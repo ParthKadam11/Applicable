@@ -109,6 +109,7 @@ export async function resolveMcpTokenUserId(
       id: mcpTokens.id,
       userId: mcpTokens.userId,
       revokedAt: mcpTokens.revokedAt,
+      lastUsedAt: mcpTokens.lastUsedAt,
     })
     .from(mcpTokens)
     .where(eq(mcpTokens.tokenHash, tokenHash))
@@ -117,10 +118,14 @@ export async function resolveMcpTokenUserId(
   const row = rows[0];
   if (!row || row.revokedAt) return null;
 
-  await db
-    .update(mcpTokens)
-    .set({ lastUsedAt: new Date() })
-    .where(eq(mcpTokens.id, row.id));
+  // Throttle last_used_at writes to once per minute per token.
+  const last = row.lastUsedAt?.getTime() ?? 0;
+  if (Date.now() - last >= 60_000) {
+    await db
+      .update(mcpTokens)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(mcpTokens.id, row.id));
+  }
 
   return row.userId;
 }

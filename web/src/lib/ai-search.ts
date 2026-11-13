@@ -557,23 +557,53 @@ export function filtersToJobsQuery(
   return sp.toString();
 }
 
-export function filtersFromSearchParams(sp: URLSearchParams): JobsFilterFields {
+export function filtersFromSearchParams(
+  sp: URLSearchParams,
+  preferences?: {
+    defaultLabels: JobsFilterFields["labels"];
+    defaultRoles: NonNullable<JobsFilterFields["roles"]> | [];
+    hideNoSalary: boolean;
+  } | null,
+): JobsFilterFields {
+  const hasLabels = Boolean(sp.get("labels"));
+  const hasRole = Boolean(sp.get("role"));
+  const hasSalaryParam =
+    sp.get("has_salary") != null && sp.get("has_salary") !== "";
+
   const labelsRaw = sp.get("labels");
-  const labels = labelsRaw
-    ? labelsRaw
+  const labels = hasLabels
+    ? labelsRaw!
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
-    : undefined;
+    : preferences?.defaultLabels;
+
   let has_salary: boolean | undefined;
   const hs = sp.get("has_salary");
-  if (hs === "true" || hs === "1") has_salary = true;
-  else if (hs === "false" || hs === "0") has_salary = false;
+  if (hasSalaryParam) {
+    if (hs === "true" || hs === "1") has_salary = true;
+    else if (hs === "false" || hs === "0") has_salary = false;
+  } else if (preferences?.hideNoSalary) {
+    has_salary = true;
+  }
+
+  let role: string | undefined = hasRole
+    ? (sp.get("role") || undefined)
+    : undefined;
+  let roles: string[] | undefined;
+  if (!hasRole && preferences?.defaultRoles?.length) {
+    if (preferences.defaultRoles.length === 1) {
+      role = preferences.defaultRoles[0];
+    } else {
+      roles = [...preferences.defaultRoles];
+    }
+  }
 
   const parsed = JobsFilterFieldsSchema.safeParse({
     q: sp.get("q") || undefined,
     labels,
-    role: sp.get("role") || undefined,
+    role,
+    roles,
     ats: sp.get("ats") || undefined,
     posted: sp.get("posted") || undefined,
     has_salary,

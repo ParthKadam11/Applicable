@@ -35,16 +35,26 @@ export function ByokKeysPanel({
   const [testMsg, setTestMsg] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
 
+  const [masked, setMasked] = useState<string | null>(null);
+
   useEffect(() => {
     const store = loadByokKey();
     setHasKey(!!store);
-    if (store) setProvider(store.provider);
+    if (store) {
+      setProvider(store.provider);
+      const k = store.apiKey;
+      setMasked(k.length <= 4 ? "••••" : `••••${k.slice(-4)}`);
+    } else {
+      setMasked(null);
+    }
   }, []);
 
   function persistKey() {
     if (!apiKey.trim()) return;
-    saveByokKey({ provider, apiKey: apiKey.trim() });
+    const key = apiKey.trim();
+    saveByokKey({ provider, apiKey: key });
     setHasKey(true);
+    setMasked(key.length <= 4 ? "••••" : `••••${key.slice(-4)}`);
     setApiKey("");
     setTestMsg(null);
     setOpen(false);
@@ -77,7 +87,9 @@ export function ByokKeysPanel({
           <p className="mt-1 text-[13px] text-mute">
             Keys stay in this browser only ·{" "}
             <span className="text-ink">
-              {hasKey ? `Saved (${provider})` : "No key"}
+              {hasKey
+                ? `Saved (${provider}${masked ? ` · ${masked}` : ""})`
+                : "No key"}
             </span>
           </p>
         </div>
@@ -131,6 +143,7 @@ export function ByokKeysPanel({
                 onClick={() => {
                   clearByokKey();
                   setHasKey(false);
+                  setMasked(null);
                   setTestMsg(null);
                   onKeyChange?.();
                 }}

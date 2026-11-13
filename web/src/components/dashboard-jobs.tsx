@@ -15,6 +15,10 @@ import { SoftSelect } from "@/components/ui/soft-select";
 import type { ApiJob, ApiJobDetail } from "@/lib/jobs-api";
 import { ELIGIBILITY_LABELS } from "@/lib/constants";
 import { formatIst } from "@/lib/format";
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+} from "@/lib/preferences";
 
 const LABEL_OPTIONS = [
   {
@@ -151,6 +155,7 @@ export function DashboardJobs({
   companySlug,
   basePath = "/dashboard/jobs",
   hideChrome = false,
+  initialPreferences,
 }: {
   initial: ListResponse | null;
   /** When set, scopes list to this company slug and simplifies filters. */
@@ -158,6 +163,7 @@ export function DashboardJobs({
   basePath?: string;
   /** Hide page title / non-label filters (company detail page). */
   hideChrome?: boolean;
+  initialPreferences?: UserPreferences;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -180,14 +186,22 @@ export function DashboardJobs({
   const debounceRef = useRef<number | null>(null);
   const [qDraft, setQDraft] = useState(searchParams.get("q") ?? "");
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [prefs, setPrefs] = useState<UserPreferences>(
+    initialPreferences ?? DEFAULT_PREFERENCES,
+  );
 
   const qsKey = searchParams.toString();
 
-  const labels = searchParams.get("labels") ?? "open,india_remote";
-  const role = searchParams.get("role") ?? "";
+  const labelsDefault = prefs.defaultLabels.join(",");
+  const roleDefault =
+    prefs.defaultRoles.length === 1 ? prefs.defaultRoles[0]! : "";
+  const hasSalaryDefault = prefs.hideNoSalary ? "true" : "";
+
+  const labels = searchParams.get("labels") ?? labelsDefault;
+  const role = searchParams.get("role") ?? roleDefault;
   const ats = searchParams.get("ats") ?? "";
   const posted = searchParams.get("posted") ?? "all";
-  const hasSalary = searchParams.get("has_salary") ?? "";
+  const hasSalary = searchParams.get("has_salary") ?? hasSalaryDefault;
   const sort = searchParams.get("sort") ?? "newest";
   const jobId = searchParams.get("job");
 
@@ -213,10 +227,20 @@ export function DashboardJobs({
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch("/api/me/saved?ids=1");
-        if (!res.ok) return;
-        const body = (await res.json()) as { ids?: string[] };
-        setSavedIds(new Set(body.ids ?? []));
+        const [savedRes, prefRes] = await Promise.all([
+          fetch("/api/me/saved?ids=1"),
+          fetch("/api/me/preferences"),
+        ]);
+        if (savedRes.ok) {
+          const body = (await savedRes.json()) as { ids?: string[] };
+          setSavedIds(new Set(body.ids ?? []));
+        }
+        if (prefRes.ok) {
+          const body = (await prefRes.json()) as {
+            preferences?: UserPreferences;
+          };
+          if (body.preferences) setPrefs(body.preferences);
+        }
       } catch {
         /* ignore */
       }
@@ -390,7 +414,7 @@ export function DashboardJobs({
           <SoftSelect
             label="Eligibility"
             value={labels}
-            defaultValue="open,india_remote"
+            defaultValue={labelsDefault}
             options={[...LABEL_OPTIONS]}
             onChange={(v) => patchParams({ labels: v })}
           />
@@ -399,7 +423,7 @@ export function DashboardJobs({
               <SoftSelect
                 label="Role"
                 value={role}
-                defaultValue=""
+                defaultValue={roleDefault}
                 options={[...ROLE_OPTIONS]}
                 onChange={(v) => patchParams({ role: v || null })}
               />
@@ -420,7 +444,7 @@ export function DashboardJobs({
               <SoftSelect
                 label="Salary"
                 value={hasSalary}
-                defaultValue=""
+                defaultValue={hasSalaryDefault}
                 options={[...SALARY_OPTIONS]}
                 onChange={(v) => patchParams({ has_salary: v || null })}
               />

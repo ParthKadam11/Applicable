@@ -242,6 +242,8 @@ export const users = pgTable(
     email: text("email").notNull(),
     name: text("name"),
     avatarUrl: text("avatar_url"),
+    /** Jobs / AI Search defaults. Shape validated in web preferences Zod. */
+    preferences: jsonb("preferences").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

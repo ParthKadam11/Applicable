@@ -31,6 +31,8 @@ export const JobsFilterFieldsSchema = z.object({
     .min(1)
     .default(["open", "india_remote"]),
   role: RoleSchema.optional(),
+  /** Multi-role filter (from preferences.defaultRoles when URL has no role). */
+  roles: z.array(RoleSchema).min(1).optional(),
   ats: AtsSchema.optional(),
   /** Public company slug — restrict results to one company. */
   company: z
@@ -53,6 +55,20 @@ export const JobsListQuerySchema = JobsFilterFieldsSchema.extend({
 });
 
 export type JobsListQuery = z.infer<typeof JobsListQuerySchema>;
+
+export type JobsUrlPresence = {
+  labels: boolean;
+  role: boolean;
+  has_salary: boolean;
+};
+
+export function jobsUrlPresence(sp: URLSearchParams): JobsUrlPresence {
+  return {
+    labels: Boolean(sp.get("labels")),
+    role: Boolean(sp.get("role")),
+    has_salary: sp.get("has_salary") != null && sp.get("has_salary") !== "",
+  };
+}
 
 export type JobsCursorPayload = {
   sort: z.infer<typeof SortSchema>;
@@ -78,25 +94,52 @@ export function decodeJobsCursor(raw: string): JobsCursorPayload {
   }
 }
 
+export type JobsPreferencesInput = {
+  defaultLabels: Array<z.infer<typeof LabelSchema>>;
+  defaultRoles: Array<z.infer<typeof RoleSchema>>;
+  hideNoSalary: boolean;
+};
+
+/**
+ * Parse list query. When `preferences` is provided, fills labels / role(s) /
+ * has_salary only for keys absent from the URL (URL always wins).
+ */
 export function parseJobsListSearchParams(
   sp: URLSearchParams,
+  preferences?: JobsPreferencesInput | null,
 ): { ok: true; data: JobsListQuery } | { ok: false; message: string } {
+  const present = jobsUrlPresence(sp);
+
   const labelsRaw = sp.get("labels");
-  const labels = labelsRaw
-    ? labelsRaw
+  const labels = present.labels
+    ? labelsRaw!
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
-    : undefined;
+    : preferences?.defaultLabels;
 
   const hasSalaryRaw = sp.get("has_salary");
   let has_salary: boolean | undefined;
-  if (hasSalaryRaw != null && hasSalaryRaw !== "") {
+  if (present.has_salary) {
     if (hasSalaryRaw === "true" || hasSalaryRaw === "1") has_salary = true;
     else if (hasSalaryRaw === "false" || hasSalaryRaw === "0")
       has_salary = false;
     else {
       return { ok: false, message: "has_salary must be true or false" };
+    }
+  } else if (preferences?.hideNoSalary) {
+    has_salary = true;
+  }
+
+  let role: string | undefined = present.role
+    ? (sp.get("role") || undefined)
+    : undefined;
+  let roles: string[] | undefined;
+  if (!present.role && preferences?.defaultRoles?.length) {
+    if (preferences.defaultRoles.length === 1) {
+      role = preferences.defaultRoles[0];
+    } else {
+      roles = preferences.defaultRoles;
     }
   }
 
@@ -113,7 +156,8 @@ export function parseJobsListSearchParams(
   const parsed = JobsListQuerySchema.safeParse({
     q: sp.get("q") || undefined,
     labels,
-    role: sp.get("role") || undefined,
+    role,
+    roles,
     ats: sp.get("ats") || undefined,
     company: sp.get("company") || undefined,
     posted: sp.get("posted") || undefined,

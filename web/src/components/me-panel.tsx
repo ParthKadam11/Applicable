@@ -150,7 +150,11 @@ export function MePanel() {
   async function wipeAccount() {
     setBusy(true);
     try {
-      const res = await fetch("/api/me/account", { method: "DELETE" });
+      const res = await fetch("/api/me/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "delete" }),
+      });
       if (!res.ok) throw new Error("delete_failed");
       await signOut({ callbackUrl: "/" });
     } catch {

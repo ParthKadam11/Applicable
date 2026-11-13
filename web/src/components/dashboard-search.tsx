@@ -29,6 +29,10 @@ import {
 import type { ApiJob, ApiJobDetail } from "@/lib/jobs-api";
 import { ELIGIBILITY_LABELS } from "@/lib/constants";
 import { formatIst } from "@/lib/format";
+import {
+  DEFAULT_PREFERENCES,
+  type UserPreferences,
+} from "@/lib/preferences";
 
 type ListResponse = {
   items: ApiJob[];
@@ -88,12 +92,16 @@ export function DashboardSearch() {
   const [detail, setDetail] = useState<ApiJobDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [prefs, setPrefs] = useState<UserPreferences>({
+    ...DEFAULT_PREFERENCES,
+  });
 
   const qsKey = searchParams.toString();
   const jobId = searchParams.get("job");
   const filters = useMemo(
-    () => filtersFromSearchParams(searchParams),
-    [qsKey],
+    () => filtersFromSearchParams(searchParams, prefs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- qsKey + prefs
+    [qsKey, prefs],
   );
   const hasFilterParams = useMemo(() => {
     return Boolean(
@@ -131,10 +139,20 @@ export function DashboardSearch() {
     if (authStatus !== "authenticated") return;
     void (async () => {
       try {
-        const res = await fetch("/api/me/saved?ids=1");
-        if (!res.ok) return;
-        const body = (await res.json()) as { ids?: string[] };
-        setSavedIds(new Set(body.ids ?? []));
+        const [savedRes, prefRes] = await Promise.all([
+          fetch("/api/me/saved?ids=1"),
+          fetch("/api/me/preferences"),
+        ]);
+        if (savedRes.ok) {
+          const body = (await savedRes.json()) as { ids?: string[] };
+          setSavedIds(new Set(body.ids ?? []));
+        }
+        if (prefRes.ok) {
+          const body = (await prefRes.json()) as {
+            preferences?: UserPreferences;
+          };
+          if (body.preferences) setPrefs(body.preferences);
+        }
       } catch {
         /* ignore */
       }
@@ -159,19 +177,28 @@ export function DashboardSearch() {
       const next: JobsFilterFields = { ...filters };
       if ("clear" in patch) {
         const key = patch.clear;
-        if (key === "labels") next.labels = ["open", "india_remote"];
+        if (key === "labels") next.labels = [...prefs.defaultLabels];
         else if (key === "posted") next.posted = "all";
         else if (key === "sort") next.sort = "newest";
-        else if (key === "has_salary") delete next.has_salary;
-        else if (key === "q") delete next.q;
-        else if (key === "role") delete next.role;
-        else if (key === "ats") delete next.ats;
+        else if (key === "has_salary") {
+          if (prefs.hideNoSalary) next.has_salary = true;
+          else delete next.has_salary;
+        } else if (key === "q") delete next.q;
+        else if (key === "role") {
+          delete next.role;
+          delete next.roles;
+          if (prefs.defaultRoles.length === 1) {
+            next.role = prefs.defaultRoles[0];
+          } else if (prefs.defaultRoles.length > 1) {
+            next.roles = [...prefs.defaultRoles];
+          }
+        } else if (key === "ats") delete next.ats;
       } else {
         Object.assign(next, patch);
       }
       applyFiltersToUrl(next, searchParams.get("nl"));
     },
-    [filters, applyFiltersToUrl, searchParams],
+    [filters, applyFiltersToUrl, searchParams, prefs],
   );
 
   // Fetch jobs whenever filter URL changes (no LLM)

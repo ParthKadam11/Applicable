@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import {
   applyMeCors,
   clientIp,
@@ -5,6 +6,7 @@ import {
   json,
 } from "@/lib/api-guard";
 import { listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
+import { getPreferences } from "@/lib/me";
 import { ipApiLimiter } from "@/lib/rate-limit";
 
 export async function OPTIONS(req: Request) {
@@ -20,8 +22,17 @@ export async function GET(req: Request) {
     return json({ ok: false, error: "rate_limit" }, 429, headers);
   }
 
+  let preferences = null;
+  try {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (userId) preferences = await getPreferences(userId);
+  } catch {
+    preferences = null;
+  }
+
   const url = new URL(req.url);
-  const parsed = parseJobsListSearchParams(url.searchParams);
+  const parsed = parseJobsListSearchParams(url.searchParams, preferences);
   if (!parsed.ok) {
     return json({ ok: false, error: "invalid_params", message: parsed.message }, 400, headers);
   }

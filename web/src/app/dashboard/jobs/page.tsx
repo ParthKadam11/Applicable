@@ -1,6 +1,9 @@
 import { Suspense } from "react";
+import { auth } from "@/auth";
 import { DashboardJobs } from "@/components/dashboard-jobs";
 import { listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
+import { getPreferences } from "@/lib/me";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +23,17 @@ export default async function DashboardJobsPage({
 }: {
   searchParams: Promise<Sp>;
 }) {
+  let preferences = null;
+  try {
+    const session = await auth();
+    if (session?.user?.id) preferences = await getPreferences(session.user.id);
+  } catch {
+    preferences = null;
+  }
+
   const parsed = parseJobsListSearchParams(
     toURLSearchParams(await searchParams),
+    preferences,
   );
   let initial = null;
   try {
@@ -29,10 +41,16 @@ export default async function DashboardJobsPage({
       parsed.ok
         ? parsed.data
         : {
-            labels: ["open", "india_remote"],
+            labels: preferences?.defaultLabels ?? ["open", "india_remote"],
             posted: "all",
             sort: "newest",
             limit: 30,
+            ...(preferences?.hideNoSalary ? { has_salary: true as const } : {}),
+            ...(preferences?.defaultRoles?.length === 1
+              ? { role: preferences.defaultRoles[0] }
+              : preferences?.defaultRoles && preferences.defaultRoles.length > 1
+                ? { roles: preferences.defaultRoles }
+                : {}),
           },
     );
   } catch {
@@ -45,7 +63,10 @@ export default async function DashboardJobsPage({
         <p className="text-sm text-mute">Loading jobs…</p>
       }
     >
-      <DashboardJobs initial={initial} />
+      <DashboardJobs
+        initial={initial}
+        initialPreferences={preferences ?? DEFAULT_PREFERENCES}
+      />
     </Suspense>
   );
 }

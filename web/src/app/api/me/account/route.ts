@@ -1,16 +1,40 @@
+import { z } from "zod";
 import { signOut } from "@/auth";
 import { corsPreflight, json, requireUser } from "@/lib/api-guard";
 import { deleteAccount } from "@/lib/me";
 
+const DeleteBodySchema = z.object({
+  confirm: z.literal("delete"),
+});
+
 export async function DELETE(req: Request) {
   const gate = await requireUser(req);
   if (!gate.ok) return gate.response;
+
+  let body: unknown = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const parsed = DeleteBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return json(
+      {
+        ok: false,
+        error: "invalid_params",
+        message: 'Type "delete" to confirm',
+      },
+      400,
+      gate.headers,
+    );
+  }
+
   try {
     const ok = await deleteAccount(gate.userId);
     if (!ok) {
       return json({ ok: false, error: "not_found" }, 404, gate.headers);
     }
-    // Best-effort cookie clear; client should also call signOut.
     try {
       await signOut({ redirect: false });
     } catch {

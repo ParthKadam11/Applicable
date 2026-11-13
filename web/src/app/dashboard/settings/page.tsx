@@ -1,25 +1,12 @@
-import { ByokKeysPanel } from "@/components/byok-keys-panel";
-import { ByokPanel } from "@/components/byok-panel";
-import { fetchLlmStatus } from "@/lib/api";
+import { Suspense } from "react";
+import { DashboardSettings } from "@/components/dashboard-settings";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
-export default async function DashboardSettingsPage() {
-  const llm = await fetchLlmStatus();
-
+export default function DashboardSettingsPage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
-          Settings
-        </h1>
-        <p className="mt-1.5 max-w-xl text-pretty text-[14px] text-mute sm:text-[15px]">
-          AI search key (browser-only) and classifier BYOK status.
-        </p>
-      </div>
-
-      <ByokKeysPanel title="Change/remove key" />
-      <ByokPanel status={llm} />
-    </div>
+    <Suspense fallback={<p className="text-sm text-mute">Loading settings…</p>}>
+      <DashboardSettings />
+    </Suspense>
   );
 }
