@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 
 type Props = {
@@ -15,6 +15,10 @@ export function SaveJobButton({ jobId, saved, onSavedChange }: Props) {
   const [localSaved, setLocalSaved] = useState(saved);
   const [pending, setPending] = useState(false);
   const [prompt, setPrompt] = useState(false);
+
+  useEffect(() => {
+    setLocalSaved(saved);
+  }, [saved]);
 
   async function toggle() {
     if (!data?.user) {

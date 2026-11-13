@@ -78,6 +78,9 @@ export const jobs = pgTable(
     ),
     index("jobs_closed_at_idx").on(table.closedAt),
     index("jobs_posted_at_idx").on(table.postedAt),
+    index("jobs_first_seen_at_idx").on(table.firstSeenAt),
+    index("jobs_last_seen_at_idx").on(table.lastSeenAt),
+    index("jobs_company_id_idx").on(table.companyId),
     index("jobs_content_hash_idx").on(table.contentHash),
   ],
 );
@@ -138,30 +141,37 @@ export const companyCandidates = pgTable(
 );
 
 /** India eligibility + role tags written by rules/LLM classification. */
-export const jobTags = pgTable("job_tags", {
-  jobId: uuid("job_id")
-    .primaryKey()
-    .references(() => jobs.id, { onDelete: "cascade" }),
-  indiaEligibility: text("india_eligibility"),
-  eligibilityEvidence: text("eligibility_evidence").array(),
-  remoteScope: text("remote_scope"),
-  interviewStyle: text("interview_style").array(),
-  interviewStyleEvidence: jsonb("interview_style_evidence").$type<
-    Record<string, string[]>
-  >(),
-  contractorOrEor: boolean("contractor_or_eor"),
-  contractorOrEorEvidence: text("contractor_or_eor_evidence"),
-  compensationMin: bigint("compensation_min", { mode: "number" }),
-  compensationMax: bigint("compensation_max", { mode: "number" }),
-  compensationCurrency: text("compensation_currency"),
-  compensationPeriod: text("compensation_period"),
-  seniority: text("seniority"),
-  roleFamily: text("role_family"),
-  classifier: text("classifier"),
-  model: text("model"),
-  classifiedAt: timestamp("classified_at", { withTimezone: true }),
-  contentHash: text("content_hash"),
-});
+export const jobTags = pgTable(
+  "job_tags",
+  {
+    jobId: uuid("job_id")
+      .primaryKey()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    indiaEligibility: text("india_eligibility"),
+    eligibilityEvidence: text("eligibility_evidence").array(),
+    remoteScope: text("remote_scope"),
+    interviewStyle: text("interview_style").array(),
+    interviewStyleEvidence: jsonb("interview_style_evidence").$type<
+      Record<string, string[]>
+    >(),
+    contractorOrEor: boolean("contractor_or_eor"),
+    contractorOrEorEvidence: text("contractor_or_eor_evidence"),
+    compensationMin: bigint("compensation_min", { mode: "number" }),
+    compensationMax: bigint("compensation_max", { mode: "number" }),
+    compensationCurrency: text("compensation_currency"),
+    compensationPeriod: text("compensation_period"),
+    seniority: text("seniority"),
+    roleFamily: text("role_family"),
+    classifier: text("classifier"),
+    model: text("model"),
+    classifiedAt: timestamp("classified_at", { withTimezone: true }),
+    contentHash: text("content_hash"),
+  },
+  (table) => [
+    index("job_tags_india_eligibility_idx").on(table.indiaEligibility),
+    index("job_tags_role_family_idx").on(table.roleFamily),
+  ],
+);
 
 /**
  * Cache of ATS board probes (Common Crawl discovery, etc.).
@@ -243,10 +253,14 @@ export const savedJobs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    /** India-eligibility label snapshot when the user saved the job. */
+    labelAtSave: text("label_at_save"),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("saved_jobs_user_job_uidx").on(table.userId, table.jobId),
     index("saved_jobs_user_created_idx").on(table.userId, table.createdAt),
+    index("saved_jobs_user_applied_idx").on(table.userId, table.appliedAt),
   ],
 );
 
@@ -268,6 +282,28 @@ export const mcpTokens = pgTable(
   (table) => [
     uniqueIndex("mcp_tokens_token_hash_uidx").on(table.tokenHash),
     index("mcp_tokens_user_idx").on(table.userId),
+  ],
+);
+
+/** Crowdsourced corrections for India-eligibility labels. */
+export const labelReports = pgTable(
+  "label_reports",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    jobId: uuid("job_id")
+      .notNull()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    suggestedLabel: text("suggested_label"),
+    note: text("note"),
+    ipHash: text("ip_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("label_reports_job_id_idx").on(table.jobId),
+    index("label_reports_created_at_idx").on(table.createdAt),
   ],
 );
 

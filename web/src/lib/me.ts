@@ -73,9 +73,18 @@ export async function saveJob(userId: string, jobId: string) {
   if (!exists[0]) {
     throw new Error("job_not_found");
   }
+  const [tag] = await db
+    .select({ label: jobTags.indiaEligibility })
+    .from(jobTags)
+    .where(eq(jobTags.jobId, jobId))
+    .limit(1);
   const inserted = await db
     .insert(savedJobs)
-    .values({ userId, jobId })
+    .values({
+      userId,
+      jobId,
+      labelAtSave: tag?.label ?? null,
+    })
     .onConflictDoNothing()
     .returning({ jobId: savedJobs.jobId });
   return { saved: true as const, already: inserted.length === 0 };

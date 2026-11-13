@@ -50,6 +50,20 @@
       "when": 1794700000000,
       "tag": "0006_users_saved_mcp",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794800000000,
+      "tag": "0007_jobs_api_indexes_label_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794900000000,
+      "tag": "0008_saved_jobs_label_applied",
+      "breakpoints": true
     }
   ]
 }

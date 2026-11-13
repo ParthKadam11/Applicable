@@ -5,6 +5,7 @@ import {
   requireUser,
 } from "@/lib/api-guard";
 import { saveJob, unsaveJob } from "@/lib/me";
+import { PatchSavedBodySchema, setSavedApplied } from "@/lib/saved-api";
 
 type Ctx = { params: Promise<{ jobId: string }> };
 
@@ -43,6 +44,55 @@ export async function DELETE(req: Request, ctx: Ctx) {
     );
     return json({ ok: false, error: "unsave_failed" }, 500, gate.headers);
   }
+}
+
+export async function PATCH(req: Request, ctx: Ctx) {
+  const gate = await requireUser(req);
+  if (!gate.ok) return gate.response;
+  const limited = enforceUserSaveRate(gate.userId, gate.headers);
+  if (limited) return limited;
+  const { jobId } = await ctx.params;
+
+  if (!jobId || !/^[0-9a-f-]{36}$/i.test(jobId)) {
+    return json(
+      { ok: false, error: "invalid_params", message: "invalid id" },
+      400,
+      gate.headers,
+    );
+  }
+
+  let body: unknown = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const parsed = PatchSavedBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return json(
+      {
+        ok: false,
+        error: "invalid_params",
+        message: parsed.error.issues.map((i) => i.message).join("; "),
+      },
+      400,
+      gate.headers,
+    );
+  }
+
+  const result = await setSavedApplied(
+    gate.userId,
+    jobId,
+    parsed.data.applied,
+  );
+  if (!result.ok) {
+    return json({ ok: false, error: "not_found" }, 404, gate.headers);
+  }
+  return json(
+    { ok: true, applied: parsed.data.applied, appliedAt: result.appliedAt },
+    200,
+    gate.headers,
+  );
 }
 
 export async function OPTIONS(req: Request) {

@@ -1,27 +1,51 @@
-import { JobsTable } from "@/components/jobs-table";
-import { fetchJobs } from "@/lib/api";
+import { Suspense } from "react";
+import { DashboardJobs } from "@/components/dashboard-jobs";
+import { listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
-export default async function DashboardJobsPage() {
-  const jobs = await fetchJobs({
-    eligibility: "open,india_remote",
-    limit: 25,
-  });
+type Sp = Record<string, string | string[] | undefined>;
+
+function toURLSearchParams(sp: Sp): URLSearchParams {
+  const out = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string" && v) out.set(k, v);
+    else if (Array.isArray(v) && v[0]) out.set(k, v[0]);
+  }
+  return out;
+}
+
+export default async function DashboardJobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Sp>;
+}) {
+  const parsed = parseJobsListSearchParams(
+    toURLSearchParams(await searchParams),
+  );
+  let initial = null;
+  try {
+    initial = await listJobs(
+      parsed.ok
+        ? parsed.data
+        : {
+            labels: ["open", "india_remote"],
+            posted: "all",
+            sort: "newest",
+            limit: 30,
+          },
+    );
+  } catch {
+    initial = null;
+  }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
-          Jobs
-        </h1>
-        <p className="mt-1.5 max-w-xl text-pretty text-[14px] text-mute sm:text-[15px]">
-          Browse India-eligible remote roles with proof from each posting.
-        </p>
-      </div>
-      <section className="rounded-2xl border border-line bg-white p-4 sm:p-5">
-        <JobsTable initial={jobs} />
-      </section>
-    </div>
+    <Suspense
+      fallback={
+        <p className="text-sm text-mute">Loading jobs…</p>
+      }
+    >
+      <DashboardJobs initial={initial} />
+    </Suspense>
   );
 }

@@ -594,7 +594,53 @@ button:focus-visible {
   border-radius: 999px;
 }
 
+/* Soft select — coastal filter menus */
+.soft-select-popup {
+  transition:
+    opacity 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soft-select-list {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--mark) 45%, var(--line)) transparent;
+}
+
+.soft-select-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.soft-select-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--mark) 40%, var(--line));
+  border-radius: 999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .soft-select-popup {
+    transition: none;
+  }
+}
+
+@keyframes dash-detail-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dash-job-detail {
+  animation: dash-detail-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-job-detail {
+    animation: none;
+  }
+
   .auth-jobs-rise,
   .auth-job-row,
   .auth-load-dot {

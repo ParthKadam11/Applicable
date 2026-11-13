@@ -30,9 +30,19 @@ export async function saveJob(
     throw err;
   }
 
+  const [tag] = await db
+    .select({ label: jobTags.indiaEligibility })
+    .from(jobTags)
+    .where(eq(jobTags.jobId, jobId))
+    .limit(1);
+
   const inserted = await db
     .insert(savedJobs)
-    .values({ userId, jobId })
+    .values({
+      userId,
+      jobId,
+      labelAtSave: tag?.label ?? null,
+    })
     .onConflictDoNothing()
     .returning({ jobId: savedJobs.jobId });
 

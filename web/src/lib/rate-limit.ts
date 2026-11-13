@@ -23,3 +23,8 @@ export class SlidingWindowLimiter {
 
 export const ipApiLimiter = new SlidingWindowLimiter(60);
 export const userSaveLimiter = new SlidingWindowLimiter(60);
+/** Label reports: 5 per hour per IP. */
+export const labelReportLimiter = new SlidingWindowLimiter(
+  5,
+  60 * 60 * 1000,
+);

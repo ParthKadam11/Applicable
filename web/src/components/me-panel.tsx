@@ -58,8 +58,39 @@ export function MePanel() {
       fetch("/api/me/mcp-token"),
     ]);
     if (sRes.ok) {
-      const body = (await sRes.json()) as { results?: SavedJobRow[] };
-      setSaved(body.results ?? []);
+      const body = (await sRes.json()) as {
+        results?: SavedJobRow[];
+        items?: Array<{
+          id: string;
+          title: string;
+          company: { name: string };
+          locationText: string | null;
+          label: string | null;
+          evidence: string[];
+          applyUrl: string;
+          savedAt: string;
+          isClosed: boolean;
+        }>;
+      };
+      if (body.results) {
+        setSaved(body.results);
+      } else if (body.items) {
+        setSaved(
+          body.items.map((j) => ({
+            job_id: j.id,
+            title: j.title,
+            company: j.company.name,
+            location: j.locationText,
+            eligibility: j.label,
+            evidence: j.evidence,
+            apply_url: j.applyUrl,
+            saved_at: j.savedAt,
+            status: j.isClosed ? ("closed" as const) : ("open" as const),
+          })),
+        );
+      } else {
+        setSaved([]);
+      }
     }
     if (tRes.ok) {
       const body = (await tRes.json()) as { tokens?: McpTokenPublic[] };

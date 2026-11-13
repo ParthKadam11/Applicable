@@ -4,21 +4,43 @@ import {
   json,
   requireUser,
 } from "@/lib/api-guard";
-import { listSavedJobIds, listSavedJobs, saveJob } from "@/lib/me";
+import { listSavedJobIds, saveJob } from "@/lib/me";
+import {
+  listSavedJobsFiltered,
+  parseSavedListSearchParams,
+} from "@/lib/saved-api";
 
 export async function GET(req: Request) {
   const gate = await requireUser(req);
   if (!gate.ok) return gate.response;
   try {
-    const idsOnly = new URL(req.url).searchParams.get("ids") === "1";
-    if (idsOnly) {
+    const sp = new URL(req.url).searchParams;
+    if (sp.get("ids") === "1") {
       const ids = await listSavedJobIds(gate.userId);
       return json({ ids }, 200, gate.headers);
     }
-    const results = await listSavedJobs(gate.userId);
-    return json({ results, count: results.length }, 200, gate.headers);
+
+    const parsed = parseSavedListSearchParams(sp);
+    if (!parsed.ok) {
+      return json(
+        { ok: false, error: "invalid_params", message: parsed.message },
+        400,
+        gate.headers,
+      );
+    }
+
+    const data = await listSavedJobsFiltered(gate.userId, parsed.data);
+    return json(data, 200, gate.headers);
   } catch (err) {
-    console.error("[api/me/saved] GET", err instanceof Error ? err.message : err);
+    const message = err instanceof Error ? err.message : "error";
+    if (message === "invalid_cursor") {
+      return json(
+        { ok: false, error: "invalid_params", message: "invalid cursor" },
+        400,
+        gate.headers,
+      );
+    }
+    console.error("[api/me/saved] GET", message);
     return json({ ok: false, error: "saved_list_failed" }, 500, gate.headers);
   }
 }
