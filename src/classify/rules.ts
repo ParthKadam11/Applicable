@@ -6,8 +6,18 @@ import type {
   Seniority,
 } from "./types.js";
 import { sentenceMatching } from "./text.js";
+import {
+  parseCompensation,
+  compensationFromAtsRaw,
+  isPlausibleCompensation,
+} from "./compensation.js";
 
 export { classifyRoleFamily, isTechRole } from "./roles.js";
+export {
+  parseCompensation,
+  compensationFromAtsRaw,
+  isPlausibleCompensation,
+};
 
 const CONTRACTOR_PATTERNS: Array<{ re: RegExp; label: string }> = [
   { re: /\bDeel\b/i, label: "Deel" },
@@ -88,71 +98,6 @@ function classifySeniority(title: string, text: string): {
     if (sentence) return { seniority: level, evidence: sentence };
   }
   return { seniority: "unknown", evidence: null };
-}
-
-export function parseCompensation(text: string): ClassificationResult["compensation"] {
-  const rangeRe =
-    /(?:(?<cur1>USD|EUR|GBP|INR|\$|€|£)\s*)?(?<min>\d{2,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?<suf1>[kKmM])?\s*(?:[-–—]|to)\s*(?:(?<cur2>USD|EUR|GBP|INR|\$|€|£)\s*)?(?<max>\d{2,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?<suf2>[kKmM])?/i;
-
-  const singleRe =
-    /(?:(?<cur>USD|EUR|GBP|INR|\$|€|£)\s*)(?<amount>\d{2,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?<suf>[kKmM])?/i;
-
-  const period = /\bper\s+hour\b|\bhourly\b|\b\/\s*hr\b/i.test(text)
-    ? ("hour" as const)
-    : /\bper\s+month\b|\bmonthly\b|\b\/\s*mo\b/i.test(text)
-      ? ("month" as const)
-      : /\bper\s+year\b|\bannually\b|\b\/\s*yr\b|\bsalary\b/i.test(text)
-        ? ("year" as const)
-        : ("year" as const);
-
-  const mapCurrency = (raw: string | undefined): string | null => {
-    if (!raw) return null;
-    const u = raw.toUpperCase();
-    if (u === "$" || u === "USD") return "USD";
-    if (u === "€" || u === "EUR") return "EUR";
-    if (u === "£" || u === "GBP") return "GBP";
-    if (u === "INR") return "INR";
-    return u;
-  };
-
-  const scale = (n: number, suf?: string): number => {
-    if (!suf) return Math.round(n);
-    const s = suf.toLowerCase();
-    if (s === "k") return Math.round(n * 1_000);
-    if (s === "m") return Math.round(n * 1_000_000);
-    return Math.round(n);
-  };
-
-  const range = rangeRe.exec(text);
-  if (range?.groups) {
-    const min = scale(
-      Number(range.groups.min!.replace(/,/g, "")),
-      range.groups.suf1,
-    );
-    const max = scale(
-      Number(range.groups.max!.replace(/,/g, "")),
-      range.groups.suf2 ?? range.groups.suf1,
-    );
-    const currency =
-      mapCurrency(range.groups.cur1) ?? mapCurrency(range.groups.cur2);
-    if (currency && min > 0 && max >= min) {
-      return { min, max, currency, period };
-    }
-  }
-
-  const single = singleRe.exec(text);
-  if (single?.groups) {
-    const amount = scale(
-      Number(single.groups.amount!.replace(/,/g, "")),
-      single.groups.suf,
-    );
-    const currency = mapCurrency(single.groups.cur);
-    if (currency && amount > 0) {
-      return { min: amount, max: amount, currency, period };
-    }
-  }
-
-  return null;
 }
 
 /**

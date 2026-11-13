@@ -19,6 +19,7 @@ import { db } from "@/db/client";
 import { companies, jobTags, jobs, savedJobs } from "@/db/schema";
 import type { ApiJob } from "@/lib/jobs-api";
 import { LabelSchema } from "@/lib/jobs-filters";
+import { formatSalaryText } from "@/lib/salary";
 
 export const SavedStatusSchema = z.enum(["active", "closed", "all"]);
 export const SavedSortSchema = z.enum([
@@ -118,19 +119,7 @@ function salaryText(row: {
   compensationCurrency: string | null;
   compensationPeriod: string | null;
 }): string | null {
-  const cur = row.compensationCurrency?.trim() || "USD";
-  const period = row.compensationPeriod?.trim();
-  const suffix = period ? ` / ${period}` : "";
-  if (row.compensationMin != null && row.compensationMax != null) {
-    return `${cur} ${row.compensationMin.toLocaleString()}–${row.compensationMax.toLocaleString()}${suffix}`;
-  }
-  if (row.compensationMin != null) {
-    return `${cur} ${row.compensationMin.toLocaleString()}+${suffix}`;
-  }
-  if (row.compensationMax != null) {
-    return `Up to ${cur} ${row.compensationMax.toLocaleString()}${suffix}`;
-  }
-  return null;
+  return formatSalaryText(row);
 }
 
 function decidedBy(classifier: string | null): "rule" | "llm" {

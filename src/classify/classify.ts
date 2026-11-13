@@ -8,6 +8,7 @@ import { createLlmProvider, type LlmProvider } from "./llm/index.js";
 import { buildEligibilitySnippet } from "./llm/snippet.js";
 import { TokenBucket } from "./rate-limit.js";
 import { isTechRole } from "./roles.js";
+import { compensationFromAtsRaw } from "./compensation.js";
 import { classifyWithRules, shouldCallLlm } from "./rules.js";
 import {
   LlmClassificationSchema,
@@ -173,7 +174,10 @@ function tagFromRow(
 }
 
 export async function classifyJobContent(
-  job: Pick<Job, "title" | "descriptionText" | "locationRaw" | "contentHash">,
+  job: Pick<
+    Job,
+    "title" | "descriptionText" | "locationRaw" | "contentHash" | "compensationRaw"
+  >,
   options: ClassifyOptions = {},
 ): Promise<ClassifiedTag> {
   const rules = classifyWithRules({
@@ -182,7 +186,9 @@ export async function classifyJobContent(
     locationRaw: job.locationRaw,
   });
 
-  let result = rules;
+  // Prefer structured ATS compensation (Ashby) over free-text regex.
+  const fromAts = compensationFromAtsRaw(job.compensationRaw);
+  let result = fromAts ? { ...rules, compensation: fromAts } : rules;
   let classifier: "rules" | "llm" | "cache" = "rules";
   let model: string | null = null;
 

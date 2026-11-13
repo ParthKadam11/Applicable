@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BrowseJobsLink } from "@/components/browse-jobs-link";
 
@@ -38,20 +39,24 @@ export function HeroCopy() {
         </div>
       </div>
 
-      <div className="hero-preview-wrap mx-auto mt-8 w-full px-4 xs:px-5 sm:mt-12 sm:max-w-4xl sm:px-8 md:mt-14 lg:mt-16 lg:max-w-5xl">
+      <div className="hero-preview-wrap mx-auto mt-8 w-full px-4 xs:px-5 sm:mt-12 sm:max-w-5xl sm:px-8 md:mt-14 lg:mt-16 lg:max-w-6xl">
         <div
-          className="hero-preview relative w-full overflow-hidden rounded-t-xl border border-b-0 border-line bg-white/55 shadow-[0_24px_60px_-28px_color-mix(in_srgb,var(--ink)_22%,transparent)] sm:rounded-t-2xl"
+          className="hero-preview relative w-full overflow-hidden rounded-t-xl border border-b-0 border-line bg-white shadow-[0_24px_60px_-28px_color-mix(in_srgb,var(--ink)_22%,transparent)] sm:rounded-t-2xl"
           data-slot="hero-dashboard"
-          aria-hidden
         >
-          <div className="hero-preview-frame absolute inset-x-0 top-0 w-full">
-            <div className="absolute inset-0 hero-iso opacity-40" />
-            <div className="absolute inset-0 flex items-start justify-center pt-[16%] sm:pt-[18%]">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-mute/70 sm:text-[11px]">
-                Dashboard
-              </span>
-            </div>
+          <div className="hero-preview-frame">
+            <Image
+              src="/dashboard.png"
+              alt="Applicable jobs dashboard with India-eligible roles and salary ranges"
+              width={1024}
+              height={522}
+              priority
+              quality={75}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 94vw, 72rem"
+              className="hero-preview-img block h-auto w-full max-w-none"
+            />
           </div>
+          <div className="hero-preview-fade" aria-hidden />
         </div>
       </div>
     </div>

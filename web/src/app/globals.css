@@ -266,26 +266,57 @@ body {
   }
 }
 
-/* Hero product preview: full 16/10 artboard, clipped to ~70% height */
+/* Hero product preview: show top ~75% of screenshot, fade the rest */
 .hero-preview {
-  /* visible height ≈ 70% of 16/10 → 16/7 */
-  aspect-ratio: 16 / 7.2;
+  /* natural image 1024×522; visible = 75% height → 1024 / 391.5 */
+  aspect-ratio: 1024 / 391.5;
+  animation: hero-preview-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
 }
 
 .hero-preview-frame {
-  aspect-ratio: 16 / 10;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  width: 100%;
+  /* full screenshot height relative to width */
+  aspect-ratio: 1024 / 522;
 }
 
-@media (max-width: 639px) {
-  .hero-preview {
-    /* slightly taller crop on narrow screens so the frame isn’t a thin strip */
-    aspect-ratio: 16 / 8;
+.hero-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.hero-preview-fade {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 28%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--paper) 55%, transparent) 55%,
+    var(--paper) 100%
+  );
+}
+
+@keyframes hero-preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (min-width: 1024px) {
+@media (prefers-reduced-motion: reduce) {
   .hero-preview {
-    aspect-ratio: 16 / 7;
+    animation: none;
   }
 }
 
