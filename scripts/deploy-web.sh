@@ -12,13 +12,16 @@ if [[ ! -f .env.local ]]; then
 fi
 
 echo "==> npm ci"
-npm ci --no-fund --no-audit
+# VPS often has NODE_ENV=production (PM2); that would skip typescript/eslint
+# and break `next.config.ts` + next build. Always install devDeps for build.
+npm ci --no-fund --no-audit --include=dev
 
 echo "==> clean .next"
 rm -rf .next
 
 echo "==> next build"
-npm run build
+# Keep production mode for the Next build itself, not for npm install above.
+NODE_ENV=production npm run build
 
 echo "==> pm2 restart applicable-web"
 if pm2 describe applicable-web >/dev/null 2>&1; then
