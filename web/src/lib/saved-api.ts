@@ -18,7 +18,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { companies, jobTags, jobs, savedJobs } from "@/db/schema";
 import type { ApiJob } from "@/lib/jobs-api";
-import { LabelSchema } from "@/lib/jobs-api";
+import { LabelSchema } from "@/lib/jobs-filters";
 
 export const SavedStatusSchema = z.enum(["active", "closed", "all"]);
 export const SavedSortSchema = z.enum([

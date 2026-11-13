@@ -14,12 +14,11 @@ export default async function DashboardSettingsPage() {
           Settings
         </h1>
         <p className="mt-1.5 max-w-xl text-pretty text-[14px] text-mute sm:text-[15px]">
-          Keys and classifier status. Account controls stay under Saved for
-          now.
+          AI search key (browser-only) and classifier BYOK status.
         </p>
       </div>
 
-      <ByokKeysPanel title="AI search keys (BYOK)" />
+      <ByokKeysPanel title="Change/remove key" />
       <ByokPanel status={llm} />
     </div>
   );

@@ -1,11 +1,15 @@
 "use client";
 
+/**
+ * Legacy embed used by JobsTable. Prefer DashboardSearch for the full AI Search tab.
+ * Keys stay in localStorage only — never posted to Applicable APIs.
+ */
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import {
-  type AiSearchFilter,
   type ByokProvider,
+  type JobsFilterFields,
   clearByokKey,
   filtersToJobsQuery,
   loadByokKey,
@@ -14,14 +18,14 @@ import {
 } from "@/lib/ai-search";
 
 type Props = {
-  onFilters: (filters: AiSearchFilter, queryString: string) => void;
+  onFilters: (filters: JobsFilterFields, queryString: string) => void;
 };
 
 export function AiSearchBar({ onFilters }: Props) {
   const { data } = useSession();
   const [promptOpen, setPromptOpen] = useState(false);
   const [nl, setNl] = useState("");
-  const [filters, setFilters] = useState<AiSearchFilter | null>(null);
+  const [filters, setFilters] = useState<JobsFilterFields | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [hasKey, setHasKey] = useState(false);
@@ -54,37 +58,14 @@ export function AiSearchBar({ onFilters }: Props) {
     if (!nl.trim()) return;
     setBusy(true);
     setError(null);
-    try {
-      const parsed = await nlToFilters(nl.trim(), store);
-      setFilters(parsed);
-      onFilters(parsed, filtersToJobsQuery(parsed));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "ai_failed");
-    } finally {
-      setBusy(false);
+    const result = await nlToFilters(nl.trim(), store);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.userMessage);
+      return;
     }
-  }
-
-  function updateChip<K extends keyof AiSearchFilter>(
-    key: K,
-    value: AiSearchFilter[K] | undefined,
-  ) {
-    if (!filters) return;
-    const next = { ...filters } as AiSearchFilter;
-    if (value === undefined || value === "") {
-      delete next[key];
-    } else {
-      next[key] = value;
-    }
-    const parsed = {
-      ...next,
-      eligibility: next.eligibility?.length
-        ? next.eligibility
-        : (["open", "india_remote"] as AiSearchFilter["eligibility"]),
-      limit: next.limit ?? 25,
-    };
-    setFilters(parsed);
-    onFilters(parsed, filtersToJobsQuery(parsed));
+    setFilters(result.filters);
+    onFilters(result.filters, filtersToJobsQuery(result.filters));
   }
 
   return (
@@ -126,6 +107,7 @@ export function AiSearchBar({ onFilters }: Props) {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Paste API key"
+              autoComplete="off"
               className="w-full flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-mark"
             />
             <button
@@ -145,7 +127,7 @@ export function AiSearchBar({ onFilters }: Props) {
               }}
               className="text-[11px] uppercase text-mute hover:text-ink"
             >
-              Clear key
+              Remove key
             </button>
           ) : null}
         </div>
@@ -156,11 +138,7 @@ export function AiSearchBar({ onFilters }: Props) {
           type="search"
           value={nl}
           onChange={(e) => setNl(e.target.value)}
-          placeholder={
-            hasKey
-              ? "e.g. backend roles at startups posted this month"
-              : "Add your key for AI search, or use plain filters below"
-          }
+          placeholder="e.g. backend roles posted this week"
           className="w-full flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-mark"
           onKeyDown={(e) => {
             if (e.key === "Enter") void runAi();
@@ -176,42 +154,13 @@ export function AiSearchBar({ onFilters }: Props) {
         </button>
       </div>
 
-      {error ? (
-        <p className="text-[12px] text-sun">Could not parse filters ({error}).</p>
-      ) : null}
+      {error ? <p className="text-[12px] text-sun">{error}</p> : null}
 
       {filters ? (
-        <div className="flex flex-wrap gap-2">
-          {filters.query ? (
-            <Chip
-              label={`query: ${filters.query}`}
-              onClear={() => updateChip("query", undefined)}
-            />
-          ) : null}
-          {filters.role_keywords ? (
-            <Chip
-              label={`role: ${filters.role_keywords}`}
-              onClear={() => updateChip("role_keywords", undefined)}
-            />
-          ) : null}
-          {filters.company ? (
-            <Chip
-              label={`company: ${filters.company}`}
-              onClear={() => updateChip("company", undefined)}
-            />
-          ) : null}
-          {filters.posted_within_days ? (
-            <Chip
-              label={`${filters.posted_within_days}d`}
-              onClear={() => updateChip("posted_within_days", undefined)}
-            />
-          ) : null}
-          <Chip
-            label={filters.eligibility.join(" + ")}
-            onClear={() =>
-              updateChip("eligibility", ["open", "india_remote"])
-            }
-          />
+        <div className="flex flex-wrap gap-2 text-[11px] text-mute">
+          {filters.q ? <span>q: {filters.q}</span> : null}
+          {filters.role ? <span>role: {filters.role}</span> : null}
+          <span>{(filters.labels ?? []).join(" + ")}</span>
         </div>
       ) : null}
 
@@ -221,19 +170,5 @@ export function AiSearchBar({ onFilters }: Props) {
         onClose={() => setPromptOpen(false)}
       />
     </div>
-  );
-}
-
-function Chip({ label, onClear }: { label: string; onClear: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClear}
-      className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] text-mute hover:text-ink"
-      title="Clear"
-    >
-      {label}
-      <span aria-hidden>×</span>
-    </button>
   );
 }

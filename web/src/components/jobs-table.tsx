@@ -6,7 +6,7 @@ import { AiSearchBar } from "@/components/ai-search-bar";
 import { SaveJobButton } from "@/components/save-job-button";
 import { TableRowsSkeleton } from "@/components/ui/skeleton";
 import type { JobRow } from "@/lib/api";
-import type { AiSearchFilter } from "@/lib/ai-search";
+import type { JobsFilterFields } from "@/lib/ai-search";
 import { API_BASE, ELIGIBILITY_LABELS } from "@/lib/constants";
 import { evidenceQuote } from "@/lib/format";
 
@@ -126,17 +126,19 @@ export function JobsTable({ initial }: { initial: Page | null }) {
     return () => window.clearTimeout(t);
   }, [query, eligibility, roleKeywords, company, postedWithin]);
 
-  function applyAiFilters(f: AiSearchFilter) {
-    setQuery(f.query ?? "");
-    setEligibility(f.eligibility.join(","));
-    setRoleKeywords(f.role_keywords);
-    setCompany(f.company);
-    setPostedWithin(f.posted_within_days);
+  function applyAiFilters(f: JobsFilterFields) {
+    const labels = (f.labels ?? ["open", "india_remote"]).join(",");
+    const days =
+      f.posted === "24h" ? 1 : f.posted === "7d" ? 7 : f.posted === "30d" ? 30 : undefined;
+    setQuery(f.q ?? "");
+    setEligibility(labels);
+    setRoleKeywords(f.role);
+    setCompany(undefined);
+    setPostedWithin(days);
     setStack([undefined]);
-    run(f.query ?? "", f.eligibility.join(","), undefined, 0, {
-      role_keywords: f.role_keywords,
-      company: f.company,
-      posted_within_days: f.posted_within_days,
+    run(f.q ?? "", labels, undefined, 0, {
+      role_keywords: f.role,
+      posted_within_days: days,
     });
   }
 

@@ -27,28 +27,32 @@ import {
   jobs,
   labelReports,
 } from "@/db/schema";
+import {
+  decodeJobsCursor,
+  encodeJobsCursor,
+  JobsListQuerySchema,
+  LabelSchema,
+  parseJobsListSearchParams,
+  PostedSchema,
+  RoleSchema,
+  SortSchema,
+  type JobsCursorPayload,
+  type JobsListQuery,
+} from "@/lib/jobs-filters";
 
-export const LabelSchema = z.enum([
-  "open",
-  "india_remote",
-  "india_onsite",
-  "region_locked",
-  "unclear",
-]);
-
-export const RoleSchema = z.enum([
-  "backend",
-  "frontend",
-  "fullstack",
-  "devops",
-  "data",
-  "mobile",
-  "other",
-]);
-
-export const AtsSchema = z.enum(["ashby", "greenhouse", "lever"]);
-export const PostedSchema = z.enum(["24h", "7d", "30d", "all"]);
-export const SortSchema = z.enum(["newest", "last_seen", "company"]);
+export {
+  decodeJobsCursor,
+  encodeJobsCursor,
+  JobsFilterFieldsSchema,
+  JobsListQuerySchema,
+  LabelSchema,
+  parseJobsListSearchParams,
+  PostedSchema,
+  RoleSchema,
+  SortSchema,
+  type JobsFilterFields,
+  type JobsListQuery,
+} from "@/lib/jobs-filters";
 
 const ROLE_FAMILY_MAP: Record<z.infer<typeof RoleSchema>, string[]> = {
   backend: ["backend"],
@@ -59,23 +63,6 @@ const ROLE_FAMILY_MAP: Record<z.infer<typeof RoleSchema>, string[]> = {
   mobile: ["mobile"],
   other: ["other", "security", "qa", "developer_relations", "solutions"],
 };
-
-export const JobsListQuerySchema = z.object({
-  q: z.string().trim().max(200).optional(),
-  labels: z
-    .array(LabelSchema)
-    .min(1)
-    .default(["open", "india_remote"]),
-  role: RoleSchema.optional(),
-  ats: AtsSchema.optional(),
-  posted: PostedSchema.default("all"),
-  has_salary: z.boolean().optional(),
-  sort: SortSchema.default("newest"),
-  cursor: z.string().min(1).optional(),
-  limit: z.number().int().min(1).max(100).default(30),
-});
-
-export type JobsListQuery = z.infer<typeof JobsListQuerySchema>;
 
 export type ApiJob = {
   id: string;
@@ -97,82 +84,6 @@ export type ApiJobDetail = ApiJob & {
   description: string;
   related: ApiJob[];
 };
-
-type CursorPayload = {
-  sort: z.infer<typeof SortSchema>;
-  v: string | null;
-  id: string;
-};
-
-export function encodeJobsCursor(payload: CursorPayload): string {
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-}
-
-export function decodeJobsCursor(raw: string): CursorPayload {
-  try {
-    const parsed = JSON.parse(
-      Buffer.from(raw, "base64url").toString("utf8"),
-    ) as CursorPayload;
-    if (!parsed?.id || !SortSchema.safeParse(parsed.sort).success) {
-      throw new Error("bad_cursor");
-    }
-    return parsed;
-  } catch {
-    throw new Error("invalid_cursor");
-  }
-}
-
-export function parseJobsListSearchParams(
-  sp: URLSearchParams,
-): { ok: true; data: JobsListQuery } | { ok: false; message: string } {
-  const labelsRaw = sp.get("labels");
-  const labels = labelsRaw
-    ? labelsRaw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : undefined;
-
-  const hasSalaryRaw = sp.get("has_salary");
-  let has_salary: boolean | undefined;
-  if (hasSalaryRaw != null && hasSalaryRaw !== "") {
-    if (hasSalaryRaw === "true" || hasSalaryRaw === "1") has_salary = true;
-    else if (hasSalaryRaw === "false" || hasSalaryRaw === "0") has_salary = false;
-    else {
-      return { ok: false, message: "has_salary must be true or false" };
-    }
-  }
-
-  const limitRaw = sp.get("limit");
-  let limit: number | undefined;
-  if (limitRaw != null && limitRaw !== "") {
-    const n = Number(limitRaw);
-    if (!Number.isFinite(n)) {
-      return { ok: false, message: "limit must be a number" };
-    }
-    limit = n;
-  }
-
-  const parsed = JobsListQuerySchema.safeParse({
-    q: sp.get("q") || undefined,
-    labels,
-    role: sp.get("role") || undefined,
-    ats: sp.get("ats") || undefined,
-    posted: sp.get("posted") || undefined,
-    has_salary,
-    sort: sp.get("sort") || undefined,
-    cursor: sp.get("cursor") || undefined,
-    limit,
-  });
-
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: parsed.error.issues.map((i) => i.message).join("; "),
-    };
-  }
-  return { ok: true, data: parsed.data };
-}
 
 function salaryText(row: {
   compensationMin: number | null;
@@ -304,7 +215,7 @@ async function baseConditions(q: JobsListQuery): Promise<SQL[]> {
 
 function cursorCondition(
   sort: z.infer<typeof SortSchema>,
-  cursor: CursorPayload,
+  cursor: JobsCursorPayload,
 ): SQL | null {
   if (sort !== cursor.sort) return null;
 
@@ -342,7 +253,7 @@ export async function listJobs(q: JobsListQuery): Promise<{
   lastIngestionAt: string | null;
 }> {
   const conditions = await baseConditions(q);
-  let cursor: CursorPayload | null = null;
+  let cursor: JobsCursorPayload | null = null;
   if (q.cursor) {
     cursor = decodeJobsCursor(q.cursor);
     const cc = cursorCondition(q.sort, cursor);

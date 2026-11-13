@@ -1,27 +1,22 @@
-import { z } from "zod";
+/**
+ * BYOK AI search — keys live ONLY in browser localStorage.
+ * They are never sent to Applicable/CaniApply API routes, never logged,
+ * and never placed in URLs. Provider calls go directly from the browser
+ * to Gemini / Groq / OpenAI.
+ */
+import {
+  JobsFilterFieldsSchema,
+  type JobsFilterFields,
+} from "@/lib/jobs-filters";
 
-export const EligibilityFilterSchema = z.enum([
-  "open",
-  "india_remote",
-  "india_onsite",
-  "region_locked",
-  "unclear",
-]);
+export {
+  JobsFilterFieldsSchema,
+  type JobsFilterFields,
+} from "@/lib/jobs-filters";
 
-/** Matches backend AiSearchFilterSchema / SearchJobsInputSchema (no cursor). */
-export const AiSearchFilterSchema = z.object({
-  query: z.string().min(1).optional(),
-  eligibility: z
-    .array(EligibilityFilterSchema)
-    .min(1)
-    .default(["open", "india_remote"]),
-  role_keywords: z.string().min(1).optional(),
-  company: z.string().min(1).optional(),
-  posted_within_days: z.number().int().positive().max(365).optional(),
-  limit: z.number().int().min(1).max(50).default(25),
-});
-
-export type AiSearchFilter = z.infer<typeof AiSearchFilterSchema>;
+/** @deprecated Alias — use JobsFilterFieldsSchema (shared with /api/jobs). */
+export const AiSearchFilterSchema = JobsFilterFieldsSchema;
+export type AiSearchFilter = JobsFilterFields;
 
 export type ByokProvider = "gemini" | "groq" | "openai";
 
@@ -30,7 +25,32 @@ export type ByokKeyStore = {
   apiKey: string;
 };
 
+export type RecentSearch = {
+  nl: string;
+  filters: JobsFilterFields;
+  at: number;
+};
+
 const STORAGE_KEY = "applicable.byok.ai-search";
+const RECENT_KEY = "applicable.byok.ai-search.recent";
+const PROVIDER_TIMEOUT_MS = 20_000;
+
+export const AI_SEARCH_SYSTEM_PROMPT = `You convert a natural-language job search into JSON filters for Applicable (India-eligibility job board).
+Return ONLY a single JSON object. No markdown, no commentary, no code fences.
+
+Allowed keys (all optional except use defaults when unclear):
+- q (string): free-text for title/company/skill keywords. Put anything that is not an enum value here.
+- labels (array): subset of open | india_remote | india_onsite | region_locked | unclear. Default ["open","india_remote"] when the user wants India-friendly remote/open roles.
+- role (string): exactly one of backend | frontend | fullstack | devops | data | mobile | other
+- ats (string): exactly one of ashby | greenhouse | lever
+- posted (string): exactly one of 24h | 7d | 30d | all. Map "this week"→7d, "today/last day"→24h, "this month"→30d.
+- has_salary (boolean): true if they want salary listed; false only if they explicitly want no salary; omit otherwise.
+- sort (string): newest | last_seen | company. Default newest.
+
+Rules:
+- NEVER invent enum values. If unsure, put the phrase into q and omit that field.
+- Prefer labels ["open","india_remote"] for "from India" / "India remote" / "can apply from India".
+- Do not include cursor, limit, or any other keys.`;
 
 export function loadByokKey(): ByokKeyStore | null {
   if (typeof window === "undefined") return null;
@@ -58,12 +78,30 @@ export function clearByokKey(): void {
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
-const SYSTEM = `You convert a natural-language job search into JSON filters for Applicable.
-Return ONLY a JSON object with optional keys:
-query (string), eligibility (array of open|india_remote|india_onsite|region_locked|unclear),
-role_keywords (string), company (string), posted_within_days (1-365), limit (1-50).
-Default eligibility to ["open","india_remote"] when unclear. Prefer India-remote friendly searches.
-No markdown, no commentary.`;
+export function loadRecentSearches(): RecentSearch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as RecentSearch[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(0, 10);
+  } catch {
+    return [];
+  }
+}
+
+export function pushRecentSearch(nl: string, filters: JobsFilterFields): void {
+  const next: RecentSearch[] = [
+    { nl, filters, at: Date.now() },
+    ...loadRecentSearches().filter((r) => r.nl !== nl),
+  ].slice(0, 10);
+  window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+}
+
+export function clearRecentSearches(): void {
+  window.localStorage.removeItem(RECENT_KEY);
+}
 
 function extractJsonObject(text: string): unknown {
   const trimmed = text.trim();
@@ -75,22 +113,90 @@ function extractJsonObject(text: string): unknown {
   return JSON.parse(body.slice(start, end + 1));
 }
 
-async function callGemini(apiKey: string, prompt: string): Promise<string> {
+export type ProviderCallError = {
+  kind: "invalid_key" | "quota" | "network" | "timeout" | "empty" | "http";
+  status?: number;
+  message: string;
+};
+
+export function mapProviderHttpError(status: number): ProviderCallError {
+  if (status === 401 || status === 403) {
+    return {
+      kind: "invalid_key",
+      status,
+      message: "API key rejected. Check the key in Change key, then try again.",
+    };
+  }
+  if (status === 429) {
+    return {
+      kind: "quota",
+      status,
+      message: "Provider quota / rate limit hit. Wait or switch provider.",
+    };
+  }
+  return {
+    kind: "http",
+    status,
+    message: `Provider error (HTTP ${status}). Try again or change key.`,
+  };
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  ms = PROVIDER_TIMEOUT_MS,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      const e: ProviderCallError = {
+        kind: "timeout",
+        message: "Provider timed out (20s). Try a shorter query or another provider.",
+      };
+      throw e;
+    }
+    const e: ProviderCallError = {
+      kind: "network",
+      message: "Network error reaching the provider. Check your connection.",
+    };
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function callGemini(
+  apiKey: string,
+  userContent: string,
+): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: `${SYSTEM}\n\nUser: ${prompt}` }] }],
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `${AI_SEARCH_SYSTEM_PROMPT}\n\nUser: ${userContent}` }],
+        },
+      ],
       generationConfig: { temperature: 0.1 },
     }),
   });
-  if (!res.ok) throw new Error(`gemini_http_${res.status}`);
+  if (!res.ok) throw mapProviderHttpError(res.status);
   const data = (await res.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("gemini_empty");
+  if (!text) {
+    throw {
+      kind: "empty",
+      message: "Provider returned an empty response.",
+    } satisfies ProviderCallError;
+  }
   return text;
 }
 
@@ -98,9 +204,9 @@ async function callOpenAiCompatible(
   baseUrl: string,
   apiKey: string,
   model: string,
-  prompt: string,
+  userContent: string,
 ): Promise<string> {
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+  const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -110,55 +216,249 @@ async function callOpenAiCompatible(
       model,
       temperature: 0.1,
       messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: prompt },
+        { role: "system", content: AI_SEARCH_SYSTEM_PROMPT },
+        { role: "user", content: userContent },
       ],
     }),
   });
-  if (!res.ok) throw new Error(`llm_http_${res.status}`);
+  if (!res.ok) throw mapProviderHttpError(res.status);
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
   };
   const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error("llm_empty");
+  if (!text) {
+    throw {
+      kind: "empty",
+      message: "Provider returned an empty response.",
+    } satisfies ProviderCallError;
+  }
   return text;
 }
 
-export async function nlToFilters(
-  prompt: string,
+async function callProvider(
   store: ByokKeyStore,
-): Promise<AiSearchFilter> {
-  let text: string;
+  userContent: string,
+): Promise<string> {
   if (store.provider === "gemini") {
-    text = await callGemini(store.apiKey, prompt);
-  } else if (store.provider === "groq") {
-    text = await callOpenAiCompatible(
+    return callGemini(store.apiKey, userContent);
+  }
+  if (store.provider === "groq") {
+    return callOpenAiCompatible(
       "https://api.groq.com/openai/v1",
       store.apiKey,
       "llama-3.3-70b-versatile",
-      prompt,
-    );
-  } else {
-    text = await callOpenAiCompatible(
-      "https://api.openai.com/v1",
-      store.apiKey,
-      "gpt-4o-mini",
-      prompt,
+      userContent,
     );
   }
-  const raw = extractJsonObject(text);
-  return AiSearchFilterSchema.parse(raw);
+  return callOpenAiCompatible(
+    "https://api.openai.com/v1",
+    store.apiKey,
+    "gpt-4o-mini",
+    userContent,
+  );
 }
 
-export function filtersToJobsQuery(f: AiSearchFilter): string {
-  const sp = new URLSearchParams();
-  if (f.query) sp.set("query", f.query);
-  if (f.role_keywords) sp.set("role_keywords", f.role_keywords);
-  if (f.company) sp.set("company", f.company);
-  if (f.posted_within_days != null) {
-    sp.set("posted_within_days", String(f.posted_within_days));
+export function parseFiltersJson(raw: unknown): {
+  ok: true;
+  data: JobsFilterFields;
+} | { ok: false; message: string } {
+  const parsed = JobsFilterFieldsSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues.map((i) => i.message).join("; "),
+    };
   }
-  sp.set("eligibility", f.eligibility.join(","));
-  sp.set("limit", String(f.limit ?? 25));
+  return { ok: true, data: parsed.data };
+}
+
+export type NlParseResult =
+  | { ok: true; filters: JobsFilterFields; retried: boolean }
+  | {
+      ok: false;
+      error: ProviderCallError | { kind: "parse"; message: string };
+      userMessage: string;
+    };
+
+/**
+ * NL → JobsFilterFields via the user's BYOK provider (browser → provider only).
+ * Validates with JobsFilterFieldsSchema; retries once with the Zod error appended.
+ */
+export async function nlToFilters(
+  prompt: string,
+  store: ByokKeyStore,
+  deps?: {
+    callProvider?: (store: ByokKeyStore, userContent: string) => Promise<string>;
+  },
+): Promise<NlParseResult> {
+  const call = deps?.callProvider ?? callProvider;
+  const failParse = (message: string): NlParseResult => ({
+    ok: false,
+    error: { kind: "parse", message },
+    userMessage: "Couldn't understand that, try rephrasing",
+  });
+
+  try {
+    const text1 = await call(store, prompt);
+    let raw: unknown;
+    try {
+      raw = extractJsonObject(text1);
+    } catch {
+      const text2 = await call(
+        store,
+        `${prompt}\n\nPrevious reply was not valid JSON. Return ONLY a JSON object matching the schema.`,
+      );
+      try {
+        raw = extractJsonObject(text2);
+      } catch {
+        return failParse("no_json");
+      }
+      const second = parseFiltersJson(raw);
+      if (!second.ok) return failParse(second.message);
+      return { ok: true, filters: second.data, retried: true };
+    }
+
+    const first = parseFiltersJson(raw);
+    if (first.ok) {
+      return { ok: true, filters: first.data, retried: false };
+    }
+
+    const text2 = await call(
+      store,
+      `${prompt}\n\nYour previous JSON failed validation: ${first.message}. Fix it and return ONLY corrected JSON.`,
+    );
+    let raw2: unknown;
+    try {
+      raw2 = extractJsonObject(text2);
+    } catch {
+      return failParse("no_json_retry");
+    }
+    const second = parseFiltersJson(raw2);
+    if (!second.ok) return failParse(second.message);
+    return { ok: true, filters: second.data, retried: true };
+  } catch (err) {
+    const pe = err as ProviderCallError;
+    if (pe?.kind && pe?.message) {
+      return { ok: false, error: pe, userMessage: pe.message };
+    }
+    return {
+      ok: false,
+      error: {
+        kind: "network",
+        message: "Network error reaching the provider. Check your connection.",
+      },
+      userMessage: "Network error reaching the provider. Check your connection.",
+    };
+  }
+}
+
+/** Tiny client-side provider ping to validate the key (never hits our server). */
+export async function testByokKey(
+  store: ByokKeyStore,
+): Promise<{ ok: true } | { ok: false; error: ProviderCallError }> {
+  try {
+    if (store.provider === "gemini") {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(store.apiKey)}`;
+      const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "Reply with ok" }] }],
+          generationConfig: { maxOutputTokens: 8, temperature: 0 },
+        }),
+      });
+      if (!res.ok) return { ok: false, error: mapProviderHttpError(res.status) };
+      return { ok: true };
+    }
+    const base =
+      store.provider === "groq"
+        ? "https://api.groq.com/openai/v1"
+        : "https://api.openai.com/v1";
+    const model =
+      store.provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+    const res = await fetchWithTimeout(`${base}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${store.apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 5,
+        messages: [{ role: "user", content: "Reply with ok" }],
+      }),
+    });
+    if (!res.ok) return { ok: false, error: mapProviderHttpError(res.status) };
+    return { ok: true };
+  } catch (err) {
+    const pe = err as ProviderCallError;
+    if (pe?.kind && pe?.message) return { ok: false, error: pe };
+    return {
+      ok: false,
+      error: {
+        kind: "network",
+        message: "Network error reaching the provider. Check your connection.",
+      },
+    };
+  }
+}
+
+/** Build query string for GET /api/jobs and /dashboard/jobs (no nl). */
+export function filtersToJobsQuery(
+  f: JobsFilterFields,
+  extra?: { nl?: string; job?: string | null },
+): string {
+  const sp = new URLSearchParams();
+  if (f.q) sp.set("q", f.q);
+  if (f.labels?.length) sp.set("labels", f.labels.join(","));
+  if (f.role) sp.set("role", f.role);
+  if (f.ats) sp.set("ats", f.ats);
+  if (f.posted && f.posted !== "all") sp.set("posted", f.posted);
+  if (f.has_salary === true) sp.set("has_salary", "true");
+  if (f.has_salary === false) sp.set("has_salary", "false");
+  if (f.sort && f.sort !== "newest") sp.set("sort", f.sort);
+  if (extra?.nl) sp.set("nl", extra.nl);
+  if (extra?.job) sp.set("job", extra.job);
   return sp.toString();
+}
+
+export function filtersFromSearchParams(sp: URLSearchParams): JobsFilterFields {
+  const labelsRaw = sp.get("labels");
+  const labels = labelsRaw
+    ? labelsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : undefined;
+  let has_salary: boolean | undefined;
+  const hs = sp.get("has_salary");
+  if (hs === "true" || hs === "1") has_salary = true;
+  else if (hs === "false" || hs === "0") has_salary = false;
+
+  const parsed = JobsFilterFieldsSchema.safeParse({
+    q: sp.get("q") || undefined,
+    labels,
+    role: sp.get("role") || undefined,
+    ats: sp.get("ats") || undefined,
+    posted: sp.get("posted") || undefined,
+    has_salary,
+    sort: sp.get("sort") || undefined,
+  });
+  if (parsed.success) return parsed.data;
+  return JobsFilterFieldsSchema.parse({});
+}
+
+/** Assert helper for tests: our API route bodies must never accept apiKey. */
+export const FORBIDDEN_KEY_FIELDS = [
+  "apiKey",
+  "api_key",
+  "openai_key",
+  "gemini_key",
+  "groq_key",
+] as const;
+
+export function bodyHasApiKeyField(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  const o = body as Record<string, unknown>;
+  return FORBIDDEN_KEY_FIELDS.some((k) => k in o && o[k] != null && o[k] !== "");
 }
