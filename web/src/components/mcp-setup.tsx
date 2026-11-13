@@ -222,9 +222,11 @@ export function McpSetup() {
               {c.body}
             </p>
 
-            <div className="mt-5">
-              <EndpointChip />
-            </div>
+            {c.id === "mcp" ? (
+              <div className="mt-5">
+                <EndpointChip />
+              </div>
+            ) : null}
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               {mobile ? (
