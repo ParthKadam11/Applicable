@@ -15,37 +15,44 @@ export function ByokPanel({ status }: { status: LlmStatus | null }) {
   const providers = status?.providers ?? [];
 
   return (
-    <section className="rounded-2xl border border-line bg-white">
-      <div className="border-b border-line px-4 py-3 sm:px-5">
+    <section className="space-y-3">
+      <div>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-display text-lg text-ink">Classification · BYOK</h2>
-          <span className="text-[11px] uppercase tracking-wide text-mute">
-            Your keys
+          <h2 className="font-display text-lg tracking-tight text-ink">
+            Classification · BYOK
+          </h2>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-mute">
+            Server keys
           </span>
         </div>
-        <p className="mt-1 max-w-2xl text-pretty text-sm text-mute">
+        <p className="mt-1 max-w-2xl text-pretty text-[13px] text-mute">
           {status?.summary ??
             "Unclear roles use Gemini / Groq / OpenRouter with keys you set on the server."}
         </p>
       </div>
-      <ul className="divide-y divide-line">
+
+      <ul>
         {providers.length === 0 ? (
-          <li className="px-4 py-5 text-sm text-mute sm:px-5">-</li>
+          <li className="py-4 text-sm text-mute">—</li>
         ) : (
           providers.map((p) => {
             const s = statusLabel(p);
             return (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-line/50 py-3.5 last:border-b-0"
               >
                 <div className="min-w-0">
-                  <p className="text-sm text-ink">{p.label}</p>
-                  <p className="mt-0.5 truncate text-[12px] text-mute">{p.model}</p>
+                  <p className="text-[14px] font-semibold tracking-[-0.01em] text-ink">
+                    {p.label}
+                  </p>
+                  <p className="mt-0.5 truncate text-[12px] text-mute">
+                    {p.model}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p
-                    className={`text-[11px] uppercase tracking-wide ${
+                    className={`text-[11px] font-semibold uppercase tracking-[0.06em] ${
                       s.tone === "ok"
                         ? "text-mark-deep"
                         : s.tone === "warn"

@@ -7,9 +7,11 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { SignInPrompt } from "@/components/sign-in-prompt";
+import { SoftSelect } from "@/components/ui/soft-select";
 import {
   type ByokProvider,
   type JobsFilterFields,
+  BYOK_PROVIDER_OPTIONS,
   clearByokKey,
   filtersToJobsQuery,
   loadByokKey,
@@ -69,12 +71,12 @@ export function AiSearchBar({ onFilters }: Props) {
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-line bg-white p-4">
+    <div className="space-y-3 border-b border-line/80 pb-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-ink">AI search (BYOK)</p>
+        <p className="text-[13px] text-mute">AI search (BYOK)</p>
         <button
           type="button"
-          className="text-[11px] uppercase tracking-wide text-mute hover:text-ink"
+          className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-ink"
           onClick={() => {
             if (!data?.user) {
               setPromptOpen(true);
@@ -83,39 +85,34 @@ export function AiSearchBar({ onFilters }: Props) {
             setShowKeyForm((v) => !v);
           }}
         >
-          {hasKey ? "Change key" : "Add your key for AI search"}
+          {hasKey ? "Change key" : "Add key"}
         </button>
       </div>
 
       {showKeyForm ? (
-        <div className="space-y-2 rounded-xl border border-line bg-paper p-3">
-          <p className="text-[12px] text-mute">
-            Key stays in this browser only. Never sent to Applicable servers.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <select
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <SoftSelect
+              label="Provider"
               value={provider}
-              onChange={(e) => setProvider(e.target.value as ByokProvider)}
-              className="rounded-xl border border-line bg-white px-3 py-2 text-sm"
-            >
-              <option value="gemini">Gemini</option>
-              <option value="groq">Groq</option>
-              <option value="openai">OpenAI</option>
-            </select>
+              defaultValue="gemini"
+              options={[...BYOK_PROVIDER_OPTIONS]}
+              onChange={(v) => setProvider(v as ByokProvider)}
+            />
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Paste API key"
               autoComplete="off"
-              className="w-full flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-mark"
+              className="w-full flex-1 border-0 border-b border-line bg-transparent pb-2 text-[14px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
             />
             <button
               type="button"
               onClick={persistKey}
-              className="rounded-full bg-mark px-4 py-2 text-[11px] font-semibold uppercase text-ink"
+              className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep"
             >
-              Save key
+              Save
             </button>
           </div>
           {hasKey ? (
@@ -125,7 +122,7 @@ export function AiSearchBar({ onFilters }: Props) {
                 clearByokKey();
                 setHasKey(false);
               }}
-              className="text-[11px] uppercase text-mute hover:text-ink"
+              className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute hover:text-ink"
             >
               Remove key
             </button>
@@ -133,13 +130,13 @@ export function AiSearchBar({ onFilters }: Props) {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <input
           type="search"
           value={nl}
           onChange={(e) => setNl(e.target.value)}
           placeholder="e.g. backend roles posted this week"
-          className="w-full flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-mark"
+          className="w-full flex-1 border-0 border-b border-line bg-transparent pb-2.5 text-[15px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
           onKeyDown={(e) => {
             if (e.key === "Enter") void runAi();
           }}
@@ -148,20 +145,24 @@ export function AiSearchBar({ onFilters }: Props) {
           type="button"
           disabled={busy}
           onClick={() => void runAi()}
-          className="rounded-full border border-line bg-white px-4 py-2 text-[11px] uppercase tracking-wide text-ink disabled:opacity-40"
+          className="shrink-0 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep disabled:opacity-40"
         >
-          {busy ? "…" : "AI search"}
+          {busy ? "…" : "Search"}
         </button>
       </div>
 
       {error ? <p className="text-[12px] text-sun">{error}</p> : null}
 
       {filters ? (
-        <div className="flex flex-wrap gap-2 text-[11px] text-mute">
-          {filters.q ? <span>q: {filters.q}</span> : null}
-          {filters.role ? <span>role: {filters.role}</span> : null}
-          <span>{(filters.labels ?? []).join(" + ")}</span>
-        </div>
+        <p className="text-[12px] text-mute">
+          {[
+            filters.q ? `q · ${filters.q}` : null,
+            filters.role ? `role · ${filters.role}` : null,
+            (filters.labels ?? []).join(" + "),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       ) : null}
 
       <SignInPrompt

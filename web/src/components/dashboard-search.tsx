@@ -48,11 +48,13 @@ function Chip({
     <button
       type="button"
       onClick={onClear}
-      className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] text-mute hover:text-ink"
+      className="inline-flex items-center gap-1.5 rounded-full bg-mark-soft/45 px-2.5 py-1.5 text-[12px] font-semibold tracking-[-0.01em] text-mark-deep transition hover:bg-mark-soft/70"
       title="Remove filter"
     >
       {label}
-      <span aria-hidden>×</span>
+      <span className="text-[11px] font-normal text-mute" aria-hidden>
+        ×
+      </span>
     </button>
   );
 }
@@ -371,13 +373,13 @@ export function DashboardSearch() {
         />
       ) : null}
 
-      <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="space-y-3 border-b border-line/80 pb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <input
             type="search"
             value={nl}
             onChange={(e) => setNl(e.target.value)}
-            placeholder='e.g. backend node jobs I can do from India, posted this week, with salary'
+            placeholder="backend node from India, this week, with salary…"
             className="w-full flex-1 border-0 border-b border-line bg-transparent pb-2.5 text-[15px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
             onKeyDown={(e) => {
               if (e.key === "Enter") void runSearch(nl);
@@ -387,69 +389,72 @@ export function DashboardSearch() {
             type="button"
             disabled={busy}
             onClick={() => void runSearch(nl)}
-            className="btn-ink shrink-0 disabled:opacity-40"
+            className="shrink-0 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep transition hover:text-ink disabled:opacity-40"
           >
             {busy ? "Searching…" : "Search"}
           </button>
         </div>
         {error ? <p className="text-[13px] text-sun">{error}</p> : null}
-      </div>
 
-      {hasFilterParams ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {filters.q ? (
-            <Chip label={`q: ${filters.q}`} onClear={() => patchFilter({ clear: "q" })} />
-          ) : null}
-          {filters.labels?.length ? (
-            <Chip
-              label={`labels: ${filters.labels.join(" + ")}`}
-              onClear={() => patchFilter({ clear: "labels" })}
-            />
-          ) : null}
-          {filters.role ? (
-            <Chip
-              label={`role: ${filters.role}`}
-              onClear={() => patchFilter({ clear: "role" })}
-            />
-          ) : null}
-          {filters.ats ? (
-            <Chip
-              label={`ats: ${filters.ats}`}
-              onClear={() => patchFilter({ clear: "ats" })}
-            />
-          ) : null}
-          {filters.posted && filters.posted !== "all" ? (
-            <Chip
-              label={`posted: ${filters.posted}`}
-              onClear={() => patchFilter({ clear: "posted" })}
-            />
-          ) : null}
-          {filters.has_salary === true ? (
-            <Chip
-              label="has salary"
-              onClear={() => patchFilter({ clear: "has_salary" })}
-            />
-          ) : null}
-          {filters.has_salary === false ? (
-            <Chip
-              label="no salary"
-              onClear={() => patchFilter({ clear: "has_salary" })}
-            />
-          ) : null}
-          {filters.sort && filters.sort !== "newest" ? (
-            <Chip
-              label={`sort: ${filters.sort}`}
-              onClear={() => patchFilter({ clear: "sort" })}
-            />
-          ) : null}
-          <Link
-            href={openInJobsHref}
-            className="ml-auto text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep hover:underline"
-          >
-            Open in Jobs tab
-          </Link>
-        </div>
-      ) : null}
+        {hasFilterParams ? (
+          <div className="-mx-1 flex flex-wrap items-center gap-0.5">
+            {filters.q ? (
+              <Chip
+                label={`q · ${filters.q}`}
+                onClear={() => patchFilter({ clear: "q" })}
+              />
+            ) : null}
+            {filters.labels?.length ? (
+              <Chip
+                label={`labels · ${filters.labels.join(" + ")}`}
+                onClear={() => patchFilter({ clear: "labels" })}
+              />
+            ) : null}
+            {filters.role ? (
+              <Chip
+                label={`role · ${filters.role}`}
+                onClear={() => patchFilter({ clear: "role" })}
+              />
+            ) : null}
+            {filters.ats ? (
+              <Chip
+                label={`ats · ${filters.ats}`}
+                onClear={() => patchFilter({ clear: "ats" })}
+              />
+            ) : null}
+            {filters.posted && filters.posted !== "all" ? (
+              <Chip
+                label={`posted · ${filters.posted}`}
+                onClear={() => patchFilter({ clear: "posted" })}
+              />
+            ) : null}
+            {filters.has_salary === true ? (
+              <Chip
+                label="has salary"
+                onClear={() => patchFilter({ clear: "has_salary" })}
+              />
+            ) : null}
+            {filters.has_salary === false ? (
+              <Chip
+                label="no salary"
+                onClear={() => patchFilter({ clear: "has_salary" })}
+              />
+            ) : null}
+            {filters.sort && filters.sort !== "newest" ? (
+              <Chip
+                label={`sort · ${filters.sort}`}
+                onClear={() => patchFilter({ clear: "sort" })}
+              />
+            ) : null}
+            <Link
+              href={openInJobsHref}
+              className="ml-auto px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-mark-deep"
+            >
+              Open in Jobs
+            </Link>
+          </div>
+        ) : null}
+      </div>
 
       {recent.length > 0 ? (
         <div className="space-y-2">
@@ -459,7 +464,7 @@ export function DashboardSearch() {
             </p>
             <button
               type="button"
-              className="text-[11px] uppercase text-mute hover:text-ink"
+              className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-ink"
               onClick={() => {
                 clearRecentSearches();
                 setRecent([]);
@@ -468,13 +473,13 @@ export function DashboardSearch() {
               Clear
             </button>
           </div>
-          <ul className="flex flex-wrap gap-2">
+          <ul className="-mx-1 flex flex-wrap gap-0.5">
             {recent.map((r) => (
               <li key={`${r.at}-${r.nl}`}>
                 <button
                   type="button"
                   onClick={() => applyRecent(r)}
-                  className="max-w-xs truncate rounded-full border border-line bg-paper px-2.5 py-1 text-left text-[12px] text-mute hover:text-ink"
+                  className="max-w-xs truncate rounded-full px-2.5 py-1.5 text-left text-[13px] text-mute transition hover:bg-mark-soft/50 hover:text-ink"
                   title={r.nl}
                 >
                   {r.nl}

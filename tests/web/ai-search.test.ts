@@ -4,8 +4,11 @@ import path from "node:path";
 import {
   AI_SEARCH_SYSTEM_PROMPT,
   bodyHasApiKeyField,
+  BYOK_PROVIDER_IDS,
+  BYOK_PROVIDERS,
   filtersToJobsQuery,
   FORBIDDEN_KEY_FIELDS,
+  getByokProvider,
   JobsFilterFieldsSchema,
   nlToFilters,
   parseFiltersJson,
@@ -14,6 +17,18 @@ import {
 import { JobsListQuerySchema } from "../../web/src/lib/jobs-filters.ts";
 
 const store: ByokKeyStore = { provider: "openai", apiKey: "sk-test" };
+
+describe("BYOK providers", () => {
+  it("registers the expanded provider set", () => {
+    expect(BYOK_PROVIDER_IDS.length).toBeGreaterThanOrEqual(8);
+    expect(BYOK_PROVIDER_IDS).toContain("gemini");
+    expect(BYOK_PROVIDER_IDS).toContain("anthropic");
+    expect(BYOK_PROVIDER_IDS).toContain("openrouter");
+    expect(BYOK_PROVIDER_IDS).toContain("deepseek");
+    expect(getByokProvider("groq")?.baseUrl).toContain("groq.com");
+    expect(BYOK_PROVIDERS.every((p) => p.model.length > 0)).toBe(true);
+  });
+});
 
 describe("shared Zod schema", () => {
   it("JobsFilterFieldsSchema is the filter core of JobsListQuerySchema", () => {

@@ -2,7 +2,7 @@
  * BYOK AI search — keys live ONLY in browser localStorage.
  * They are never sent to Applicable/CaniApply API routes, never logged,
  * and never placed in URLs. Provider calls go directly from the browser
- * to Gemini / Groq / OpenAI.
+ * to the chosen provider (Gemini, Anthropic, OpenAI-compatible hosts, etc.).
  */
 import {
   JobsFilterFieldsSchema,
@@ -18,7 +18,124 @@ export {
 export const AiSearchFilterSchema = JobsFilterFieldsSchema;
 export type AiSearchFilter = JobsFilterFields;
 
-export type ByokProvider = "gemini" | "groq" | "openai";
+export type ByokProvider =
+  | "gemini"
+  | "anthropic"
+  | "openai"
+  | "groq"
+  | "openrouter"
+  | "deepseek"
+  | "mistral"
+  | "together"
+  | "fireworks"
+  | "xai"
+  | "perplexity";
+
+type ProviderKind = "gemini" | "anthropic" | "openai_compatible";
+
+type ByokProviderConfig = {
+  id: ByokProvider;
+  label: string;
+  hint?: string;
+  kind: ProviderKind;
+  /** OpenAI-compatible base URL (…/v1) */
+  baseUrl?: string;
+  model: string;
+};
+
+export const BYOK_PROVIDERS: readonly ByokProviderConfig[] = [
+  {
+    id: "gemini",
+    label: "Gemini",
+    hint: "Google AI Studio",
+    kind: "gemini",
+    model: "gemini-2.0-flash",
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    hint: "Claude",
+    kind: "anthropic",
+    model: "claude-3-5-haiku-latest",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    kind: "openai_compatible",
+    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-4o-mini",
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    kind: "openai_compatible",
+    baseUrl: "https://api.groq.com/openai/v1",
+    model: "llama-3.3-70b-versatile",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    hint: "Many models, one key",
+    kind: "openai_compatible",
+    baseUrl: "https://openrouter.ai/api/v1",
+    model: "openai/gpt-4o-mini",
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    kind: "openai_compatible",
+    baseUrl: "https://api.deepseek.com/v1",
+    model: "deepseek-chat",
+  },
+  {
+    id: "mistral",
+    label: "Mistral",
+    kind: "openai_compatible",
+    baseUrl: "https://api.mistral.ai/v1",
+    model: "mistral-small-latest",
+  },
+  {
+    id: "together",
+    label: "Together",
+    kind: "openai_compatible",
+    baseUrl: "https://api.together.xyz/v1",
+    model: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+  },
+  {
+    id: "fireworks",
+    label: "Fireworks",
+    kind: "openai_compatible",
+    baseUrl: "https://api.fireworks.ai/inference/v1",
+    model: "accounts/fireworks/models/llama-v3p1-8b-instruct",
+  },
+  {
+    id: "xai",
+    label: "xAI",
+    hint: "Grok",
+    kind: "openai_compatible",
+    baseUrl: "https://api.x.ai/v1",
+    model: "grok-2-latest",
+  },
+  {
+    id: "perplexity",
+    label: "Perplexity",
+    kind: "openai_compatible",
+    baseUrl: "https://api.perplexity.ai",
+    model: "sonar",
+  },
+] as const;
+
+export const BYOK_PROVIDER_IDS = BYOK_PROVIDERS.map((p) => p.id);
+
+export const BYOK_PROVIDER_OPTIONS = BYOK_PROVIDERS.map((p) => ({
+  value: p.id,
+  label: p.label,
+  hint: p.hint,
+}));
+
+export function getByokProvider(id: string): ByokProviderConfig | undefined {
+  return BYOK_PROVIDERS.find((p) => p.id === id);
+}
 
 export type ByokKeyStore = {
   provider: ByokProvider;
@@ -60,7 +177,7 @@ export function loadByokKey(): ByokKeyStore | null {
     const parsed = JSON.parse(raw) as ByokKeyStore;
     if (
       !parsed?.apiKey ||
-      !["gemini", "groq", "openai"].includes(parsed.provider)
+      !BYOK_PROVIDER_IDS.includes(parsed.provider as ByokProvider)
     ) {
       return null;
     }
@@ -200,17 +317,55 @@ async function callGemini(
   return text;
 }
 
+async function callAnthropic(
+  apiKey: string,
+  model: string,
+  userContent: string,
+): Promise<string> {
+  const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      // Required for browser calls when Anthropic allows the origin
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      temperature: 0.1,
+      system: AI_SEARCH_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    }),
+  });
+  if (!res.ok) throw mapProviderHttpError(res.status);
+  const data = (await res.json()) as {
+    content?: Array<{ type?: string; text?: string }>;
+  };
+  const text = data.content?.find((c) => c.type === "text")?.text;
+  if (!text) {
+    throw {
+      kind: "empty",
+      message: "Provider returned an empty response.",
+    } satisfies ProviderCallError;
+  }
+  return text;
+}
+
 async function callOpenAiCompatible(
   baseUrl: string,
   apiKey: string,
   model: string,
   userContent: string,
+  extraHeaders?: Record<string, string>,
 ): Promise<string> {
   const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
+      ...extraHeaders,
     },
     body: JSON.stringify({
       model,
@@ -235,26 +390,37 @@ async function callOpenAiCompatible(
   return text;
 }
 
+function openRouterHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  return {
+    "HTTP-Referer": window.location.origin,
+    "X-Title": "Applicable AI Search",
+  };
+}
+
 async function callProvider(
   store: ByokKeyStore,
   userContent: string,
 ): Promise<string> {
-  if (store.provider === "gemini") {
+  const cfg = getByokProvider(store.provider);
+  if (!cfg) {
+    throw {
+      kind: "http",
+      message: "Unknown provider. Pick another in Change key.",
+    } satisfies ProviderCallError;
+  }
+  if (cfg.kind === "gemini") {
     return callGemini(store.apiKey, userContent);
   }
-  if (store.provider === "groq") {
-    return callOpenAiCompatible(
-      "https://api.groq.com/openai/v1",
-      store.apiKey,
-      "llama-3.3-70b-versatile",
-      userContent,
-    );
+  if (cfg.kind === "anthropic") {
+    return callAnthropic(store.apiKey, cfg.model, userContent);
   }
   return callOpenAiCompatible(
-    "https://api.openai.com/v1",
+    cfg.baseUrl!,
     store.apiKey,
-    "gpt-4o-mini",
+    cfg.model,
     userContent,
+    cfg.id === "openrouter" ? openRouterHeaders() : undefined,
   );
 }
 
@@ -357,38 +523,7 @@ export async function testByokKey(
   store: ByokKeyStore,
 ): Promise<{ ok: true } | { ok: false; error: ProviderCallError }> {
   try {
-    if (store.provider === "gemini") {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(store.apiKey)}`;
-      const res = await fetchWithTimeout(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: "Reply with ok" }] }],
-          generationConfig: { maxOutputTokens: 8, temperature: 0 },
-        }),
-      });
-      if (!res.ok) return { ok: false, error: mapProviderHttpError(res.status) };
-      return { ok: true };
-    }
-    const base =
-      store.provider === "groq"
-        ? "https://api.groq.com/openai/v1"
-        : "https://api.openai.com/v1";
-    const model =
-      store.provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
-    const res = await fetchWithTimeout(`${base}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${store.apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 5,
-        messages: [{ role: "user", content: "Reply with ok" }],
-      }),
-    });
-    if (!res.ok) return { ok: false, error: mapProviderHttpError(res.status) };
+    await callProvider(store, "Reply with the single word ok");
     return { ok: true };
   } catch (err) {
     const pe = err as ProviderCallError;
@@ -455,6 +590,8 @@ export const FORBIDDEN_KEY_FIELDS = [
   "openai_key",
   "gemini_key",
   "groq_key",
+  "anthropic_key",
+  "openrouter_key",
 ] as const;
 
 export function bodyHasApiKeyField(body: unknown): boolean {

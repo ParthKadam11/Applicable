@@ -8,7 +8,7 @@ export default async function DashboardSettingsPage() {
   const llm = await fetchLlmStatus();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <div>
         <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
           Settings

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SoftSelect } from "@/components/ui/soft-select";
 import {
   type ByokProvider,
+  BYOK_PROVIDER_OPTIONS,
   clearByokKey,
   loadByokKey,
   saveByokKey,
@@ -66,89 +68,83 @@ export function ByokKeysPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-line bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
+    <section className="space-y-3 border-b border-line/80 pb-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-lg text-ink">{title}</h2>
-          <p className="mt-0.5 text-[13px] text-mute">
-            Keys stay in this browser only. Never sent to Applicable servers.
+          <h2 className="font-display text-lg tracking-tight text-ink">
+            {title}
+          </h2>
+          <p className="mt-1 text-[13px] text-mute">
+            Keys stay in this browser only ·{" "}
+            <span className="text-ink">
+              {hasKey ? `Saved (${provider})` : "No key"}
+            </span>
           </p>
         </div>
         <button
           type="button"
-          className="text-[11px] uppercase tracking-wide text-mute hover:text-ink"
+          className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-ink"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? "Hide" : hasKey ? "Change key" : "Add key"}
         </button>
       </div>
 
-      <div className="px-4 py-3 sm:px-5">
-        <p className="text-[13px] text-mute">
-          Status:{" "}
-          <span className="font-medium text-ink">
-            {hasKey ? `Saved (${provider})` : "No key"}
-          </span>
-        </p>
-
-        {open ? (
-          <div className="mt-3 space-y-2 rounded-xl border border-line bg-paper p-3">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value as ByokProvider)}
-                className="rounded-xl border border-line bg-white px-3 py-2 text-sm"
-              >
-                <option value="gemini">Gemini</option>
-                <option value="groq">Groq</option>
-                <option value="openai">OpenAI</option>
-              </select>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste API key"
-                autoComplete="off"
-                className="w-full flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-mark"
-              />
+      {open ? (
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <SoftSelect
+              label="Provider"
+              value={provider}
+              defaultValue="gemini"
+              options={[...BYOK_PROVIDER_OPTIONS]}
+              onChange={(v) => setProvider(v as ByokProvider)}
+            />
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Paste API key"
+              autoComplete="off"
+              className="w-full flex-1 border-0 border-b border-line bg-transparent pb-2 text-[14px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
+            />
+            <button
+              type="button"
+              onClick={persistKey}
+              className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep transition hover:text-ink"
+            >
+              Save
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <button
+              type="button"
+              disabled={testing}
+              onClick={() => void runTest()}
+              className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-mark-deep disabled:opacity-40"
+            >
+              {testing ? "Testing…" : "Test key"}
+            </button>
+            {hasKey ? (
               <button
                 type="button"
-                onClick={persistKey}
-                className="rounded-full bg-mark px-4 py-2 text-[11px] font-semibold uppercase text-ink"
+                onClick={() => {
+                  clearByokKey();
+                  setHasKey(false);
+                  setTestMsg(null);
+                  onKeyChange?.();
+                }}
+                className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-ink"
               >
-                Save key
+                Remove key
               </button>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={testing}
-                onClick={() => void runTest()}
-                className="text-[11px] uppercase tracking-wide text-mark-deep hover:text-ink disabled:opacity-40"
-              >
-                {testing ? "Testing…" : "Test key"}
-              </button>
-              {hasKey ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearByokKey();
-                    setHasKey(false);
-                    setTestMsg(null);
-                    onKeyChange?.();
-                  }}
-                  className="text-[11px] uppercase text-mute hover:text-ink"
-                >
-                  Remove key
-                </button>
-              ) : null}
-            </div>
+            ) : null}
             {testMsg ? (
-              <p className="text-[12px] text-mute">{testMsg}</p>
+              <span className="text-[12px] text-mute">{testMsg}</span>
             ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }
