@@ -30,6 +30,11 @@ export const companies = pgTable(
     website: text("website").notNull(),
     ats: atsEnum("ats").notNull(),
     atsSlug: text("ats_slug").notNull(),
+    /**
+     * Public URL slug for /dashboard/companies/[slug].
+     * DB trigger fills from ats_slug/name when omitted (promote/seed).
+     */
+    slug: text("slug"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -37,7 +42,10 @@ export const companies = pgTable(
   },
   (table) => [
     uniqueIndex("companies_ats_slug_uidx").on(table.ats, table.atsSlug),
+    uniqueIndex("companies_slug_uidx").on(table.slug),
     index("companies_active_idx").on(table.active),
+    index("companies_created_at_idx").on(table.createdAt),
+    index("companies_name_idx").on(table.name),
   ],
 );
 
@@ -137,6 +145,9 @@ export const companyCandidates = pgTable(
     ),
     index("company_candidates_status_idx").on(table.status),
     index("company_candidates_source_idx").on(table.source),
+    index("company_candidates_promoted_company_id_idx").on(
+      table.promotedCompanyId,
+    ),
   ],
 );
 

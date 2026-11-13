@@ -32,6 +32,14 @@ export const JobsFilterFieldsSchema = z.object({
     .default(["open", "india_remote"]),
   role: RoleSchema.optional(),
   ats: AtsSchema.optional(),
+  /** Public company slug — restrict results to one company. */
+  company: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, "invalid company slug")
+    .optional(),
   posted: PostedSchema.default("all"),
   has_salary: z.boolean().optional(),
   sort: SortSchema.default("newest"),
@@ -107,6 +115,7 @@ export function parseJobsListSearchParams(
     labels,
     role: sp.get("role") || undefined,
     ats: sp.get("ats") || undefined,
+    company: sp.get("company") || undefined,
     posted: sp.get("posted") || undefined,
     has_salary,
     sort: sp.get("sort") || undefined,

@@ -64,6 +64,13 @@
       "when": 1794900000000,
       "tag": "0008_saved_jobs_label_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795000000000,
+      "tag": "0009_companies_slug",
+      "breakpoints": true
     }
   ]
 }

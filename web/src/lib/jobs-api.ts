@@ -184,6 +184,10 @@ async function baseConditions(q: JobsListQuery): Promise<SQL[]> {
     );
   }
 
+  if (q.company) {
+    conditions.push(eq(companies.slug, q.company));
+  }
+
   const since = postedSince(q.posted);
   if (since) {
     conditions.push(

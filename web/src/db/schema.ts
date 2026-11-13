@@ -17,6 +17,12 @@ import {
 
 export const atsEnum = pgEnum("ats", ["ashby", "greenhouse", "lever"]);
 
+export const candidateStatusEnum = pgEnum("candidate_status", [
+  "pending",
+  "verified",
+  "rejected",
+]);
+
 export const users = pgTable(
   "users",
   {
@@ -42,9 +48,21 @@ export const companies = pgTable(
     name: text("name").notNull(),
     website: text("website"),
     ats: atsEnum("ats"),
+    atsSlug: text("ats_slug"),
+    /** Filled by migration backfill + companies_ensure_slug trigger. */
+    slug: text("slug"),
     active: boolean("active").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [index("companies_active_idx").on(table.active)],
+  (table) => [
+    uniqueIndex("companies_ats_slug_uidx").on(table.ats, table.atsSlug),
+    uniqueIndex("companies_slug_uidx").on(table.slug),
+    index("companies_active_idx").on(table.active),
+    index("companies_created_at_idx").on(table.createdAt),
+    index("companies_name_idx").on(table.name),
+  ],
 );
 
 export const jobs = pgTable(
@@ -97,6 +115,42 @@ export const fetchRuns = pgTable("fetch_runs", {
   finishedAt: timestamp("finished_at", { withTimezone: true }),
   ok: boolean("ok").notNull().default(false),
 });
+
+export const companyCandidates = pgTable(
+  "company_candidates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    domain: text("domain"),
+    source: text("source").notNull(),
+    discoveredAt: timestamp("discovered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    status: candidateStatusEnum("status").notNull().default("pending"),
+    ats: atsEnum("ats"),
+    atsSlug: text("ats_slug"),
+    evidenceUrl: text("evidence_url"),
+    rejectReason: text("reject_reason"),
+    promotedCompanyId: uuid("promoted_company_id").references(
+      () => companies.id,
+      { onDelete: "set null" },
+    ),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("company_candidates_source_name_uidx").on(
+      table.source,
+      table.name,
+    ),
+    index("company_candidates_status_idx").on(table.status),
+    index("company_candidates_source_idx").on(table.source),
+    index("company_candidates_promoted_company_id_idx").on(
+      table.promotedCompanyId,
+    ),
+  ],
+);
 
 export const savedJobs = pgTable(
   "saved_jobs",

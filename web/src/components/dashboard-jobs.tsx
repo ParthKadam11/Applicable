@@ -130,28 +130,34 @@ function highlightEvidence(quote: string, q: string | null) {
   );
 }
 
-function buildQuery(sp: URLSearchParams): string {
+function buildQuery(
+  sp: URLSearchParams,
+  opts?: { companySlug?: string; companyOnly?: boolean },
+): string {
   const next = new URLSearchParams();
-  for (const key of [
-    "q",
-    "labels",
-    "role",
-    "ats",
-    "posted",
-    "has_salary",
-    "sort",
-    "job",
-  ]) {
+  const keys = opts?.companyOnly
+    ? ["labels", "sort", "job"]
+    : ["q", "labels", "role", "ats", "posted", "has_salary", "sort", "job"];
+  for (const key of keys) {
     const v = sp.get(key);
     if (v) next.set(key, v);
   }
+  if (opts?.companySlug) next.set("company", opts.companySlug);
   return next.toString();
 }
 
 export function DashboardJobs({
   initial,
+  companySlug,
+  basePath = "/dashboard/jobs",
+  hideChrome = false,
 }: {
   initial: ListResponse | null;
+  /** When set, scopes list to this company slug and simplifies filters. */
+  companySlug?: string;
+  basePath?: string;
+  /** Hide page title / non-label filters (company detail page). */
+  hideChrome?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,10 +199,11 @@ export function DashboardJobs({
         else sp.set(k, v);
       }
       startTransition(() => {
-        router.replace(`/dashboard/jobs?${sp.toString()}`, { scroll: false });
+        const qs = sp.toString();
+        router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
       });
     },
-    [router, searchParams],
+    [router, searchParams, basePath],
   );
 
   useEffect(() => {
@@ -221,7 +228,12 @@ export function DashboardJobs({
     async function load() {
       setFailed(false);
       try {
-        const sp = new URLSearchParams(buildQuery(searchParams));
+        const sp = new URLSearchParams(
+          buildQuery(searchParams, {
+            companySlug,
+            companyOnly: Boolean(companySlug),
+          }),
+        );
         sp.delete("job");
         const res = await fetch(`/api/jobs?${sp.toString()}`);
         if (!res.ok) {
@@ -243,7 +255,7 @@ export function DashboardJobs({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- qsKey captures URL state
-  }, [qsKey]);
+  }, [qsKey, companySlug]);
 
   useEffect(() => {
     if (!jobId) {
@@ -276,7 +288,12 @@ export function DashboardJobs({
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const sp = new URLSearchParams(buildQuery(searchParams));
+      const sp = new URLSearchParams(
+        buildQuery(searchParams, {
+          companySlug,
+          companyOnly: Boolean(companySlug),
+        }),
+      );
       sp.delete("job");
       sp.set("cursor", nextCursor);
       const res = await fetch(`/api/jobs?${sp.toString()}`);
@@ -332,37 +349,43 @@ export function DashboardJobs({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div>
-          <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
-            Jobs
-          </h1>
-          <p className="mt-1.5 text-[13px] text-mute sm:text-[14px]">
-            {headerLine}
-          </p>
-        </div>
-        {pending ? (
-          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-mark-deep">
-            Updating…
-          </p>
-        ) : null}
-      </header>
+      {!hideChrome ? (
+        <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div>
+            <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
+              Jobs
+            </h1>
+            <p className="mt-1.5 text-[13px] text-mute sm:text-[14px]">
+              {headerLine}
+            </p>
+          </div>
+          {pending ? (
+            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-mark-deep">
+              Updating…
+            </p>
+          ) : null}
+        </header>
+      ) : null}
 
       <div className="space-y-3 border-b border-line/80 pb-4">
-        <input
-          type="search"
-          placeholder="Search titles, companies, skills…"
-          value={qDraft}
-          onChange={(e) => {
-            const v = e.target.value;
-            setQDraft(v);
-            if (debounceRef.current) window.clearTimeout(debounceRef.current);
-            debounceRef.current = window.setTimeout(() => {
-              patchParams({ q: v.trim() || null });
-            }, 300);
-          }}
-          className="w-full border-0 border-b border-line bg-transparent pb-2.5 text-[15px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
-        />
+        {!hideChrome ? (
+          <input
+            type="search"
+            placeholder="Search titles, companies, skills…"
+            value={qDraft}
+            onChange={(e) => {
+              const v = e.target.value;
+              setQDraft(v);
+              if (debounceRef.current) window.clearTimeout(debounceRef.current);
+              debounceRef.current = window.setTimeout(() => {
+                patchParams({ q: v.trim() || null });
+              }, 300);
+            }}
+            className="w-full border-0 border-b border-line bg-transparent pb-2.5 text-[15px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
+          />
+        ) : (
+          <p className="text-[13px] text-mute sm:text-[14px]">{headerLine}</p>
+        )}
         <div className="-mx-1 flex flex-wrap items-center gap-0.5">
           <SoftSelect
             label="Eligibility"
@@ -371,41 +394,45 @@ export function DashboardJobs({
             options={[...LABEL_OPTIONS]}
             onChange={(v) => patchParams({ labels: v })}
           />
-          <SoftSelect
-            label="Role"
-            value={role}
-            defaultValue=""
-            options={[...ROLE_OPTIONS]}
-            onChange={(v) => patchParams({ role: v || null })}
-          />
-          <SoftSelect
-            label="ATS"
-            value={ats}
-            defaultValue=""
-            options={[...ATS_OPTIONS]}
-            onChange={(v) => patchParams({ ats: v || null })}
-          />
-          <SoftSelect
-            label="Posted"
-            value={posted}
-            defaultValue="all"
-            options={[...POSTED_OPTIONS]}
-            onChange={(v) => patchParams({ posted: v })}
-          />
-          <SoftSelect
-            label="Salary"
-            value={hasSalary}
-            defaultValue=""
-            options={[...SALARY_OPTIONS]}
-            onChange={(v) => patchParams({ has_salary: v || null })}
-          />
-          <SoftSelect
-            label="Sort"
-            value={sort}
-            defaultValue="newest"
-            options={[...SORT_OPTIONS]}
-            onChange={(v) => patchParams({ sort: v })}
-          />
+          {!hideChrome ? (
+            <>
+              <SoftSelect
+                label="Role"
+                value={role}
+                defaultValue=""
+                options={[...ROLE_OPTIONS]}
+                onChange={(v) => patchParams({ role: v || null })}
+              />
+              <SoftSelect
+                label="ATS"
+                value={ats}
+                defaultValue=""
+                options={[...ATS_OPTIONS]}
+                onChange={(v) => patchParams({ ats: v || null })}
+              />
+              <SoftSelect
+                label="Posted"
+                value={posted}
+                defaultValue="all"
+                options={[...POSTED_OPTIONS]}
+                onChange={(v) => patchParams({ posted: v })}
+              />
+              <SoftSelect
+                label="Salary"
+                value={hasSalary}
+                defaultValue=""
+                options={[...SALARY_OPTIONS]}
+                onChange={(v) => patchParams({ has_salary: v || null })}
+              />
+              <SoftSelect
+                label="Sort"
+                value={sort}
+                defaultValue="newest"
+                options={[...SORT_OPTIONS]}
+                onChange={(v) => patchParams({ sort: v })}
+              />
+            </>
+          ) : null}
         </div>
       </div>
 

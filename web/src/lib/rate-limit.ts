@@ -28,3 +28,8 @@ export const labelReportLimiter = new SlidingWindowLimiter(
   5,
   60 * 60 * 1000,
 );
+/** Company suggestions: 5 per hour per IP. */
+export const companySubmitLimiter = new SlidingWindowLimiter(
+  5,
+  60 * 60 * 1000,
+);
