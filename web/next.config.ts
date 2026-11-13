@@ -28,11 +28,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // HTML/RSC must not be cached by browsers/CDN across deploys
       {
-        source: "/(.*)",
+        source: "/((?!_next/static|_next/image).*)",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, max-age=0, must-revalidate",
+          },
         ],
       },
     ];

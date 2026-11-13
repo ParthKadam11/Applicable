@@ -140,7 +140,11 @@ networks:
     driver: bridge
 
 volumes:
+  # MUST stay on caniapply_caniapply_pgdata — that volume has ingest data.
+  # caniapply_applicable_pgdata is an empty rename leftover; do not switch back.
   applicable_pgdata:
+    external: true
+    name: caniapply_caniapply_pgdata
   applicable_appdata:
   applicable_caddy_data:
   applicable_caddy_config:

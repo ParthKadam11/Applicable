@@ -138,6 +138,14 @@ jobs:
             docker compose -f docker-compose.prod.yml ps
             docker compose -f docker-compose.prod.yml logs --tail=40 migrate mcp app
 
+            echo "==> web (Next.js PM2) — without this, site keeps serving old .next"
+            if [ -d web ]; then
+              chmod +x scripts/deploy-web.sh
+              ./scripts/deploy-web.sh
+            else
+              echo "WARN: web/ missing — skipped"
+            fi
+
             echo "==> deployed $(git rev-parse --short HEAD)"
 
       - name: Smoke test
