@@ -2,263 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BrowseJobsLink } from "@/components/browse-jobs-link";
+import { ConnectSheet } from "@/components/connect-sheet";
 import { CopyButton } from "@/components/copy-button";
-import { MCP_URL } from "@/lib/constants";
+import { CONNECTORS, MCP_URL, type ConnectorDef } from "@/lib/mcp-connectors";
 import { copyText, isLikelyMobile } from "@/lib/copy-text";
-import {
-  chatgptPluginsHref,
-  claudeConnectorHref,
-  cursorInstallHref,
-  grokHref,
-  instinctHref,
-  vscodeInstallHref,
-  windsurfMcpHref,
-} from "@/lib/mcp-install";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { McpJsonPanel } from "@/components/mcp-json-panel";
 import { AgentLogo } from "./agent-logo";
 import { BrandLogo } from "./brand-logo";
-
-type Cta =
-  | {
-      kind: "deeplink";
-      label: string;
-      href: string;
-      /** Also copy endpoint on tap (helps mobile paste if prefill fails). */
-      copyOnClick?: boolean;
-    }
-  | {
-      kind: "copy-then-open";
-      label: string;
-      openUrl: string;
-      openLabel: string;
-    }
-  | { kind: "copy-only"; label: string };
-
-type Connector = {
-  id: string;
-  label: string;
-  headline: string;
-  body: string;
-  tag: string;
-  cta: Cta;
-  stepsDesktop: string[];
-  stepsMobile: string[];
-  /** Tip shown under CTAs on phones */
-  mobileTip?: string;
-};
-
-const CONNECTORS: Connector[] = [
-  {
-    id: "claude",
-    label: "Claude",
-    headline: "Add Applicable to Claude",
-    body: "Opens Claude’s connector dialog with our URL filled in. On iPhone, use Safari (not the Claude app) so the connector can be added, then it syncs to the app.",
-    tag: "Web + iOS",
-    cta: {
-      kind: "deeplink",
-      label: "Add to Claude",
-      href: claudeConnectorHref(),
-      copyOnClick: true,
-    },
-    stepsDesktop: [
-      "Click Add to Claude (prefilled).",
-      "Confirm the connector.",
-      "Ask for India-remote roles.",
-    ],
-    stepsMobile: [
-      "Tap Add to Claude in Safari or Chrome.",
-      "Sign in if asked, then confirm the connector.",
-      "Open the Claude app — Applicable is under Connectors.",
-    ],
-    mobileTip:
-      "If the Claude app opens instead, switch to Safari and tap Add to Claude again.",
-  },
-  {
-    id: "codex",
-    label: "Codex",
-    headline: "Wire Applicable into Codex",
-    body: "Copies the endpoint, then opens ChatGPT Plugins. Create a custom MCP server and paste. Works in a phone browser too.",
-    tag: "Copy + paste",
-    cta: {
-      kind: "copy-then-open",
-      label: "Copy endpoint",
-      openUrl: chatgptPluginsHref(),
-      openLabel: "Open Plugins",
-    },
-    stepsDesktop: [
-      "Copy the endpoint.",
-      "Open Plugins → Add custom MCP server.",
-      "Paste the URL and create the plugin.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint.",
-      "Open Plugins in Safari/Chrome (same Apple/Google account).",
-      "Add custom MCP server → paste → create.",
-    ],
-  },
-  {
-    id: "cursor",
-    label: "Cursor",
-    headline: "Install Applicable in Cursor",
-    body: "On desktop, one click hands off to Cursor and installs the server. On phones, copy the endpoint and finish in Cursor on your computer.",
-    tag: "Desktop",
-    cta: {
-      kind: "deeplink",
-      label: "Add to Cursor",
-      href: cursorInstallHref(),
-      copyOnClick: true,
-    },
-    stepsDesktop: [
-      "Click Add to Cursor.",
-      "Confirm Install in the Cursor app.",
-      "Ask for india_remote jobs.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint below (or Add to Cursor to copy).",
-      "Open Cursor on your computer.",
-      "Add MCP server → paste the URL → ask for india_remote jobs.",
-    ],
-    mobileTip: "Cursor install links only complete on desktop.",
-  },
-  {
-    id: "grok",
-    label: "Grokbot",
-    headline: "Hook Grokbot into Applicable",
-    body: "Copies the endpoint and opens Grok. Paste into MCP / connectors settings.",
-    tag: "Copy + paste",
-    cta: {
-      kind: "copy-then-open",
-      label: "Copy endpoint",
-      openUrl: grokHref(),
-      openLabel: "Open Grok",
-    },
-    stepsDesktop: [
-      "Copy the endpoint.",
-      "Open Grok → MCP / connectors.",
-      "Paste and save, then ask for open + india_remote roles.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint, then Open Grok.",
-      "Paste into MCP / connectors settings.",
-      "Ask for open + india_remote roles.",
-    ],
-  },
-  {
-    id: "instinct",
-    label: "Instinct",
-    headline: "Connect Instinct to Applicable",
-    body: "Copies the endpoint and opens Instinct. Add a remote MCP connection in settings, then text or call Instinct.",
-    tag: "Copy + paste",
-    cta: {
-      kind: "copy-then-open",
-      label: "Copy endpoint",
-      openUrl: instinctHref(),
-      openLabel: "Open Instinct",
-    },
-    stepsDesktop: [
-      "Copy the endpoint.",
-      "In Instinct settings, add an MCP connection and paste.",
-      "Ask for India-remote roles by text or call.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint, then Open Instinct.",
-      "Add an MCP connection and paste the URL.",
-      "Text or call Instinct for India-remote roles.",
-    ],
-  },
-  {
-    id: "chatgpt",
-    label: "ChatGPT",
-    headline: "Connect ChatGPT to live India checks",
-    body: "Copies the endpoint and opens ChatGPT Plugins. Add a custom MCP server on web (including iPhone Safari), then use it in the app.",
-    tag: "Web + iOS",
-    cta: {
-      kind: "copy-then-open",
-      label: "Copy endpoint",
-      openUrl: chatgptPluginsHref(),
-      openLabel: "Open Plugins",
-    },
-    stepsDesktop: [
-      "Copy the endpoint.",
-      "Plugins → Add custom MCP server → paste.",
-      "Create, install, then @Applicable in chat.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint.",
-      "Open Plugins in Safari/Chrome (not only the app).",
-      "Add custom MCP server → paste → create. It syncs to the ChatGPT app.",
-    ],
-    mobileTip:
-      "Custom MCP is added on chatgpt.com in a browser, then available in the iOS app.",
-  },
-  {
-    id: "windsurf",
-    label: "Windsurf",
-    headline: "Connect Windsurf to Applicable",
-    body: "Copies the endpoint and opens Windsurf MCP docs. Paste as serverUrl in Cascade MCP settings on desktop.",
-    tag: "Desktop",
-    cta: {
-      kind: "copy-then-open",
-      label: "Copy endpoint",
-      openUrl: windsurfMcpHref(),
-      openLabel: "Open docs",
-    },
-    stepsDesktop: [
-      "Copy the endpoint.",
-      "Paste as serverUrl in Cascade MCP.",
-      "Ask who’s hiring from India.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint.",
-      "Finish in Windsurf on your computer (Cascade MCP).",
-      "Paste as serverUrl, then ask who’s hiring from India.",
-    ],
-    mobileTip: "Windsurf MCP setup is desktop-only.",
-  },
-  {
-    id: "cline",
-    label: "Cline",
-    headline: "Use Applicable inside Cline",
-    body: "On desktop, opens VS Code’s MCP install flow. On phones, copy the endpoint and enable it in Cline on your computer.",
-    tag: "Desktop",
-    cta: {
-      kind: "deeplink",
-      label: "Add to Cline",
-      href: vscodeInstallHref(),
-      copyOnClick: true,
-    },
-    stepsDesktop: [
-      "Click Add to Cline.",
-      "Confirm in VS Code, enable in Cline MCP if needed.",
-      "Ask for India-eligible roles.",
-    ],
-    stepsMobile: [
-      "Tap Copy endpoint below.",
-      "Open VS Code / Cline on your computer.",
-      "Add remote MCP URL → ask for India-eligible roles.",
-    ],
-    mobileTip: "Cline / VS Code install completes on desktop.",
-  },
-  {
-    id: "mcp",
-    label: "Any MCP",
-    headline: "Any MCP-capable client",
-    body: "Copy this Streamable HTTP endpoint into any client that speaks MCP. Same corpus everywhere.",
-    tag: "URL",
-    cta: { kind: "copy-only", label: "Copy MCP endpoint" },
-    stepsDesktop: [
-      "Copy the endpoint URL.",
-      "Add remote server applicable.",
-      "Query search_jobs / stats.",
-    ],
-    stepsMobile: [
-      "Tap Copy MCP endpoint.",
-      "Paste into your client’s remote MCP settings.",
-      "Query search_jobs / stats.",
-    ],
-  },
-];
 
 type ConnectorId = (typeof CONNECTORS)[number]["id"];
 
@@ -331,8 +82,9 @@ function EndpointChip() {
   );
 }
 
-function ConnectCta({ cta }: { cta: Cta }) {
+function DesktopCta({ connector }: { connector: ConnectorDef }) {
   const [copied, setCopied] = useState(false);
+  const cta = connector.cta;
 
   async function doCopy() {
     const ok = await copyText(MCP_URL);
@@ -348,11 +100,8 @@ function ConnectCta({ cta }: { cta: Cta }) {
         className="btn-ink touch-manipulation"
         rel="noopener noreferrer"
         target="_blank"
-        onClick={() => {
-          if (cta.copyOnClick) void doCopy();
-        }}
       >
-        {copied ? "Copied · opening…" : cta.label}
+        {cta.label}
       </a>
     );
   }
@@ -369,8 +118,6 @@ function ConnectCta({ cta }: { cta: Cta }) {
     );
   }
 
-  // copy-then-open: never window.open after await (iOS blocks it).
-  // Copy is a button; Open is a real <a> so Safari allows navigation.
   return (
     <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap">
       <button
@@ -395,13 +142,14 @@ function ConnectCta({ cta }: { cta: Cta }) {
 export function McpSetup() {
   const [active, setActive] = useState<ConnectorId>("claude");
   const [mobile, setMobile] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const c = CONNECTORS.find((x) => x.id === active) ?? CONNECTORS[0]!;
 
   useEffect(() => {
     setMobile(isLikelyMobile());
   }, []);
 
-  const steps = mobile ? c.stepsMobile : c.stepsDesktop;
+  const steps = mobile ? c.mobile.steps : c.stepsDesktop;
 
   const snippet = `{
   "mcpServers": {
@@ -422,9 +170,9 @@ export function McpSetup() {
             Plug into the agent you already use
           </h2>
           <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
-            Same corpus everywhere. Copy the endpoint, or use a client that can
-            open a prefilled install link. Mobile steps use Safari/Chrome where
-            apps block custom MCP setup.
+            On phones we copy the endpoint and guide you — native apps often
+            open and do nothing. Desktop still gets install links where they
+            work.
           </p>
         </div>
 
@@ -479,15 +227,19 @@ export function McpSetup() {
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <ConnectCta cta={c.cta} />
+              {mobile ? (
+                <button
+                  type="button"
+                  className="btn-ink w-full touch-manipulation sm:w-auto"
+                  onClick={() => setSheetOpen(true)}
+                >
+                  Connect {c.label}
+                </button>
+              ) : (
+                <DesktopCta connector={c} />
+              )}
               <BrowseJobsLink className="btn-ghost w-full touch-manipulation sm:w-auto" />
             </div>
-
-            {mobile && c.mobileTip ? (
-              <p className="mt-4 max-w-md text-[12px] leading-relaxed text-mute">
-                {c.mobileTip}
-              </p>
-            ) : null}
           </div>
 
           <div className="mx-auto flex w-full max-w-sm flex-col items-center justify-center gap-4 lg:mx-0 lg:justify-self-center">
@@ -498,7 +250,7 @@ export function McpSetup() {
             <ol className="w-full space-y-2 pt-1">
               {steps.map((step, i) => (
                 <li
-                  key={step}
+                  key={`${c.id}-${i}`}
                   className="flex gap-2 text-sm leading-snug text-mute"
                 >
                   <span className="shrink-0 tabular-nums">{i + 1}.</span>
@@ -511,6 +263,12 @@ export function McpSetup() {
 
         <McpJsonPanel snippet={snippet} />
       </div>
+
+      <ConnectSheet
+        open={sheetOpen}
+        guide={c.mobile}
+        onClose={() => setSheetOpen(false)}
+      />
     </section>
   );
 }

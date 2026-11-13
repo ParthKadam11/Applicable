@@ -32,6 +32,13 @@ export async function copyText(text: string): Promise<boolean> {
 }
 
 export function isLikelyMobile(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (typeof navigator === "undefined" || typeof window === "undefined") {
+    return false;
+  }
+  const ua = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const coarse =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches &&
+    window.matchMedia("(max-width: 900px)").matches;
+  return ua || coarse;
 }

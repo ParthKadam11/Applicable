@@ -1,26 +1,13 @@
-import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
-
-const LABELS: Record<string, string> = {
-  claude: "Claude",
-  codex: "Codex",
-  cursor: "Cursor",
-  grok: "Grokbot",
-  instinct: "Instinct",
-  chatgpt: "ChatGPT",
-  windsurf: "Windsurf",
-  cline: "Cline",
-};
+import { notFound } from "next/navigation";
+import { IntegrationConnectClient } from "@/components/integration-connect-client";
+import { CONNECTORS } from "@/lib/mcp-connectors";
 
 type Props = { params: Promise<{ client: string }> };
 
 export default async function DashboardIntegrationClientPage({ params }: Props) {
   const { client } = await params;
-  const label = LABELS[client] ?? client;
+  const connector = CONNECTORS.find((c) => c.id === client);
+  if (!connector) notFound();
 
-  return (
-    <DashboardPlaceholder
-      title={label}
-      description={`One-click connect flow for ${label}. Placeholder while we wire install.`}
-    />
-  );
+  return <IntegrationConnectClient connector={connector} />;
 }
