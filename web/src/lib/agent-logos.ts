@@ -8,6 +8,7 @@ export const AGENT_LOGOS = {
   cline: "/cline.png",
   chatgpt: "/chatgpt.jpg",
   grok: "/grokbot.webp",
+  instinct: "/instinct.png",
   mcp: "/mcp.png",
 } as const;
 

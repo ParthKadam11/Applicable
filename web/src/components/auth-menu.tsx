@@ -1,28 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { Skel } from "@/components/ui/skeleton";
 
 export function AuthMenu() {
   const { data, status } = useSession();
 
   if (status === "loading") {
     return (
-      <span className="hidden rounded-full px-2.5 py-1.5 text-mute sm:inline">
-        …
+      <span
+        className="inline-flex items-center px-2.5 py-1.5 sm:px-3"
+        aria-hidden
+      >
+        <Skel className="h-3 w-12 rounded-full sm:w-14" />
       </span>
     );
   }
 
   if (!data?.user) {
     return (
-      <button
-        type="button"
-        onClick={() => void signIn("google")}
+      <Link
+        href="/auth"
         className="rounded-full px-2.5 py-1.5 text-mute transition hover:bg-white/45 hover:text-ink sm:px-3"
       >
         Sign in
-      </button>
+      </Link>
     );
   }
 

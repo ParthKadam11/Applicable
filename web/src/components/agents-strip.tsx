@@ -9,10 +9,13 @@ const SETS: LogoItem[][] = [
     { name: "Codex", node: <AgentLogo id="codex" label="Codex" size="sm" /> },
     { name: "Cursor", node: <AgentLogo id="cursor" label="Cursor" size="sm" /> },
     {
-      name: "Windsurf",
-      node: <AgentLogo id="windsurf" label="Windsurf" size="sm" />,
+      name: "Grokbot",
+      node: <AgentLogo id="grok" label="Grokbot" size="sm" />,
     },
-    { name: "Cline", node: <AgentLogo id="cline" label="Cline" size="sm" /> },
+    {
+      name: "Instinct",
+      node: <AgentLogo id="instinct" label="Instinct" size="sm" />,
+    },
     { name: "MCP", node: <AgentLogo id="mcp" label="MCP" size="sm" /> },
   ],
   [
@@ -21,12 +24,15 @@ const SETS: LogoItem[][] = [
       name: "ChatGPT",
       node: <AgentLogo id="chatgpt" label="ChatGPT" size="sm" />,
     },
-    { name: "Cursor", node: <AgentLogo id="cursor" label="Cursor" size="sm" /> },
     {
-      name: "Grokbot",
-      node: <AgentLogo id="grok" label="Grokbot" size="sm" />,
+      name: "Windsurf",
+      node: <AgentLogo id="windsurf" label="Windsurf" size="sm" />,
     },
     { name: "Cline", node: <AgentLogo id="cline" label="Cline" size="sm" /> },
+    {
+      name: "Instinct",
+      node: <AgentLogo id="instinct" label="Instinct" size="sm" />,
+    },
     { name: "MCP", node: <AgentLogo id="mcp" label="MCP" size="sm" /> },
   ],
 ];

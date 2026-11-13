@@ -2,17 +2,17 @@
 
 import dynamic from "next/dynamic";
 import type { DailyStats } from "@/lib/api";
+import {
+  ChartPieSkeleton,
+  ChartTrendSkeleton,
+} from "@/components/ui/skeleton";
 
 const EligibilityChart = dynamic(
   () =>
     import("@/components/eligibility-chart").then((m) => m.EligibilityChart),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
-        -
-      </div>
-    ),
+    loading: () => <ChartPieSkeleton />,
   },
 );
 
@@ -20,11 +20,7 @@ const HistoryChart = dynamic(
   () => import("@/components/history-chart").then((m) => m.HistoryChart),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
-        -
-      </div>
-    ),
+    loading: () => <ChartTrendSkeleton />,
   },
 );
 

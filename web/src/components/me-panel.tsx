@@ -2,9 +2,45 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { Skel } from "@/components/ui/skeleton";
 import { ELIGIBILITY_LABELS, MCP_URL } from "@/lib/constants";
 import { evidenceQuote, formatIst } from "@/lib/format";
 import type { McpTokenPublic, SavedJobRow } from "@/lib/me-types";
+
+function MePanelSkeleton() {
+  return (
+    <div className="space-y-8" role="status" aria-label="Loading account">
+      <section className="rounded-2xl border border-line bg-white p-5">
+        <Skel className="h-2.5 w-16 rounded-full" />
+        <Skel className="mt-3 h-7 w-48 rounded-lg" />
+        <Skel className="mt-2 h-3 w-40 rounded-full" />
+      </section>
+      <section className="rounded-2xl border border-line bg-white">
+        <div className="border-b border-line px-5 py-3">
+          <Skel className="h-5 w-28 rounded-md" />
+        </div>
+        <ul className="divide-y divide-line">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="space-y-2 px-5 py-4">
+              <Skel className="h-4 w-[60%] rounded-full" />
+              <Skel className="h-3 w-[40%] rounded-full" />
+              <Skel className="h-3 w-[80%] rounded-full" />
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="rounded-2xl border border-line bg-white p-5">
+        <Skel className="h-5 w-40 rounded-md" />
+        <Skel className="mt-3 h-3 w-full max-w-md rounded-full" />
+        <Skel className="mt-2 h-3 w-2/3 rounded-full" />
+        <div className="mt-4 flex gap-2">
+          <Skel className="h-9 w-32 rounded-full" />
+          <Skel className="h-9 w-24 rounded-full" />
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export function MePanel() {
   const { data, status } = useSession();
@@ -37,7 +73,7 @@ export function MePanel() {
   }, [status]);
 
   if (status === "loading") {
-    return <p className="text-sm text-mute">Loading…</p>;
+    return <MePanelSkeleton />;
   }
 
   if (!data?.user) {

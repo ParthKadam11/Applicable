@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { AGENT_LOGOS, type AgentLogoId } from "@/lib/agent-logos";
+import { cn } from "@/lib/utils";
 
 type Size = "sm" | "md" | "lg";
 
@@ -29,36 +33,61 @@ export function AgentLogo({
 }: Props) {
   const src = AGENT_LOGOS[id as AgentLogoId];
   const dim = SIZE[size];
+  const [loaded, setLoaded] = useState(false);
 
   if (!src) return null;
 
   if (fill) {
     return (
-      <Image
-        src={src}
-        alt={label}
-        width={64}
-        height={64}
-        sizes="64px"
-        quality={70}
-        priority={priority}
-        loading={priority ? "eager" : "lazy"}
-        className={`size-full object-cover ${className}`}
-      />
+      <span className={cn("relative block size-full overflow-hidden", className)}>
+        {!loaded ? (
+          <span className="skel absolute inset-0 block" aria-hidden />
+        ) : null}
+        <Image
+          src={src}
+          alt={label}
+          width={64}
+          height={64}
+          sizes="64px"
+          quality={70}
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
+          onLoad={() => setLoaded(true)}
+          className={cn(
+            "size-full object-cover transition-opacity duration-300",
+            loaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      </span>
     );
   }
 
   return (
-    <Image
-      src={src}
-      alt={label}
-      width={dim.px}
-      height={dim.px}
-      sizes={`${dim.px}px`}
-      quality={65}
-      priority={priority}
-      loading={priority ? "eager" : "lazy"}
-      className={`${dim.box} rounded-md object-cover ${className}`}
-    />
+    <span
+      className={cn(
+        "relative inline-flex shrink-0 overflow-hidden rounded-md",
+        dim.box,
+        className,
+      )}
+    >
+      {!loaded ? (
+        <span className="skel absolute inset-0 block rounded-md" aria-hidden />
+      ) : null}
+      <Image
+        src={src}
+        alt={label}
+        width={dim.px}
+        height={dim.px}
+        sizes={`${dim.px}px`}
+        quality={65}
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
+        onLoad={() => setLoaded(true)}
+        className={cn(
+          "size-full rounded-md object-cover transition-opacity duration-300",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+      />
+    </span>
   );
 }

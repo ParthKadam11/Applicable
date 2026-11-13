@@ -27,6 +27,7 @@ export type JobRow = {
   id: string;
   title: string;
   company: string;
+  company_website?: string | null;
   location: string | null;
   eligibility: string | null;
   evidence: unknown;

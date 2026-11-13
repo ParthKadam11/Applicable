@@ -1,8 +1,6 @@
 import { ByokPanel } from "@/components/byok-panel";
 import { DashboardCharts } from "@/components/dashboard-charts";
 import { JobsTable } from "@/components/jobs-table";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { StatsStrip } from "@/components/stats-strip";
 import { TopCompanies } from "@/components/top-companies";
 import {
@@ -42,39 +40,28 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <div className="sky">
-        <SiteHeader active="dashboard" />
-        <div className="mx-auto max-w-5xl px-5 pb-6 pt-10 sm:px-8 sm:pt-12">
-          <p className="font-mono text-[11px] uppercase text-mark-deep">
-            Dashboard
-          </p>
-          <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">
-            Live corpus
-          </h1>
-          <p className="mt-3 max-w-xl text-pretty text-[15px] text-mute">
-            India-eligibility mix, companies, jobs, and BYOK classifier status.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
+          Overview
+        </h1>
+        <p className="mt-1.5 max-w-xl text-pretty text-[14px] text-mute sm:text-[15px]">
+          India-eligibility mix, companies, jobs, and BYOK classifier status.
+        </p>
       </div>
 
       <StatsStrip stats={stats} compact />
-
-      <div className="mx-auto max-w-5xl space-y-5 px-5 py-10 sm:px-8">
-        <ByokPanel status={llm} />
-        <DashboardCharts
-          byEligibility={stats?.by_eligibility}
-          history={history}
-        />
-        <Panel title="Top companies">
-          <TopCompanies companies={top} />
-        </Panel>
-        <Panel title="India-eligible jobs">
-          <JobsTable initial={jobs} />
-        </Panel>
-      </div>
-
-      <SiteFooter />
+      <ByokPanel status={llm} />
+      <DashboardCharts
+        byEligibility={stats?.by_eligibility}
+        history={history}
+      />
+      <Panel title="Top companies">
+        <TopCompanies companies={top} />
+      </Panel>
+      <Panel title="India-eligible jobs">
+        <JobsTable initial={jobs} />
+      </Panel>
     </div>
   );
 }

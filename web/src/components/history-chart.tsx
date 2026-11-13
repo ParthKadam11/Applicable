@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChartEmpty } from "@/components/ui/skeleton";
 import type { DailyStats } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 
@@ -26,9 +27,7 @@ export function HistoryChart({ history }: { history: DailyStats[] | null }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center font-mono text-sm text-mute">
-        -
-      </div>
+      <ChartEmpty className="h-72" label="No history yet" />
     );
   }
 

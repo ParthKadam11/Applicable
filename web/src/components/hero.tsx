@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { HeroCopy } from "@/components/hero-copy";
 import { HeroLite } from "@/components/hero-lite";
 
 const BackgroundCubesGrid = dynamic(
@@ -9,24 +10,22 @@ const BackgroundCubesGrid = dynamic(
     import("@/components/ui/background-cubes-grid").then(
       (m) => m.BackgroundCubesGrid,
     ),
-  {
-    ssr: false,
-    loading: () => <HeroLite />,
-  },
+  { ssr: false },
 );
 
 /**
- * Always run the cube animation. Code-split Three.js so first paint stays
- * fast; upgrade from the CSS shell as soon as the chunk is ready.
+ * Stacked hero layout (title → subline → CTAs → preview slot).
+ * Ambient cubes stay behind; content is not vertically centered.
  */
 export function Hero() {
-  const [ready, setReady] = useState(false);
+  const [loadGl, setLoadGl] = useState(false);
+  const [glReady, setGlReady] = useState(false);
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
 
-    const start = () => setReady(true);
+    const start = () => setLoadGl(true);
     const ric = window.requestIdleCallback?.bind(window);
     if (ric) {
       const id = ric(start, { timeout: 900 });
@@ -36,23 +35,47 @@ export function Hero() {
     return () => window.clearTimeout(t);
   }, []);
 
-  if (!ready) {
+  useEffect(() => {
+    if (!loadGl) return;
+    const t = window.setTimeout(() => setGlReady(true), 120);
+    return () => window.clearTimeout(t);
+  }, [loadGl]);
+
+  if (!loadGl) {
     return <HeroLite />;
   }
 
   return (
-    <section className="relative min-h-[52vh] w-full overflow-hidden sm:min-h-[72vh] lg:min-h-[78vh]">
-      <BackgroundCubesGrid
-        variant="isometric"
-        cellSize={52}
-        gap={0.035}
-        topColor="#f6fafc"
-        leftColor="#d7ebf4"
-        rightColor="#b5d6e6"
-        glowColor="#4cc9f0"
-        glow={0.38}
-        amplitude={0.55}
+    <section
+      className="relative w-full overflow-hidden"
+      aria-label="Applicable"
+    >
+      <div className="absolute inset-0 z-0">
+        <HeroLite fieldOnly />
+      </div>
+      <div
+        className={`hero-webgl-fade absolute inset-0 z-[1] ${glReady ? "is-ready" : ""}`}
+      >
+        <BackgroundCubesGrid
+          variant="isometric"
+          cellSize={52}
+          gap={0.035}
+          topColor="#f6fafc"
+          leftColor="#d7ebf4"
+          rightColor="#b5d6e6"
+          glowColor="#4cc9f0"
+          glow={0.38}
+          amplitude={0.55}
+        />
+      </div>
+      {/* Soft center hush so type sits in a calm pocket over the field */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_58%_48%_at_50%_28%,rgba(255,255,255,0.55)_0%,rgba(246,250,252,0.2)_45%,transparent_70%)]"
+        aria-hidden
       />
+      <div className="relative z-[2]">
+        <HeroCopy />
+      </div>
     </section>
   );
 }

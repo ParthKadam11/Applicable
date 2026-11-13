@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { AiSearchBar } from "@/components/ai-search-bar";
 import { SaveJobButton } from "@/components/save-job-button";
+import { TableRowsSkeleton } from "@/components/ui/skeleton";
 import type { JobRow } from "@/lib/api";
 import type { AiSearchFilter } from "@/lib/ai-search";
 import { API_BASE, ELIGIBILITY_LABELS } from "@/lib/constants";
@@ -166,11 +167,15 @@ export function JobsTable({ initial }: { initial: Page | null }) {
         </select>
       </div>
 
-      <div
-        className={`overflow-x-auto rounded-xl border border-line ${
-          pending ? "opacity-70" : ""
-        }`}
-      >
+      <div className="relative overflow-x-auto rounded-xl border border-line">
+        {pending ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden bg-line"
+            aria-hidden
+          >
+            <div className="skel h-full w-1/3 rounded-none" />
+          </div>
+        ) : null}
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-line bg-paper font-mono text-[10px] uppercase text-mute">
             <tr>
@@ -188,20 +193,22 @@ export function JobsTable({ initial }: { initial: Page | null }) {
             </tr>
           </thead>
           <tbody>
-            {failed || !page ? (
+            {pending && (!page || page.results.length === 0) ? (
+              <TableRowsSkeleton rows={5} cols={7} />
+            ) : failed || !page ? (
               <tr>
                 <td
                   colSpan={7}
-                  className="px-3 py-10 text-center font-mono text-mute"
+                  className="px-3 py-10 text-center text-sm text-mute"
                 >
-                  -
+                  Couldn’t load jobs.
                 </td>
               </tr>
             ) : page.results.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
-                  className="px-3 py-10 text-center font-mono text-mute"
+                  className="px-3 py-10 text-center text-sm text-mute"
                 >
                   No jobs match.
                 </td>

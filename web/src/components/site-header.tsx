@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AuthMenu } from "@/components/auth-menu";
 import { BrandLogo } from "@/components/brand-logo";
-import { LINKS } from "@/lib/constants";
 
 /** Light glass - no SVG displacement filter (that costs a lot on phones). */
 function GlassLayers() {
@@ -22,7 +21,7 @@ function GlassLayers() {
 export function SiteHeader({
   active,
 }: {
-  active?: "home" | "dashboard" | "me";
+  active?: "home" | "dashboard" | "me" | "auth";
 }) {
   const link = (on: boolean) =>
     on
@@ -48,21 +47,6 @@ export function SiteHeader({
             >
               Home
             </Link>
-            <Link
-              href="/dashboard"
-              className={`rounded-full px-2.5 py-1.5 transition sm:px-3 ${link(active === "dashboard")}`}
-            >
-              <span className="sm:hidden">Dash</span>
-              <span className="hidden sm:inline">Dashboard</span>
-            </Link>
-            <a
-              href={LINKS.github}
-              className={`hidden rounded-full px-3 py-1.5 transition md:inline ${link(false)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub
-            </a>
             <AuthMenu />
             <Link
               href="/#mcp"

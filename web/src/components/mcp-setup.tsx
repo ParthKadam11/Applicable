@@ -1,13 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
+import { BrowseJobsLink } from "@/components/browse-jobs-link";
 import { MCP_URL } from "@/lib/constants";
 import {
   chatgptPluginsHref,
   claudeConnectorHref,
   cursorInstallHref,
   grokHref,
+  instinctHref,
   vscodeInstallHref,
   windsurfMcpHref,
 } from "@/lib/mcp-install";
@@ -74,6 +75,57 @@ const CONNECTORS = [
     ],
   },
   {
+    id: "grok",
+    label: "Grokbot",
+    headline: "Hook Grokbot into Applicable",
+    body: "One click copies the endpoint and opens Grok. Paste into MCP / connectors settings.",
+    tag: "1-click",
+    cta: {
+      kind: "copy-open",
+      label: "Add to Grokbot",
+      openUrl: grokHref(),
+    } satisfies Cta,
+    steps: [
+      "Click Add to Grokbot (copies URL).",
+      "Paste into MCP / connectors.",
+      "Ask for open + india_remote roles.",
+    ],
+  },
+  {
+    id: "instinct",
+    label: "Instinct",
+    headline: "Connect Instinct to Applicable",
+    body: "One click copies the endpoint and opens Instinct. Add a remote MCP connection in settings, paste the URL, then text or call Instinct for India-eligible roles.",
+    tag: "1-click",
+    cta: {
+      kind: "copy-open",
+      label: "Add to Instinct",
+      openUrl: instinctHref(),
+    } satisfies Cta,
+    steps: [
+      "Click Add to Instinct (copies URL).",
+      "Add an MCP connection in Instinct settings.",
+      "Ask for India-remote roles by text or call.",
+    ],
+  },
+  {
+    id: "chatgpt",
+    label: "ChatGPT",
+    headline: "Connect ChatGPT to live India checks",
+    body: "One click copies the endpoint and opens ChatGPT Plugins. Add a custom MCP server and paste.",
+    tag: "1-click",
+    cta: {
+      kind: "copy-open",
+      label: "Add to ChatGPT",
+      openUrl: chatgptPluginsHref(),
+    } satisfies Cta,
+    steps: [
+      "Click Add to ChatGPT (copies URL).",
+      "Create a custom MCP server, paste.",
+      "Ask who’s hiring from India.",
+    ],
+  },
+  {
     id: "windsurf",
     label: "Windsurf",
     headline: "Connect Windsurf to Applicable",
@@ -105,40 +157,6 @@ const CONNECTORS = [
       "Click Add to Cline.",
       "Enable the remote URL in Cline MCP.",
       "Ask for India-eligible roles.",
-    ],
-  },
-  {
-    id: "chatgpt",
-    label: "ChatGPT",
-    headline: "Connect ChatGPT to live India checks",
-    body: "One click copies the endpoint and opens ChatGPT Plugins. Add a custom MCP server and paste.",
-    tag: "1-click",
-    cta: {
-      kind: "copy-open",
-      label: "Add to ChatGPT",
-      openUrl: chatgptPluginsHref(),
-    } satisfies Cta,
-    steps: [
-      "Click Add to ChatGPT (copies URL).",
-      "Create a custom MCP server, paste.",
-      "Ask who’s hiring from India.",
-    ],
-  },
-  {
-    id: "grok",
-    label: "Grokbot",
-    headline: "Hook Grokbot into Applicable",
-    body: "One click copies the endpoint and opens Grok. Paste into MCP / connectors settings.",
-    tag: "1-click",
-    cta: {
-      kind: "copy-open",
-      label: "Add to Grokbot",
-      openUrl: grokHref(),
-    } satisfies Cta,
-    steps: [
-      "Click Add to Grokbot (copies URL).",
-      "Paste into MCP / connectors.",
-      "Ask for open + india_remote roles.",
     ],
   },
   {
@@ -325,9 +343,7 @@ export function McpSetup() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <ConnectCta cta={c.cta} />
-              <Link href="/dashboard" className="btn-ghost w-full sm:w-auto">
-                Open dashboard
-              </Link>
+              <BrowseJobsLink className="btn-ghost w-full sm:w-auto" />
             </div>
           </div>
 

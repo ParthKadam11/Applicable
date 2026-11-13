@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 type Props = {
   open: boolean;
@@ -31,16 +31,16 @@ export function SignInPrompt({
           {message}
         </h2>
         <p className="mt-2 text-sm text-mute">
-          Google only. Public browse stays free without an account.
+          Sign in to continue. Public browse stays free without an account.
         </p>
         <div className="mt-5 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => void signIn("google")}
+          <Link
+            href="/auth"
             className="inline-flex min-h-10 items-center justify-center rounded-full bg-mark px-4 text-[11px] font-semibold uppercase tracking-wide text-ink transition hover:bg-mark-deep hover:text-white"
+            onClick={onClose}
           >
-            Continue with Google
-          </button>
+            Sign in
+          </Link>
           <button
             type="button"
             onClick={onClose}

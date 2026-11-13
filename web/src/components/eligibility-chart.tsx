@@ -7,6 +7,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { ChartEmpty } from "@/components/ui/skeleton";
 import { ELIGIBILITY_COLORS, ELIGIBILITY_LABELS } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
 
@@ -32,11 +33,7 @@ export function EligibilityChart({ byEligibility }: Props) {
     }));
 
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center font-mono text-sm text-mute">
-        -
-      </div>
-    );
+    return <ChartEmpty label="No eligibility mix yet" />;
   }
 
   return (

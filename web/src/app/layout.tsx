@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Fraunces } from "next/font/google";
 import { FontLoader } from "@/components/font-loader";
 import { AppSessionProvider } from "@/components/session-provider";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-hero",
+  axes: ["SOFT", "WONK", "opsz"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -47,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="font-sans">
+    <html lang="en" className={`${fraunces.variable} font-sans`}>
       <head>
         <link rel="preconnect" href="https://fonts.cdnfonts.com" crossOrigin="" />
         <noscript>

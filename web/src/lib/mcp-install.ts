@@ -49,4 +49,9 @@ export function grokHref(): string {
   return "https://grok.x.ai/";
 }
 
+/** Instinct personal assistant (MCP connections in settings). */
+export function instinctHref(): string {
+  return "https://app.instinct.com/";
+}
+
 export { MCP_URL };
