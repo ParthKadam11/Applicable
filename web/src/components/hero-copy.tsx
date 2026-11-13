@@ -48,8 +48,8 @@ export function HeroCopy() {
             <Image
               src="/dashboard.png"
               alt="Applicable jobs dashboard with India-eligible roles and salary ranges"
-              width={1024}
-              height={522}
+              width={1900}
+              height={970}
               priority
               quality={75}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 94vw, 72rem"
