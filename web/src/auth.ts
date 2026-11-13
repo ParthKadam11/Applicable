@@ -58,21 +58,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Always prefer dashboard after a successful OAuth round-trip
       // unless a same-origin relative/absolute callback was provided.
       if (url.startsWith("/")) {
-        if (url.startsWith("/auth")) return `${baseUrl}/dashboard`;
+        if (url.startsWith("/auth")) return `${baseUrl}/dashboard/jobs`;
+        if (url === "/dashboard") return `${baseUrl}/dashboard/jobs`;
         return `${baseUrl}${url}`;
       }
       try {
         const target = new URL(url);
         if (target.origin === baseUrl) {
           if (target.pathname.startsWith("/auth")) {
-            return `${baseUrl}/dashboard`;
+            return `${baseUrl}/dashboard/jobs`;
+          }
+          if (target.pathname === "/dashboard") {
+            return `${baseUrl}/dashboard/jobs`;
           }
           return url;
         }
       } catch {
         /* ignore */
       }
-      return `${baseUrl}/dashboard`;
+      return `${baseUrl}/dashboard/jobs`;
     },
     async signIn({ account, profile }) {
       // Never block Google on DB outages — that surfaces as Access Denied.

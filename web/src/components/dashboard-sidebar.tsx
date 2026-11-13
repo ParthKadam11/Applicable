@@ -8,8 +8,6 @@ import {
   Bookmark,
   Building2,
   ChevronDown,
-  KeyRound,
-  LayoutDashboard,
   Plug,
   Search,
   Settings,
@@ -28,12 +26,6 @@ type TabItem = {
 };
 
 const WORKSPACE_TABS: TabItem[] = [
-  {
-    href: "/dashboard",
-    label: "Overview",
-    icon: <LayoutDashboard className="size-4" strokeWidth={1.75} />,
-    match: (p) => p === "/dashboard",
-  },
   {
     href: "/dashboard/jobs",
     label: "Jobs",
@@ -60,21 +52,6 @@ const WORKSPACE_TABS: TabItem[] = [
   },
 ];
 
-const CONNECT_EXTRAS: TabItem[] = [
-  {
-    href: "/dashboard/byok",
-    label: "BYOK keys",
-    icon: <KeyRound className="size-4" strokeWidth={1.75} />,
-    match: (p) => p.startsWith("/dashboard/byok"),
-  },
-  {
-    href: "/dashboard/mcp",
-    label: "Personal MCP",
-    icon: <Sparkles className="size-4" strokeWidth={1.75} />,
-    match: (p) => p.startsWith("/dashboard/mcp"),
-  },
-];
-
 const ACCOUNT_TABS: TabItem[] = [
   {
     href: "/dashboard/settings",
@@ -85,15 +62,21 @@ const ACCOUNT_TABS: TabItem[] = [
 ];
 
 const INTEGRATIONS = [
-  { id: "claude", label: "Claude", href: "/dashboard/integrations/claude" },
-  { id: "codex", label: "Codex", href: "/dashboard/integrations/codex" },
-  { id: "cursor", label: "Cursor", href: "/dashboard/integrations/cursor" },
-  { id: "grok", label: "Grokbot", href: "/dashboard/integrations/grok" },
-  { id: "instinct", label: "Instinct", href: "/dashboard/integrations/instinct" },
-  { id: "chatgpt", label: "ChatGPT", href: "/dashboard/integrations/chatgpt" },
-  { id: "windsurf", label: "Windsurf", href: "/dashboard/integrations/windsurf" },
-  { id: "cline", label: "Cline", href: "/dashboard/integrations/cline" },
-  { id: "mcp", label: "Any MCP", href: "/dashboard/integrations" },
+  {
+    id: "personal-mcp",
+    label: "Personal MCP",
+    href: "/dashboard/integrations#personal-mcp",
+    logo: false as const,
+  },
+  { id: "claude", label: "Claude", href: "/dashboard/integrations/claude", logo: true as const },
+  { id: "codex", label: "Codex", href: "/dashboard/integrations/codex", logo: true as const },
+  { id: "cursor", label: "Cursor", href: "/dashboard/integrations/cursor", logo: true as const },
+  { id: "grok", label: "Grokbot", href: "/dashboard/integrations/grok", logo: true as const },
+  { id: "instinct", label: "Instinct", href: "/dashboard/integrations/instinct", logo: true as const },
+  { id: "chatgpt", label: "ChatGPT", href: "/dashboard/integrations/chatgpt", logo: true as const },
+  { id: "windsurf", label: "Windsurf", href: "/dashboard/integrations/windsurf", logo: true as const },
+  { id: "cline", label: "Cline", href: "/dashboard/integrations/cline", logo: true as const },
+  { id: "mcp", label: "Any MCP", href: "/dashboard/integrations", logo: true as const },
 ] as const;
 
 function tabClass(on: boolean) {
@@ -160,20 +143,29 @@ function IntegrationsDropdown({ onNavigate }: { onNavigate?: () => void }) {
       {open ? (
         <div className="mt-0.5 ml-2 space-y-0.5 border-l border-line/80 pl-2">
           {INTEGRATIONS.map((item) => {
+            const pathOnly = item.href.split("#")[0] ?? item.href;
             const on =
-              pathname === item.href ||
-              (item.href !== "/dashboard/integrations" &&
-                pathname.startsWith(item.href));
+              item.id === "personal-mcp"
+                ? pathname === "/dashboard/integrations"
+                : item.id === "mcp"
+                  ? pathname === "/dashboard/integrations"
+                  : pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 onClick={onNavigate}
-                className={tabClass(on)}
+                className={tabClass(Boolean(on))}
               >
-                <span className="overflow-hidden rounded-md">
-                  <AgentLogo id={item.id} label={item.label} size="sm" />
-                </span>
+                {item.logo ? (
+                  <span className="overflow-hidden rounded-md">
+                    <AgentLogo id={item.id} label={item.label} size="sm" />
+                  </span>
+                ) : (
+                  <span className="text-mute">
+                    <Sparkles className="size-4" strokeWidth={1.75} />
+                  </span>
+                )}
                 <span className="truncate">{item.label}</span>
               </Link>
             );
@@ -200,9 +192,6 @@ function NavSections({ onNavigate }: { onNavigate?: () => void }) {
       <SectionLabel>Connect</SectionLabel>
       <div className="flex flex-col gap-0.5">
         <IntegrationsDropdown onNavigate={onNavigate} />
-        {CONNECT_EXTRAS.map((tab) => (
-          <TabLink key={tab.href} tab={tab} onNavigate={onNavigate} />
-        ))}
       </div>
 
       <SectionLabel>Account</SectionLabel>

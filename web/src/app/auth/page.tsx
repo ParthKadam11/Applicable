@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 /** Split auth: interactive hero + entry-level Browse Jobs · Google sign-in. */
 export default async function AuthPage() {
   const session = await auth();
-  if (session?.user) redirect("/dashboard");
+  if (session?.user) redirect("/dashboard/jobs");
 
   const page = await fetchJobs({
     eligibility: "open,india_remote",

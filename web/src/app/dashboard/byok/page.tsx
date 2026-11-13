@@ -1,10 +1,6 @@
-import { DashboardPlaceholder } from "@/components/dashboard-placeholder";
+import { redirect } from "next/navigation";
 
+/** BYOK lives under AI Search (+ copy in Settings). */
 export default function DashboardByokPage() {
-  return (
-    <DashboardPlaceholder
-      title="BYOK keys"
-      description="Bring your own Gemini, Groq, or OpenRouter keys. Stored only in this browser."
-    />
-  );
+  redirect("/dashboard/search");
 }

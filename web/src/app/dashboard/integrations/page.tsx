@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AgentLogo } from "@/components/agent-logo";
+import { PersonalMcpCard } from "@/components/personal-mcp-card";
+import { MCP_URL } from "@/lib/constants";
 import { CONNECTORS } from "@/lib/mcp-connectors";
 
 export default function DashboardIntegrationsPage() {
@@ -12,10 +14,21 @@ export default function DashboardIntegrationsPage() {
           Integrations
         </h1>
         <p className="mt-1.5 max-w-xl text-pretty text-[14px] text-mute sm:text-[15px]">
-          Pick a client. On phones we copy the endpoint and guide you — apps
-          that open and do nothing are skipped.
+          Personal MCP token plus client installs. On phones we copy the
+          endpoint and guide you.
         </p>
       </div>
+
+      <div id="personal-mcp" className="scroll-mt-20">
+        <PersonalMcpCard />
+      </div>
+
+      <section className="rounded-2xl border border-line bg-white p-5">
+        <h2 className="font-display text-lg text-ink">Public endpoint</h2>
+        <code className="mt-2 block break-all rounded-xl bg-soft px-3 py-3 text-[13px] text-ink">
+          {MCP_URL}
+        </code>
+      </section>
 
       <ul className="grid gap-2 sm:grid-cols-2">
         {clients.map((c) => (

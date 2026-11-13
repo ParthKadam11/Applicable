@@ -12,7 +12,7 @@ type Props = {
 export function BrowseJobsLink({ className, children = "Browse jobs" }: Props) {
   const { data, status } = useSession();
   const href =
-    status === "authenticated" && data?.user ? "/dashboard" : "/auth";
+    status === "authenticated" && data?.user ? "/dashboard/jobs" : "/auth";
 
   return (
     <Link href={href} className={className}>

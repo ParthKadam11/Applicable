@@ -23,7 +23,7 @@ export function AuthSignIn() {
           type="button"
           onClick={() =>
             void signIn("google", {
-              callbackUrl: "/dashboard",
+              callbackUrl: "/dashboard/jobs",
               redirect: true,
             })
           }
