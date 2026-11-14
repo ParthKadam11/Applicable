@@ -10,47 +10,48 @@ export const metadata: Metadata = {
 };
 
 /**
- * Minimal waitlist — Applicable coastal system, brand-first, one job.
+ * Minimal waitlist — coastal Applicable system, calm spacing.
  */
 export default function WaitlistPage() {
   return (
     <main className="sky relative flex min-h-dvh flex-col overflow-hidden">
-      {/* Soft coastal atmosphere */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_18%,rgba(255,255,255,0.72)_0%,rgba(246,250,252,0.25)_48%,transparent_72%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_22%,rgba(255,255,255,0.7)_0%,rgba(246,250,252,0.22)_48%,transparent_72%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -left-24 top-24 size-[28rem] rounded-full bg-[color-mix(in_srgb,var(--mark)_18%,transparent)] blur-3xl"
+        className="pointer-events-none absolute -left-28 top-16 size-[30rem] rounded-full bg-[color-mix(in_srgb,var(--mark)_16%,transparent)] blur-3xl"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -right-20 bottom-10 size-[22rem] rounded-full bg-[color-mix(in_srgb,var(--sun)_14%,transparent)] blur-3xl"
+        className="pointer-events-none absolute -right-24 bottom-0 size-[24rem] rounded-full bg-[color-mix(in_srgb,var(--sun)_12%,transparent)] blur-3xl"
         aria-hidden
       />
 
-      <div className="relative z-[1] mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-5 py-16 text-center sm:px-8 sm:py-20">
-        <div className="waitlist-in flex flex-col items-center">
-          <div className="flex items-center gap-3 sm:gap-3.5">
+      <div className="relative z-[1] mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-5 py-16 sm:px-8 sm:py-24">
+        <div className="waitlist-in relative flex w-full max-w-md flex-col items-center text-center">
+          <div className="hero-readability" aria-hidden />
+
+          <div className="relative flex items-center gap-2.5 sm:gap-3">
             <BrandLogo
-              size={40}
-              className="rounded-[10px] shadow-[0_10px_28px_-12px_color-mix(in_srgb,var(--mark-deep)_45%,transparent)] sm:rounded-[12px]"
+              size={32}
+              className="rounded-[8px] shadow-[0_10px_28px_-14px_color-mix(in_srgb,var(--mark-deep)_50%,transparent)] sm:rounded-[9px]"
             />
-            <p className="font-display text-[1.35rem] font-semibold tracking-tight text-ink sm:text-[1.5rem]">
+            <p className="font-display text-[16px] font-semibold tracking-[-0.02em] text-ink sm:text-[17px]">
               Applicable
             </p>
           </div>
 
-          <h1 className="font-hero mt-8 max-w-[20rem] text-[1.65rem] leading-[1.18] tracking-[-0.02em] text-ink xs:max-w-[22rem] sm:mt-9 sm:max-w-lg sm:text-[2.1rem]">
-            Stop applying to &lsquo;remote&rsquo; jobs that aren&rsquo;t open
-            to India.
+          <h1 className="font-hero relative mt-12 text-[1.75rem] font-medium italic leading-[1.15] tracking-[-0.035em] text-ink sm:mt-14 sm:text-[2.15rem]">
+            Get early access
           </h1>
 
-          <p className="mt-4 max-w-[18rem] text-[14px] leading-relaxed text-mute sm:mt-5 sm:max-w-sm sm:text-[15px]">
-            We’re opening access soon. Leave your email for early entry.
+          <p className="relative mx-auto mt-5 max-w-[17rem] text-[14px] font-medium leading-relaxed tracking-[-0.01em] text-mute sm:mt-6 sm:max-w-xs sm:text-[15px]">
+            Stop applying to &lsquo;remote&rsquo; jobs that aren&rsquo;t open to
+            India.
           </p>
 
-          <div className="mt-8 w-full max-w-sm sm:mt-10">
+          <div className="relative mt-12 w-full sm:mt-14">
             <WaitlistForm />
           </div>
         </div>
