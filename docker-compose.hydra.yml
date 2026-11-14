@@ -1,15 +1,22 @@
-# Self-hosted HydraDB graph (separate from prod app/postgres stack).
-# Postgres remains source of truth. Bind loopback only — not on Caddy.
+# Self-hosted HydraDB graph (separate Compose project from prod app/postgres).
+# Project name `applicable-hydra` so `docker compose -f docker-compose.prod.yml
+# up --remove-orphans` never treats these containers as orphans.
+#
+# Postgres remains source of truth. Bolt/HTTP bind loopback on the host;
+# app/mcp reach HydraDB on the shared `caniapply_applicable` network as `hydradb`.
 #
 # Prerequisites (host):
 #   mkdir -p .hydra
 #   python3 -c "import secrets; print(secrets.token_urlsafe(32))" > .hydra/auth-token
 #   chmod 600 .hydra/auth-token
 #
-# Do NOT run until approved. Exact command is in the agent report.
+# Start:
+#   docker compose -f docker-compose.hydra.yml up -d --build
 #
 # Uses the published image (ghcr.io/hydra-db/hydradb) — a from-source Docker
 # build needs several GiB RAM; this host had ~2.5GiB available and 0 swap.
+
+name: applicable-hydra
 
 services:
   hydradb-init:
@@ -27,6 +34,8 @@ services:
         chown -R 10001:10001 /data
         chmod 600 /data/auth-token
     restart: "no"
+    networks:
+      - applicable
 
   hydradb:
     build:
@@ -65,8 +74,17 @@ services:
       - "127.0.0.1:8443:8443"
       # Host :9090 is taken (infra Prometheus). Map admin /readyz to 19090.
       - "127.0.0.1:19090:9090"
+    networks:
+      - applicable
     # HEALTHCHECK defined in docker/hydradb.Dockerfile (curl GET /readyz → 200)
+
+networks:
+  applicable:
+    external: true
+    name: caniapply_applicable
 
 volumes:
   applicable_hydra_data:
+    # Existing named volume from first bring-up — do not recreate/prefix.
+    external: true
     name: applicable_hydra_data

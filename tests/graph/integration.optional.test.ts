@@ -3,13 +3,13 @@ import { createGraphClient, closeSharedGraphDriver } from "../../src/graph/drive
 import { upsertNodesByLabel, mergeTypedEdges } from "../../src/graph/cypher.js";
 
 /**
- * Optional live Bolt test — only runs when HYDRA_BOLT_URL + HYDRA_TOKEN set
- * and HYDRA_GRAPH_ENABLED=true.
+ * Optional live HydraDB test — opt-in only via HYDRA_INTEGRATION=1.
+ * Do not key off HYDRA_GRAPH_ENABLED in .env (that would fail `npm test` on prod hosts).
  */
 describe("hydradb bolt integration (optional)", () => {
   it("round-trips a MERGE edge when graph is enabled", async () => {
     if (
-      process.env.HYDRA_GRAPH_ENABLED !== "true" ||
+      process.env.HYDRA_INTEGRATION !== "1" ||
       !process.env.HYDRA_TOKEN ||
       !process.env.HYDRA_BOLT_URL
     ) {
