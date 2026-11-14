@@ -115,12 +115,19 @@ describe("MCP HTTP end-to-end", () => {
       companies_active: number;
       tech_open_jobs: number;
       by_eligibility: Record<string, number>;
-      hydra: { enabled: boolean; lastSyncAt: string | null; syncedJobs: number };
+      graph: {
+        enabled: boolean;
+        nodes: number;
+        edges: number;
+        lastSyncAt: string | null;
+        lastRun: { added: number; removed: number; relabels: number } | null;
+      };
     };
-    expect(statsJson.hydra).toEqual(
+    expect(statsJson.graph).toEqual(
       expect.objectContaining({
         enabled: expect.any(Boolean),
-        syncedJobs: expect.any(Number),
+        nodes: expect.any(Number),
+        edges: expect.any(Number),
       }),
     );
     expect(typeof statsJson.companies_active).toBe("number");

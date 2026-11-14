@@ -1,38 +1,40 @@
 import type PgBoss from "pg-boss";
 import { db } from "../db/client.js";
-import { createHydraClient } from "./client.js";
-import { HYDRA_SYNC_QUEUE, runHydraSync, type HydraSyncPayload } from "./sync.js";
+import { createGraphClient } from "./driver.js";
+import {
+  GRAPH_SYNC_QUEUE,
+  runGraphSync,
+  type GraphSyncPayload,
+} from "./sync.js";
 
-export { HYDRA_SYNC_QUEUE };
+export { GRAPH_SYNC_QUEUE };
 
-export async function registerHydraWorkers(boss: PgBoss): Promise<void> {
-  await boss.createQueue(HYDRA_SYNC_QUEUE);
+export async function registerGraphWorkers(boss: PgBoss): Promise<void> {
+  await boss.createQueue(GRAPH_SYNC_QUEUE);
 
-  await boss.work<HydraSyncPayload>(
-    HYDRA_SYNC_QUEUE,
+  await boss.work<GraphSyncPayload>(
+    GRAPH_SYNC_QUEUE,
     { batchSize: 1 },
     async ([job]) => {
       if (!job) return;
       const payload = job.data ?? {};
       console.log(
-        `[hydra-sync] job full=${Boolean(payload.full)} ` +
+        `[graph-sync] job full=${Boolean(payload.full)} ` +
           `jobIds=${payload.jobIds?.length ?? 0} companyId=${payload.companyId ?? "-"}`,
       );
-      // Never throw: sync records failures in hydra_sync_runs
-      await runHydraSync(db, payload, createHydraClient());
+      await runGraphSync(db, payload, createGraphClient());
     },
   );
 
-  console.log("[hydra-sync] worker registered");
+  console.log("[graph-sync] worker registered");
 }
 
-/** Enqueue after classify. Failures here must not break classify. */
-export async function enqueueHydraSync(
+export async function enqueueGraphSync(
   boss: PgBoss,
-  payload: HydraSyncPayload = {},
+  payload: GraphSyncPayload = {},
 ): Promise<void> {
   try {
-    const client = createHydraClient();
+    const client = createGraphClient();
     if (!client.enabled) return;
 
     const singletonKey = payload.full
@@ -45,7 +47,7 @@ export async function enqueueHydraSync(
             ? `jobs:${payload.jobIds.slice().sort().join(",").slice(0, 80)}`
             : "incremental";
 
-    await boss.send(HYDRA_SYNC_QUEUE, payload, {
+    await boss.send(GRAPH_SYNC_QUEUE, payload, {
       singletonKey,
       retryLimit: 2,
       retryDelay: 30,
@@ -54,7 +56,7 @@ export async function enqueueHydraSync(
     });
   } catch (err) {
     console.error(
-      "[hydra-sync] enqueue failed (ignored):",
+      "[graph-sync] enqueue failed (ignored):",
       err instanceof Error ? err.message : err,
     );
   }

@@ -22,6 +22,8 @@ import {
   jobTags,
   jobs,
 } from "../db/schema.js";
+import { countGraphTotals } from "../graph/cypher.js";
+import { createGraphClient } from "../graph/driver.js";
 import { domainFromUrl } from "../discover/ats-urls.js";
 import {
   getDailyStatsHistory,
@@ -293,10 +295,16 @@ export type McpStatsResult = {
   tech_open_jobs: number;
   by_eligibility: Record<string, number>;
   last_ingestion_at: string | null;
-  hydra: {
+  graph: {
     enabled: boolean;
+    nodes: number;
+    edges: number;
     lastSyncAt: string | null;
-    syncedJobs: number;
+    lastRun: {
+      added: number;
+      removed: number;
+      relabels: number;
+    } | null;
   };
   history?: DailyStatsRow[];
 };
@@ -347,20 +355,36 @@ export async function getMcpStats(
     .orderBy(desc(fetchRuns.finishedAt), desc(fetchRuns.startedAt))
     .limit(1);
 
-  const [{ syncedJobs } = { syncedJobs: 0 }] = await db
-    .select({
-      syncedJobs: sql<number>`count(*) filter (where ${jobs.hydraSyncedAt} is not null)`,
-    })
-    .from(jobs);
-
-  const [lastHydra] = await db
+  const [lastGraph] = await db
     .select({
       finishedAt: hydraSyncRuns.finishedAt,
       startedAt: hydraSyncRuns.startedAt,
+      nodesAdded: hydraSyncRuns.nodesAdded,
+      edgesAdded: hydraSyncRuns.edgesAdded,
+      removed: hydraSyncRuns.removed,
+      relabels: hydraSyncRuns.relabels,
     })
     .from(hydraSyncRuns)
     .orderBy(desc(hydraSyncRuns.finishedAt), desc(hydraSyncRuns.startedAt))
     .limit(1);
+
+  let nodes = 0;
+  let edges = 0;
+  const graphClient = createGraphClient();
+  if (graphClient.enabled) {
+    try {
+      const totals = await countGraphTotals((cypher, params) =>
+        graphClient.run(cypher, params),
+      );
+      nodes = totals.nodes;
+      edges = totals.edges;
+    } catch (err) {
+      console.error(
+        "[api/stats] graph count failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
 
   const result: McpStatsResult = {
     companies_active: Number(companiesActive),
@@ -370,13 +394,23 @@ export async function getMcpStats(
       lastIngest?.finishedAt?.toISOString() ??
       lastIngest?.startedAt?.toISOString() ??
       null,
-    hydra: {
-      enabled: Boolean(config.HYDRADB_ENABLED && config.HYDRADB_API_KEY),
+    graph: {
+      enabled: Boolean(config.HYDRA_GRAPH_ENABLED && config.HYDRA_TOKEN),
+      nodes,
+      edges,
       lastSyncAt:
-        lastHydra?.finishedAt?.toISOString() ??
-        lastHydra?.startedAt?.toISOString() ??
+        lastGraph?.finishedAt?.toISOString() ??
+        lastGraph?.startedAt?.toISOString() ??
         null,
-      syncedJobs: Number(syncedJobs),
+      lastRun: lastGraph
+        ? {
+            added:
+              Number(lastGraph.nodesAdded ?? 0) +
+              Number(lastGraph.edgesAdded ?? 0),
+            removed: Number(lastGraph.removed ?? 0),
+            relabels: Number(lastGraph.relabels ?? 0),
+          }
+        : null,
     },
   };
 

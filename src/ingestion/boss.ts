@@ -8,7 +8,7 @@ import { enqueueJobsNeedingClassification } from "../classify/enqueue.js";
 import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { companies } from "../db/schema.js";
-import { enqueueHydraSync, registerHydraWorkers } from "../hydra/boss.js";
+import { enqueueGraphSync, registerGraphWorkers } from "../graph/boss.js";
 import { writeDailyStats } from "../stats/daily.js";
 import { fetchCompanyJobs } from "./fetch-company.js";
 
@@ -56,7 +56,7 @@ async function handleIngestJob(
     );
     await enqueueJobsNeedingClassification(boss, db, companyId);
     // Catch jobs that already had fresh tags (no classify enqueue) + deletes
-    await enqueueHydraSync(boss, { companyId });
+    await enqueueGraphSync(boss, { companyId });
   } else {
     console.error(
       `[ingest] fail ${result.companyName}: ${result.error ?? "unknown"}`,
@@ -79,7 +79,7 @@ export async function registerIngestWorkers(boss: PgBoss): Promise<void> {
   }
 
   await registerClassifyWorkers(boss);
-  await registerHydraWorkers(boss);
+  await registerGraphWorkers(boss);
 
   await boss.work(SCHEDULE_QUEUE, async () => {
     await enqueueActiveCompanies(boss);
