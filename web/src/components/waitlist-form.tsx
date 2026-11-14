@@ -55,7 +55,7 @@ export function WaitlistForm() {
           {message}
         </p>
         <p className="mt-2 text-[13px] leading-relaxed text-mute">
-          Watch your inbox — no spam, just the invite.
+          Watch your inbox. No spam, just the invite.
         </p>
       </div>
     );
