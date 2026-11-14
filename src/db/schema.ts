@@ -304,18 +304,24 @@ export const mcpTokens = pgTable(
   ],
 );
 
-/** One row per HydraDB sync run (CLI or pg-boss). Failures never throw to ingest. */
+/** One row per graph sync run (CLI or pg-boss). Failures never throw to ingest. */
 export const hydraSyncRuns = pgTable("hydra_sync_runs", {
   id: uuid("id").defaultRandom().primaryKey(),
   startedAt: timestamp("started_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
   finishedAt: timestamp("finished_at", { withTimezone: true }),
+  /** Legacy counters (still written; prefer nodes_added / edges_added). */
   pushed: integer("pushed").notNull().default(0),
   updated: integer("updated").notNull().default(0),
   deleted: integer("deleted").notNull().default(0),
   failed: integer("failed").notNull().default(0),
   error: text("error"),
+  nodesAdded: integer("nodes_added").notNull().default(0),
+  edgesAdded: integer("edges_added").notNull().default(0),
+  removed: integer("removed").notNull().default(0),
+  relabels: integer("relabels").notNull().default(0),
+  durationMs: integer("duration_ms").notNull().default(0),
 });
 
 /** Crowdsourced corrections for India-eligibility labels. */

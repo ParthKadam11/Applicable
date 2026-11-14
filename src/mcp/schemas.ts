@@ -57,25 +57,35 @@ export const GetJobInputSchema = z.object({
   id: z.string().uuid().describe("Job UUID"),
 });
 
-export const AskJobsInputSchema = z.object({
-  question: z
-    .string()
-    .min(1)
-    .max(500)
-    .describe("Natural-language question about jobs (max 500 chars)"),
-  labels: z
-    .array(EligibilityFilterSchema)
-    .min(1)
-    .default(["open", "india_remote"])
-    .describe("India eligibility labels to include (default: open + india_remote)"),
-  max_results: z
-    .number()
-    .int()
-    .min(1)
-    .max(25)
-    .default(10)
-    .describe("Max jobs to return (1–25, default 10)"),
-});
+export const AskJobsInputSchema = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("match_skills"),
+    skills: z
+      .array(z.string().min(1).max(64))
+      .min(1)
+      .max(20)
+      .describe("Skills to match (aliases normalized)"),
+    labels: z
+      .array(EligibilityFilterSchema)
+      .min(1)
+      .default(["open", "india_remote"]),
+    max_results: z.number().int().min(1).max(25).default(10),
+  }),
+  z.object({
+    op: z.literal("similar_companies"),
+    company_slug: z.string().min(1).max(200),
+    max_results: z.number().int().min(1).max(25).default(10),
+  }),
+  z.object({
+    op: z.literal("company_jobs_by_skill"),
+    skill: z.string().min(1).max(64),
+    labels: z
+      .array(EligibilityFilterSchema)
+      .min(1)
+      .default(["open", "india_remote"]),
+    max_results: z.number().int().min(1).max(25).default(10),
+  }),
+]);
 
 export const ListCompaniesInputSchema = z.object({
   query: z

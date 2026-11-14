@@ -1,0 +1,90 @@
+# Self-hosted HydraDB graph (separate Compose project from prod app/postgres).
+# Project name `applicable-hydra` so `docker compose -f docker-compose.prod.yml
+# up --remove-orphans` never treats these containers as orphans.
+#
+# Postgres remains source of truth. Bolt/HTTP bind loopback on the host;
+# app/mcp reach HydraDB on the shared `caniapply_applicable` network as `hydradb`.
+#
+# Prerequisites (host):
+#   mkdir -p .hydra
+#   python3 -c "import secrets; print(secrets.token_urlsafe(32))" > .hydra/auth-token
+#   chmod 600 .hydra/auth-token
+#
+# Start:
+#   docker compose -f docker-compose.hydra.yml up -d --build
+#
+# Uses the published image (ghcr.io/hydra-db/hydradb) — a from-source Docker
+# build needs several GiB RAM; this host had ~2.5GiB available and 0 swap.
+
+name: applicable-hydra
+
+services:
+  hydradb-init:
+    image: busybox:1.37
+    user: "0:0"
+    volumes:
+      - applicable_hydra_data:/data
+      - ./.hydra/auth-token:/token:ro
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /data/store /data/cache
+        cp /token /data/auth-token
+        chown -R 10001:10001 /data
+        chmod 600 /data/auth-token
+    restart: "no"
+    networks:
+      - applicable
+
+  hydradb:
+    build:
+      context: .
+      dockerfile: docker/hydradb.Dockerfile
+    image: applicable-hydradb:0.4.0
+    depends_on:
+      hydradb-init:
+        condition: service_completed_successfully
+    user: "10001:10001"
+    restart: unless-stopped
+    mem_limit: 1g
+    memswap_limit: 1g
+    environment:
+      CLOUD_PROVIDER: local
+      LOCAL_PATH: /data/store
+      GRAPH_NAMESPACE: default
+      GRAPH_ID: default
+      GRAPH_CELL_ID: cell-0
+      GRAPH_CELLS: cell-0
+      GRAPH_NODE_ID: node-0
+      GRAPH_BOLT_NODE_ADDRESSES: node-0=127.0.0.1:7687
+      GRAPH_ADVERTISED_BOLT_ADDR: 127.0.0.1:7687
+      GRAPH_BOLT_ADDR: 0.0.0.0:7687
+      GRAPH_HTTP_ADDR: 0.0.0.0:8443
+      GRAPH_ADMIN_ADDR: 0.0.0.0:9090
+      GRAPH_DATA_CACHE_DIR: /data/cache
+      GRAPH_AUTH_TOKEN_FILE: /data/auth-token
+      GRAPH_ALLOW_PLAINTEXT: "true"
+      RUST_MIN_STACK: "33554432"
+      RUST_LOG: info
+    volumes:
+      - applicable_hydra_data:/data
+    ports:
+      - "127.0.0.1:7687:7687"
+      - "127.0.0.1:8443:8443"
+      # Host :9090 is taken (infra Prometheus). Map admin /readyz to 19090.
+      - "127.0.0.1:19090:9090"
+    networks:
+      - applicable
+    # HEALTHCHECK defined in docker/hydradb.Dockerfile (curl GET /readyz → 200)
+
+networks:
+  applicable:
+    external: true
+    name: caniapply_applicable
+
+volumes:
+  applicable_hydra_data:
+    # Existing named volume from first bring-up — do not recreate/prefix.
+    external: true
+    name: applicable_hydra_data

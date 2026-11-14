@@ -7,9 +7,11 @@ import {
 } from "../auth/saved-jobs.js";
 import { SIGN_IN_TO_SAVE } from "./auth-context.js";
 import { logToolCall } from "./logging.js";
-import { askJobs } from "../hydra/ask.js";
+import { z } from "zod";
+import { askJobs } from "../graph/ask.js";
 import {
   AskJobsInputSchema,
+  EligibilityFilterSchema,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   MySavedJobsInputSchema,
@@ -108,22 +110,28 @@ export function createApplicableMcpServer(
   server.registerTool(
     "ask_jobs",
     {
-      title: "Ask jobs (HydraDB context)",
+      title: "Ask jobs (graph)",
       description:
-        "Natural-language job questions via HydraDB hybrid retrieval (thinking mode), re-hydrated from Postgres. Falls back to search_jobs if HydraDB is disabled or down. Public, same rate limit as other MCP tools.",
-      inputSchema: AskJobsInputSchema.shape,
+        "Fixed graph queries: match_skills, similar_companies, company_jobs_by_skill. Results re-hydrated from Postgres. Falls back to keyword search if the graph is disabled/down. Public, same rate limit as other MCP tools.",
+      inputSchema: {
+        op: z.enum([
+          "match_skills",
+          "similar_companies",
+          "company_jobs_by_skill",
+        ]),
+        skills: z.array(z.string().min(1).max(64)).min(1).max(20).optional(),
+        skill: z.string().min(1).max(64).optional(),
+        company_slug: z.string().min(1).max(200).optional(),
+        labels: z.array(EligibilityFilterSchema).min(1).optional(),
+        max_results: z.number().int().min(1).max(25).optional(),
+      },
     },
     async (args) => {
       try {
         const parsed = AskJobsInputSchema.parse(args);
         const result = await timed(
           "ask_jobs",
-          () =>
-            askJobs(db, {
-              question: parsed.question,
-              labels: parsed.labels,
-              max_results: parsed.max_results,
-            }),
+          () => askJobs(db, parsed),
           (r) => r.count,
         );
         return jsonResult(result);

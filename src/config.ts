@@ -66,14 +66,15 @@ const envSchema = z.object({
   DISCOVER_CC_LIMIT: z.coerce.number().int().positive().default(5000),
   YC_ALGOLIA_API_KEY: z.string().optional().default(""),
 
-  /** HydraDB read-layer sync (default off). */
-  HYDRADB_ENABLED: z
+  /** Self-hosted HydraDB graph (Bolt). Default off. */
+  HYDRA_GRAPH_ENABLED: z
     .string()
     .optional()
     .default("false")
     .transform((v) => v === "true" || v === "1"),
-  HYDRADB_API_KEY: z.string().optional().default(""),
-  HYDRADB_DATABASE: z.string().min(1).optional().default("applicable"),
+  HYDRA_BOLT_URL: z.string().optional().default("bolt://127.0.0.1:7687"),
+  HYDRA_TOKEN: z.string().optional().default(""),
+  HYDRA_GRAPH_ID: z.string().min(1).optional().default("default"),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

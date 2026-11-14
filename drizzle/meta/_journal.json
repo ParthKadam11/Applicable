@@ -85,6 +85,13 @@
       "when": 1795200000000,
       "tag": "0011_hydra_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795300000000,
+      "tag": "0012_graph_sync_stats",
+      "breakpoints": true
     }
   ]
 }
