@@ -93,6 +93,7 @@ describe("MCP HTTP end-to-end", () => {
     expect(toolNames).toEqual(
       expect.arrayContaining([
         "search_jobs",
+        "ask_jobs",
         "get_job",
         "list_companies",
         "stats",
@@ -114,7 +115,14 @@ describe("MCP HTTP end-to-end", () => {
       companies_active: number;
       tech_open_jobs: number;
       by_eligibility: Record<string, number>;
+      hydra: { enabled: boolean; lastSyncAt: string | null; syncedJobs: number };
     };
+    expect(statsJson.hydra).toEqual(
+      expect.objectContaining({
+        enabled: expect.any(Boolean),
+        syncedJobs: expect.any(Number),
+      }),
+    );
     expect(typeof statsJson.companies_active).toBe("number");
     expect(typeof statsJson.tech_open_jobs).toBe("number");
     expect(statsJson.by_eligibility).toBeTypeOf("object");

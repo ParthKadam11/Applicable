@@ -7,7 +7,9 @@ import {
 } from "../auth/saved-jobs.js";
 import { SIGN_IN_TO_SAVE } from "./auth-context.js";
 import { logToolCall } from "./logging.js";
+import { askJobs } from "../hydra/ask.js";
 import {
+  AskJobsInputSchema,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   MySavedJobsInputSchema,
@@ -94,6 +96,34 @@ export function createApplicableMcpServer(
         const result = await timed(
           "search_jobs",
           () => searchJobs(db, parsed),
+          (r) => r.count,
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "ask_jobs",
+    {
+      title: "Ask jobs (HydraDB context)",
+      description:
+        "Natural-language job questions via HydraDB hybrid retrieval (thinking mode), re-hydrated from Postgres. Falls back to search_jobs if HydraDB is disabled or down. Public, same rate limit as other MCP tools.",
+      inputSchema: AskJobsInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = AskJobsInputSchema.parse(args);
+        const result = await timed(
+          "ask_jobs",
+          () =>
+            askJobs(db, {
+              question: parsed.question,
+              labels: parsed.labels,
+              max_results: parsed.max_results,
+            }),
           (r) => r.count,
         );
         return jsonResult(result);

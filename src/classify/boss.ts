@@ -1,6 +1,7 @@
 import type PgBoss from "pg-boss";
 import { config } from "../config.js";
 import { db } from "../db/client.js";
+import { enqueueHydraSync } from "../hydra/boss.js";
 import { classifyAndStoreJob } from "./classify.js";
 import {
   CLASSIFY_QUEUE,
@@ -39,6 +40,8 @@ export async function registerClassifyWorkers(boss: PgBoss): Promise<void> {
         console.log(
           `[classify] ok ${jobId}: india=${tag.india_eligibility} via ${tag.classifier}`,
         );
+        // Hydra sync after classify; never fail the classify job
+        await enqueueHydraSync(boss, { jobIds: [jobId] });
       },
     );
   }

@@ -65,6 +65,15 @@ const envSchema = z.object({
   /** Common Crawl slug cap on the weekly discover cron. */
   DISCOVER_CC_LIMIT: z.coerce.number().int().positive().default(5000),
   YC_ALGOLIA_API_KEY: z.string().optional().default(""),
+
+  /** HydraDB read-layer sync (default off). */
+  HYDRADB_ENABLED: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((v) => v === "true" || v === "1"),
+  HYDRADB_API_KEY: z.string().optional().default(""),
+  HYDRADB_DATABASE: z.string().min(1).optional().default("applicable"),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

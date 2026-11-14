@@ -260,7 +260,14 @@ describe("preferences + token + export + delete (db)", () => {
   it("PATCH preferences and GET defaults", async ({ skip }) => {
     if (!dbUp) skip();
     const before = await getPreferences(userA);
-    expect(before.defaultLabels).toEqual(["open", "india_remote"]);
+    // Defaults match jobs-filters ALL_LABELS (all eligibility labels).
+    expect(before.defaultLabels).toEqual([
+      "open",
+      "india_remote",
+      "india_onsite",
+      "region_locked",
+      "unclear",
+    ]);
 
     const updated = await updatePreferences(userA, {
       defaultLabels: ["open"],

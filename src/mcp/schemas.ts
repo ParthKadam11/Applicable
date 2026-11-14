@@ -57,6 +57,26 @@ export const GetJobInputSchema = z.object({
   id: z.string().uuid().describe("Job UUID"),
 });
 
+export const AskJobsInputSchema = z.object({
+  question: z
+    .string()
+    .min(1)
+    .max(500)
+    .describe("Natural-language question about jobs (max 500 chars)"),
+  labels: z
+    .array(EligibilityFilterSchema)
+    .min(1)
+    .default(["open", "india_remote"])
+    .describe("India eligibility labels to include (default: open + india_remote)"),
+  max_results: z
+    .number()
+    .int()
+    .min(1)
+    .max(25)
+    .default(10)
+    .describe("Max jobs to return (1–25, default 10)"),
+});
+
 export const ListCompaniesInputSchema = z.object({
   query: z
     .string()

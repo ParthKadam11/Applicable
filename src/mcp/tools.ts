@@ -13,10 +13,12 @@ import {
   sql,
 } from "drizzle-orm";
 import type { Db } from "../db/client.js";
+import { config } from "../config.js";
 import {
   companies,
   companyCandidates,
   fetchRuns,
+  hydraSyncRuns,
   jobTags,
   jobs,
 } from "../db/schema.js";
@@ -291,6 +293,11 @@ export type McpStatsResult = {
   tech_open_jobs: number;
   by_eligibility: Record<string, number>;
   last_ingestion_at: string | null;
+  hydra: {
+    enabled: boolean;
+    lastSyncAt: string | null;
+    syncedJobs: number;
+  };
   history?: DailyStatsRow[];
 };
 
@@ -340,6 +347,21 @@ export async function getMcpStats(
     .orderBy(desc(fetchRuns.finishedAt), desc(fetchRuns.startedAt))
     .limit(1);
 
+  const [{ syncedJobs } = { syncedJobs: 0 }] = await db
+    .select({
+      syncedJobs: sql<number>`count(*) filter (where ${jobs.hydraSyncedAt} is not null)`,
+    })
+    .from(jobs);
+
+  const [lastHydra] = await db
+    .select({
+      finishedAt: hydraSyncRuns.finishedAt,
+      startedAt: hydraSyncRuns.startedAt,
+    })
+    .from(hydraSyncRuns)
+    .orderBy(desc(hydraSyncRuns.finishedAt), desc(hydraSyncRuns.startedAt))
+    .limit(1);
+
   const result: McpStatsResult = {
     companies_active: Number(companiesActive),
     tech_open_jobs: techOpenTotal,
@@ -348,6 +370,14 @@ export async function getMcpStats(
       lastIngest?.finishedAt?.toISOString() ??
       lastIngest?.startedAt?.toISOString() ??
       null,
+    hydra: {
+      enabled: Boolean(config.HYDRADB_ENABLED && config.HYDRADB_API_KEY),
+      lastSyncAt:
+        lastHydra?.finishedAt?.toISOString() ??
+        lastHydra?.startedAt?.toISOString() ??
+        null,
+      syncedJobs: Number(syncedJobs),
+    },
   };
 
   if (raw.history != null) {

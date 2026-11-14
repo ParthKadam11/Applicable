@@ -78,6 +78,10 @@ export const jobs = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    /** Last successful HydraDB push for this job (null = never synced). */
+    hydraSyncedAt: timestamp("hydra_synced_at", { withTimezone: true }),
+    /** Hash of content_hash + label last pushed to HydraDB. */
+    hydraContentHash: text("hydra_content_hash"),
   },
   (table) => [
     uniqueIndex("jobs_company_external_uidx").on(
@@ -90,6 +94,8 @@ export const jobs = pgTable(
     index("jobs_last_seen_at_idx").on(table.lastSeenAt),
     index("jobs_company_id_idx").on(table.companyId),
     index("jobs_content_hash_idx").on(table.contentHash),
+    index("jobs_hydra_synced_at_idx").on(table.hydraSyncedAt),
+    index("jobs_hydra_content_hash_idx").on(table.hydraContentHash),
   ],
 );
 
@@ -298,6 +304,20 @@ export const mcpTokens = pgTable(
   ],
 );
 
+/** One row per HydraDB sync run (CLI or pg-boss). Failures never throw to ingest. */
+export const hydraSyncRuns = pgTable("hydra_sync_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  startedAt: timestamp("started_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  pushed: integer("pushed").notNull().default(0),
+  updated: integer("updated").notNull().default(0),
+  deleted: integer("deleted").notNull().default(0),
+  failed: integer("failed").notNull().default(0),
+  error: text("error"),
+});
+
 /** Crowdsourced corrections for India-eligibility labels. */
 export const labelReports = pgTable(
   "label_reports",
@@ -332,3 +352,4 @@ export type DailyStats = typeof dailyStats.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type SavedJob = typeof savedJobs.$inferSelect;
 export type McpToken = typeof mcpTokens.$inferSelect;
+export type HydraSyncRun = typeof hydraSyncRuns.$inferSelect;
