@@ -11,13 +11,8 @@ import {
 import type { Db } from "../db/client.js";
 import { companies, jobTags, jobs } from "../db/schema.js";
 import type { EligibilityFilter } from "../mcp/schemas.js";
-import {
-  companyJobsBySkillQuery,
-  matchSkillsQueryV2,
-  similarCompaniesOpenJobsQuery,
-  similarCompaniesQuery,
-} from "./cypher.js";
 import { createGraphClient, type GraphClient } from "./driver.js";
+import { explore } from "./explore.js";
 import { normalizeSkill } from "./skills.js";
 
 export type AskJobsInput =
@@ -60,6 +55,8 @@ export type AskJobsResult = {
     shared_skills?: string[];
     open_india_job_count?: number;
   }>;
+  /** Path lines from explore (compatibility alias). */
+  lines?: string[];
   count: number;
   latency_ms: number;
   approx_response_tokens: number;
@@ -71,54 +68,7 @@ function approxTokens(payload: unknown): number {
 
 const DEFAULT_LABELS: EligibilityFilter[] = ["open", "india_remote"];
 
-async function rehydrateJobs(
-  db: Db,
-  ids: string[],
-  labels: string[],
-): Promise<AskJobsResult["jobs"]> {
-  if (ids.length === 0) return [];
-  const rows = await db
-    .select({
-      id: jobs.id,
-      title: jobs.title,
-      company: companies.name,
-      location: jobs.locationRaw,
-      eligibility: jobTags.indiaEligibility,
-      evidence: jobTags.eligibilityEvidence,
-      applyUrl: jobs.applyUrl,
-    })
-    .from(jobs)
-    .innerJoin(companies, eq(companies.id, jobs.companyId))
-    .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(
-      and(
-        inArray(jobs.id, ids),
-        isNull(jobs.closedAt),
-        eq(companies.active, true),
-        or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
-        inArray(jobTags.indiaEligibility, labels),
-      ),
-    );
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const out: AskJobsResult["jobs"] = [];
-  for (const id of ids) {
-    const r = byId.get(id);
-    if (!r) continue;
-    out.push({
-      id: r.id,
-      title: r.title,
-      company: r.company,
-      location: r.location ?? null,
-      eligibility: r.eligibility ?? null,
-      evidence: r.evidence ?? [],
-      apply_url: r.applyUrl,
-    });
-  }
-  return out;
-}
-
-/** Keyword split, any-word match on title/company/description (fallback only). */
-export async function keywordFallbackSearch(
+async function keywordFallbackSearch(
   db: Db,
   question: string,
   labels: EligibilityFilter[],
@@ -208,6 +158,9 @@ async function fallback(
   return body;
 }
 
+/**
+ * Compatibility alias — maps legacy ops onto `explore` path queries.
+ */
 export async function askJobs(
   db: Db,
   input: AskJobsInput,
@@ -228,100 +181,76 @@ export async function askJobs(
         .map((s) => normalizeSkill(s) ?? s.trim().toLowerCase())
         .filter(Boolean);
       const limit = input.max_results ?? 10;
-      const q = matchSkillsQueryV2({ skills, labels });
-      const { records } = await client.run(q.cypher, q.params);
-      // App-side dedupe (no count(DISTINCT) in Cypher)
-      const byJob = new Map<string, Set<string>>();
-      for (const r of records) {
-        const id = String(r.jobId ?? "");
-        if (!id) continue;
-        const set = byJob.get(id) ?? new Set();
-        const sk = r.skillName != null ? String(r.skillName) : "";
-        if (sk) set.add(sk);
-        byJob.set(id, set);
-      }
-      const ranked = [...byJob.entries()]
-        .sort((a, b) => b[1].size - a[1].size)
-        .slice(0, limit);
-      const ids = ranked.map(([id]) => id);
-      const matched = new Map(ranked.map(([id, set]) => [id, [...set].sort()]));
-      const jobsOut = await rehydrateJobs(db, ids, labels);
-      for (const j of jobsOut) {
-        j.matched_skills = matched.get(j.id) ?? [];
+      const ex = await explore(
+        db,
+        {
+          start: { type: "skill", value: skills[0] },
+          path: ["REQUIRES"],
+          filter: { labels, skills },
+          max_results: limit,
+        },
+        { client },
+      );
+      if (ex.source !== "graph") {
+        return fallback(db, input, ex.error ?? ex.source, started);
       }
       const body: AskJobsResult = {
         source: "graph",
         op: input.op,
-        jobs: jobsOut,
-        count: jobsOut.length,
+        jobs: ex.jobs.map((j) => ({
+          id: j.id,
+          title: j.title,
+          company: j.company,
+          location: null,
+          eligibility: j.label,
+          evidence: [],
+          apply_url: j.apply_url,
+          matched_skills: skills,
+        })),
+        lines: ex.lines,
+        count: ex.jobs.length,
         latency_ms: Date.now() - started,
-        approx_response_tokens: 0,
+        approx_response_tokens: ex.tokens_used,
       };
-      body.approx_response_tokens = approxTokens(body);
       logAsk(body, input);
       return body;
     }
 
     if (input.op === "similar_companies") {
       const limit = input.max_results ?? 10;
-      const q = similarCompaniesQuery({
-        companySlug: input.company_slug,
-      });
-      const qJobs = similarCompaniesOpenJobsQuery({
-        companySlug: input.company_slug,
-      });
-      // Two statements: avoid skills×jobs cartesian on precomputed SIMILAR_TO.
-      const [{ records }, jobsRes] = await Promise.all([
-        client.run(q.cypher, q.params),
-        client.run(qJobs.cypher, qJobs.params),
-      ]);
-      type Agg = {
-        slug: string | null;
-        name: string;
-        score: number;
-        skills: Set<string>;
-        jobs: Set<string>;
-      };
-      const byCo = new Map<string, Agg>();
-      for (const r of records) {
-        const key = String(r.companyId ?? r.slug ?? "");
-        if (!key) continue;
-        const agg = byCo.get(key) ?? {
-          slug: (r.slug as string) || null,
-          name: String(r.name ?? ""),
-          score: Number(r.score ?? 0),
-          skills: new Set<string>(),
-          jobs: new Set<string>(),
+      const ex = await explore(
+        db,
+        {
+          start: { type: "company", value: input.company_slug },
+          path: ["SIMILAR_TO"],
+          max_results: limit,
+        },
+        { client },
+      );
+      if (ex.source !== "graph") {
+        return fallback(db, input, ex.error ?? ex.source, started);
+      }
+      const companiesOut = ex.lines.map((line, i) => {
+        // "Acme -SIMILAR_TO(0.52)-> Other"
+        const m = line.match(/SIMILAR_TO\(([^)]+)\)->\s*(.+)$/);
+        return {
+          slug: null as string | null,
+          name: m?.[2]?.trim() ?? `similar_${i}`,
+          score: m ? Number(m[1]) : undefined,
+          shared_skills: [] as string[],
+          open_india_job_count: 0,
         };
-        if (r.sharedSkill != null) agg.skills.add(String(r.sharedSkill));
-        byCo.set(key, agg);
-      }
-      for (const r of jobsRes.records) {
-        const key = String(r.companyId ?? "");
-        const agg = byCo.get(key);
-        if (!agg) continue;
-        if (r.jobId != null) agg.jobs.add(String(r.jobId));
-      }
-      const companiesOut = [...byCo.values()]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
-        .map((a) => ({
-          slug: a.slug,
-          name: a.name,
-          score: a.score,
-          shared_skills: [...a.skills].sort(),
-          open_india_job_count: a.jobs.size,
-        }));
+      });
       const body: AskJobsResult = {
         source: "graph",
         op: input.op,
         jobs: [],
-        companies: companiesOut,
+        companies: companiesOut.slice(0, limit),
+        lines: ex.lines,
         count: companiesOut.length,
         latency_ms: Date.now() - started,
-        approx_response_tokens: 0,
+        approx_response_tokens: ex.tokens_used,
       };
-      body.approx_response_tokens = approxTokens(body);
       logAsk(body, input);
       return body;
     }
@@ -335,39 +264,36 @@ export async function askJobs(
       const skill =
         normalizeSkill(input.skill) ?? input.skill.trim().toLowerCase();
       const limit = input.max_results ?? 10;
-      const q = companyJobsBySkillQuery({ skill, labels });
-      const { records } = await client.run(q.cypher, q.params);
-      const seenJobs = new Set<string>();
-      const ids: string[] = [];
-      const companiesMap = new Map<
-        string,
-        { slug: string | null; name: string }
-      >();
-      for (const r of records) {
-        const jid = String(r.jobId ?? "");
-        if (jid && !seenJobs.has(jid)) {
-          seenJobs.add(jid);
-          ids.push(jid);
-        }
-        const ck = String(r.slug ?? r.companyId ?? "");
-        if (ck && !companiesMap.has(ck)) {
-          companiesMap.set(ck, {
-            slug: (r.slug as string) || null,
-            name: String(r.companyName ?? ""),
-          });
-        }
+      const ex = await explore(
+        db,
+        {
+          start: { type: "skill", value: skill },
+          path: ["REQUIRES"],
+          filter: { labels },
+          max_results: limit,
+        },
+        { client },
+      );
+      if (ex.source !== "graph") {
+        return fallback(db, input, ex.error ?? ex.source, started);
       }
-      const jobsOut = await rehydrateJobs(db, ids.slice(0, limit), labels);
       const body: AskJobsResult = {
         source: "graph",
         op: input.op,
-        jobs: jobsOut,
-        companies: [...companiesMap.values()],
-        count: jobsOut.length,
+        jobs: ex.jobs.map((j) => ({
+          id: j.id,
+          title: j.title,
+          company: j.company,
+          location: null,
+          eligibility: j.label,
+          evidence: [],
+          apply_url: j.apply_url,
+        })),
+        lines: ex.lines,
+        count: ex.jobs.length,
         latency_ms: Date.now() - started,
-        approx_response_tokens: 0,
+        approx_response_tokens: ex.tokens_used,
       };
-      body.approx_response_tokens = approxTokens(body);
       logAsk(body, input);
       return body;
     }
@@ -392,5 +318,4 @@ function logAsk(body: AskJobsResult, input: AskJobsInput): void {
   );
 }
 
-// silence unused import if sql needed later
 void sql;

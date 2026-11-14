@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { users } from "../db/schema.js";
+import { removeUserFromGraph, scheduleGraphSaved } from "../graph/saved.js";
 
 export type UpsertGoogleUserInput = {
   googleSub: string;
@@ -51,6 +52,8 @@ export async function getUserById(db: Db, id: string) {
 }
 
 export async function deleteUserAccount(db: Db, userId: string): Promise<boolean> {
+  // Graph cleanup before cascade delete (best-effort).
+  scheduleGraphSaved(() => removeUserFromGraph(userId));
   const deleted = await db
     .delete(users)
     .where(eq(users.id, userId))

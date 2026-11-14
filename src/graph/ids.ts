@@ -65,6 +65,8 @@ export function createGraphIds(registry: GraphIdRegistry = new GraphIdRegistry()
         stableGraphId("evidence", `${jobUuid}:${quote}`),
         `evidence:${jobUuid}:${quote}`,
       ),
+    user: (uuid: string) =>
+      registry.claim(stableGraphId("user", uuid), `user:${uuid}`),
     edge: (kind: string, a: string, b: string) =>
       registry.claim(
         stableGraphId(`edge:${kind}`, `${a}->${b}`),

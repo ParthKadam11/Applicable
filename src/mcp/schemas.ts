@@ -87,6 +87,46 @@ export const AskJobsInputSchema = z.discriminatedUnion("op", [
   }),
 ]);
 
+export const ExploreHopSchema = z.enum([
+  "SIMILAR_TO",
+  "POSTS",
+  "REQUIRES",
+  "USES_SKILL",
+  "LABELED",
+  "SAVED",
+]);
+
+export const ExploreInputSchema = z.object({
+  start: z.object({
+    type: z.enum(["skill", "company", "job", "me"]),
+    value: z.string().min(1).max(200).optional(),
+  }),
+  path: z.array(ExploreHopSchema).max(3).default([]),
+  filter: z
+    .object({
+      labels: z
+        .array(EligibilityFilterSchema)
+        .min(1)
+        .default(["open", "india_remote"])
+        .optional(),
+      skills: z.array(z.string().min(1).max(64)).max(20).optional(),
+    })
+    .optional(),
+  max_results: z.number().int().min(1).max(25).default(10),
+  max_tokens: z.number().int().min(100).max(4000).default(1500),
+});
+
+export const SkillGapInputSchema = z.object({
+  my_skills: z.array(z.string().min(1).max(64)).max(40).optional(),
+  me: z.boolean().optional(),
+  labels: z
+    .array(EligibilityFilterSchema)
+    .min(1)
+    .default(["open", "india_remote"])
+    .optional(),
+  max_skills: z.number().int().min(1).max(10).default(5).optional(),
+});
+
 export const ListCompaniesInputSchema = z.object({
   query: z
     .string()

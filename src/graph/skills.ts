@@ -1,6 +1,9 @@
 /**
  * Deterministic skill extraction — fixed dictionary + aliases, no LLM.
  * Names are stored normalized (lowercase).
+ *
+ * Ambiguous bare tokens (rest, go, spring, express, next, swift, c, r)
+ * only match via qualified phrases — never as lone words.
  */
 
 /** Flat list of canonical skills (~150). */
@@ -171,7 +174,22 @@ export const CANONICAL_SKILLS: readonly string[] = [
   "cadence",
 ] as const;
 
-/** alias (lowercase) -> canonical */
+/**
+ * Bare tokens that false-positive too often in JD prose.
+ * Still valid as *canonical* skill names; extraction uses CONTEXT_PHRASES only.
+ */
+export const AMBIGUOUS_BARE_TOKENS: ReadonlySet<string> = new Set([
+  "rest",
+  "go",
+  "spring",
+  "express",
+  "next",
+  "swift",
+  "c",
+  "r",
+]);
+
+/** alias (lowercase) -> canonical — used by normalizeSkill (user input OK). */
 const ALIAS_TO_CANONICAL: Map<string, string> = (() => {
   const m = new Map<string, string>();
   for (const skill of CANONICAL_SKILLS) {
@@ -196,7 +214,10 @@ const ALIAS_TO_CANONICAL: Map<string, string> = (() => {
     ["ecmascript", "javascript"],
     ["es6", "javascript"],
     ["go lang", "golang"],
-    ["go", "golang"],
+    ["go language", "golang"],
+    ["go (lang)", "golang"],
+    ["golang", "golang"],
+    ["go programming", "golang"],
     ["c#", "csharp"],
     ["c sharp", "csharp"],
     [".net", "dotnet"],
@@ -214,6 +235,21 @@ const ALIAS_TO_CANONICAL: Map<string, string> = (() => {
     ["angularjs", "angular"],
     ["fast api", "fastapi"],
     ["spring boot", "springboot"],
+    ["spring framework", "spring"],
+    ["express.js", "express"],
+    ["express js", "express"],
+    ["expressjs", "express"],
+    ["rest api", "rest"],
+    ["rest apis", "rest"],
+    ["restful", "rest"],
+    ["restful api", "rest"],
+    ["restful apis", "rest"],
+    ["swift language", "swift"],
+    ["swift programming", "swift"],
+    ["ios/swift", "swift"],
+    ["swift/ios", "swift"],
+    ["swift developer", "swift"],
+    ["swift engineer", "swift"],
     ["graph ql", "graphql"],
     ["g rpc", "grpc"],
     ["tf", "terraform"],
@@ -230,13 +266,18 @@ const ALIAS_TO_CANONICAL: Map<string, string> = (() => {
   for (const [alias, canon] of extra) {
     m.set(alias.toLowerCase(), canon);
   }
+  // Intentional: bare "go" / "next" are NOT aliases for extraction or normalize.
   return m;
 })();
 
-/** Longer phrases first so "spring boot" wins over "spring". */
+/**
+ * Phrases used only for extractSkills. Ambiguous bare tokens excluded;
+ * qualified forms (REST API, Golang, Express.js, …) included.
+ */
 const MATCH_TERMS: Array<{ term: string; canonical: string }> = (() => {
   const items: Array<{ term: string; canonical: string }> = [];
   for (const [term, canonical] of ALIAS_TO_CANONICAL) {
+    if (AMBIGUOUS_BARE_TOKENS.has(term)) continue;
     items.push({ term, canonical });
   }
   items.sort((a, b) => b.term.length - a.term.length);
@@ -250,6 +291,7 @@ function escapeRegExp(s: string): string {
 /**
  * Extract canonical skills from title + description.
  * Deterministic; case-insensitive; word-boundary for short tokens.
+ * Ambiguous words require qualified context (see AMBIGUOUS_BARE_TOKENS).
  */
 export function extractSkills(title: string, description: string): string[] {
   const text = `${title}\n${description}`.toLowerCase();
@@ -257,7 +299,10 @@ export function extractSkills(title: string, description: string): string[] {
   for (const { term, canonical } of MATCH_TERMS) {
     if (found.has(canonical)) continue;
     const pattern =
-      term.includes(" ") || term.includes(".") || term.includes("/")
+      term.includes(" ") ||
+      term.includes(".") ||
+      term.includes("/") ||
+      term.includes("(")
         ? new RegExp(escapeRegExp(term), "i")
         : new RegExp(
             `(?:^|[^a-z0-9_+#])${escapeRegExp(term)}(?:[^a-z0-9_+#]|$)`,
@@ -272,5 +317,14 @@ export function extractSkills(title: string, description: string): string[] {
 
 export function normalizeSkill(raw: string): string | null {
   const key = raw.trim().toLowerCase();
+  if (AMBIGUOUS_BARE_TOKENS.has(key) && key !== "c" && key !== "r") {
+    // Bare ambiguous input from agents: reject so they pass qualified forms.
+    // Exception: single-letter langs stay normalizable only via explicit aliases
+    // (none for bare c/r beyond canonical — reject bare).
+    if (key === "swift" || key === "rest" || key === "spring" || key === "express" || key === "next" || key === "go") {
+      return null;
+    }
+  }
+  if (AMBIGUOUS_BARE_TOKENS.has(key)) return null;
   return ALIAS_TO_CANONICAL.get(key) ?? null;
 }

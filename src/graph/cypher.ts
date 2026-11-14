@@ -17,7 +17,7 @@ export type CypherQuery = {
 
 /** Upsert labelled nodes with properties (edgeless). */
 export function upsertNodesByLabel(
-  label: "Company" | "Job" | "Skill" | "Label" | "Evidence",
+  label: "Company" | "Job" | "Skill" | "Label" | "Evidence" | "User",
   rows: Array<Record<string, unknown>>,
 ): CypherQuery {
   // Exactly one SET label required by HydraDB UNWIND vertex upsert.
@@ -39,11 +39,25 @@ export function upsertNodesByLabel(
 
 /** Idempotent edge: Company -[:POSTS]-> Job (and similar typed edges without props). */
 export function mergeTypedEdges(
-  relType: "POSTS" | "LABELED" | "REQUIRES" | "PROVEN_BY",
+  relType: "POSTS" | "LABELED" | "REQUIRES" | "PROVEN_BY" | "SAVED",
   rows: Array<{ src: number; dst: number }>,
 ): CypherQuery {
   return {
     cypher: `UNWIND $rows AS row CREATE (a {id: row.src})-[:${relType}]->(b {id: row.dst})`,
+    params: { rows },
+  };
+}
+
+/** User -[:SAVED]-> Job (labeled endpoints for HydraDB UNWIND safety). */
+export function mergeSavedEdges(
+  rows: Array<{ src: number; dst: number }>,
+): CypherQuery {
+  return {
+    cypher: `
+UNWIND $rows AS row
+MATCH (a:User {id: row.src}), (b:Job {id: row.dst})
+CREATE (a)-[:SAVED]->(b)
+`.trim(),
     params: { rows },
   };
 }
@@ -87,7 +101,13 @@ ${prop}
  * ("UNWIND batch node requires an id property"). Per-id MATCH works.
  */
 export function deleteOutgoingEdgesFromNode(
-  relType: "LABELED" | "REQUIRES" | "PROVEN_BY" | "USES_SKILL" | "SIMILAR_TO",
+  relType:
+    | "LABELED"
+    | "REQUIRES"
+    | "PROVEN_BY"
+    | "USES_SKILL"
+    | "SIMILAR_TO"
+    | "SAVED",
   nodeId: number,
 ): CypherQuery {
   return {
@@ -98,7 +118,13 @@ export function deleteOutgoingEdgesFromNode(
 
 /** Delete a typed edge between two known endpoints (UNWIND-safe). */
 export function deleteTypedEdgesBetween(
-  relType: "LABELED" | "REQUIRES" | "PROVEN_BY" | "USES_SKILL" | "SIMILAR_TO",
+  relType:
+    | "LABELED"
+    | "REQUIRES"
+    | "PROVEN_BY"
+    | "USES_SKILL"
+    | "SIMILAR_TO"
+    | "SAVED",
   rows: Array<{ src: number; dst: number }>,
 ): CypherQuery {
   return {
@@ -237,6 +263,7 @@ export const GRAPH_NODE_LABELS = [
   "Skill",
   "Label",
   "Evidence",
+  "User",
 ] as const;
 
 export const GRAPH_EDGE_TYPES = [
@@ -246,6 +273,7 @@ export const GRAPH_EDGE_TYPES = [
   "PROVEN_BY",
   "USES_SKILL",
   "SIMILAR_TO",
+  "SAVED",
 ] as const;
 
 export function countNodesByLabelQuery(

@@ -1,6 +1,11 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { companies, jobTags, jobs, savedJobs } from "../db/schema.js";
+import {
+  addSavedEdge,
+  removeSavedEdge,
+  scheduleGraphSaved,
+} from "../graph/saved.js";
 
 export type SavedJobRow = {
   job_id: string;
@@ -46,6 +51,10 @@ export async function saveJob(
     .onConflictDoNothing()
     .returning({ jobId: savedJobs.jobId });
 
+  if (inserted.length > 0) {
+    scheduleGraphSaved(() => addSavedEdge(userId, jobId));
+  }
+
   return { saved: true, already: inserted.length === 0 };
 }
 
@@ -58,6 +67,9 @@ export async function unsaveJob(
     .delete(savedJobs)
     .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
     .returning({ jobId: savedJobs.jobId });
+  if (deleted.length > 0) {
+    scheduleGraphSaved(() => removeSavedEdge(userId, jobId));
+  }
   return { removed: deleted.length > 0 };
 }
 

@@ -28,7 +28,7 @@ export const ELIGIBILITY_NEGATIVE_PHRASES: RegExp[] = [
  */
 const HIRING_LOCATION_CONTEXT: RegExp[] = [
   /\bremote\b/i,
-  /\banywhere\b/i,
+  // NOTE: bare "anywhere" is NOT context — it is the claim being validated.
   /\blocat(?:ion|ed)\b/i,
   /\bbased\b/i,
   /\bwork from\b/i,
@@ -237,13 +237,22 @@ const WEAK_OPEN_ANYWHERE: RegExp[] = [
 
 /** Perk / benefits phrasing that must never count as hire-location open evidence. */
 const PERK_ANYWHERE_PHRASES: RegExp[] = [
+  /\bwork from anywhere\b.{0,8}\bpolicy\b/i,
   /\bwork from anywhere policy\b/i,
   /\b(?:\d+\+?\s*)?(?:weeks?|days?|months?)\s+(?:of\s+)?work from anywhere\b/i,
+  /\bwork from anywhere\b.{0,60}\b(?:weeks?|days?|months?|year)\b/i,
+  /\bwork from anywhere\s+(?:for|up to)\b/i,
   /\bflexible remote work\b/i,
   /\bremote work(?:ing)? flexibility\b/i,
   /\bwork from anywhere\s*!\b/i,
   /\bunlimited work from anywhere\b/i,
   /\bwork from anywhere benefit\b/i,
+  /\b(?:travel|vacation|holiday|pto|paid time off|offsites?|retreats?|stipend)s?\b.{0,60}\banywhere\b/i,
+  /\banywhere\b.{0,60}\b(?:travel|vacation|holiday|pto|stipend|offsites?|retreats?)\b/i,
+  /\bto travel anywhere\b/i,
+  /\btravel anywhere\b/i,
+  /\btravel stipend\b/i,
+  /\bstipend\b.{0,40}\b(?:travel|anywhere)\b/i,
 ];
 
 const BENEFITS_HEADING =
@@ -298,10 +307,18 @@ export function isPerkAnywherePhrase(sentence: string): boolean {
   return PERK_ANYWHERE_PHRASES.some((re) => re.test(sentence));
 }
 
+/**
+ * India signals that imply applicant location — never bare "India" alone
+ * (investor names like "Sequoia India" / funding blurbs).
+ */
 const OPEN_INDIA: RegExp[] = [
   /\bopen to candidates (?:from |in )?India\b/i,
   /\bcandidates (?:in|from) India\b/i,
-  /\bIndia\b/i,
+  /\bhire(?:s|ing)? (?:in |from )?India\b/i,
+  /\b(?:remote|location|based|work from|office)\b.{0,40}\bIndia\b/i,
+  /\bIndia\b.{0,40}\b(?:remote|based|location|timezone|candidates?|applicants?|hire)\b/i,
+  /\bRemote\s*[-–—:/]\s*India\b/i,
+  /\bIndia\s*[-–—:/]\s*Remote\b/i,
   /\bIST\b/,
   /\bIndian Standard Time\b/i,
   /\bBengaluru\b/i,
@@ -311,7 +328,46 @@ const OPEN_INDIA: RegExp[] = [
   /\bPune\b/i,
   /\bDelhi\b/i,
   /\bChennai\b/i,
+  /\bNoida\b/i,
+  /\bGurugram\b/i,
+  /\bGurgaon\b/i,
+  /\bKolkata\b/i,
 ];
+
+/** "India" inside investor / funding / about-company copy — not hire location. */
+const INDIA_NON_LOCATION: RegExp[] = [
+  /\bSequoia India\b/i,
+  /\b(?:Accel|Matrix|SoftBank|Tiger|Lightspeed|Bessemer)\s+India\b/i,
+  /\bPeak XV\b/i,
+  /\b(?:formerly|known as)\b.{0,40}\bIndia\b/i,
+  /\b(?:raised|funding|series\s*[a-d]\b|backed by|investors?|venture|led by)\b[\s\S]{0,120}\bIndia\b/i,
+  /\bIndia\b[\s\S]{0,120}\b(?:raised|funding|series\s*[a-d]\b|investors?|Partners|Ventures)\b/i,
+];
+
+export function isNonLocationIndiaMention(sentence: string): boolean {
+  return INDIA_NON_LOCATION.some((re) => re.test(sentence));
+}
+
+/** True when "India" / city appears with hire-location context (not funding copy). */
+export function hasIndiaLocationContext(sentence: string): boolean {
+  if (isNonLocationIndiaMention(sentence)) return false;
+  if (
+    /\b(?:Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata)\b/i.test(
+      sentence,
+    )
+  ) {
+    return true;
+  }
+  if (/\bIST\b|\bIndian Standard Time\b/i.test(sentence)) return true;
+  return (
+    /\b(?:remote|location|located|based|work from|hire(?:s|d|ing)?|candidates?|applicants?|office|timezone|time zone|open to)\b[\s\S]{0,50}\bIndia\b/i.test(
+      sentence,
+    ) ||
+    /\bIndia\b[\s\S]{0,50}\b(?:remote|based|location|located|timezone|time zone|candidates?|applicants?|hire|office)\b/i.test(
+      sentence,
+    )
+  );
+}
 
 const CONTRACTOR_OPEN: RegExp[] = [
   /\bas (?:a )?contractor\b/i,
@@ -404,6 +460,15 @@ function isAcceptableOpenEvidence(sentence: string): boolean {
   if (isNegativeEligibilitySentence(sentence)) return false;
   if (isPerkAnywherePhrase(sentence)) return false;
   if (isCountryScopedAnywhere(sentence)) return false;
+  // Travel / stipend / vacation "anywhere" is never work-location open.
+  if (
+    /\banywhere\b/i.test(sentence) &&
+    /\b(?:travel|stipend|vacation|holiday|pto|offsite|retreat|perk|benefit)\b/i.test(
+      sentence,
+    )
+  ) {
+    return false;
+  }
   // "based anywhere in the USA" / similar - specific geo + anywhere is a lock.
   if (
     hasSpecificGeo(sentence) &&
@@ -677,27 +742,26 @@ export function classifyIndiaEligibility(input: {
     };
   }
 
-  // India-specific
+  // India-specific — require location context; skip investor/funding "India".
   for (const re of OPEN_INDIA) {
     let found: string | null = null;
     for (const sentence of splitSentences(corpus)) {
       if (!re.test(sentence)) continue;
       if (isNegativeEligibilitySentence(sentence)) continue;
-      if (
-        /^Location:/i.test(sentence) ||
-        isApplyContextSentence(sentence) ||
-        INDIA_CITY.test(sentence)
-      ) {
-        found = sentence;
-        break;
+      if (isNonLocationIndiaMention(sentence)) continue;
+      if (!hasIndiaLocationContext(sentence) && !/^Location:/i.test(sentence)) {
+        continue;
       }
+      found = sentence;
+      break;
     }
     if (!found) {
       const sentence = sentenceMatching(corpus, re);
       if (
         sentence &&
         !isNegativeEligibilitySentence(sentence) &&
-        (isApplyContextSentence(sentence) || INDIA_CITY.test(sentence))
+        !isNonLocationIndiaMention(sentence) &&
+        (hasIndiaLocationContext(sentence) || /^Location:/i.test(sentence))
       ) {
         found = sentence;
       }

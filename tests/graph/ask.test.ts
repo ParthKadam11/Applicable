@@ -34,15 +34,26 @@ describe("ask_jobs templates + fallback", () => {
     ).toContain("REQUIRES");
   });
 
-  it("rehydrates and drops inactive graph hits", async () => {
+  it("rehydrates and drops inactive graph hits (via explore alias)", async () => {
     const activeId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
     const inactiveId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
     const client = mockGraphClient(async () => ({
-      keys: ["jobId", "skillName", "evidenceQuote"],
+      keys: ["n0_name", "n1_ext", "n1_title", "n1_label", "proof_quote"],
       records: [
-        { jobId: inactiveId, skillName: "rust", evidenceQuote: null },
-        { jobId: activeId, skillName: "postgres", evidenceQuote: null },
-        { jobId: activeId, skillName: "postgres", evidenceQuote: "dup" },
+        {
+          n0_name: "postgres",
+          n1_ext: inactiveId,
+          n1_title: "Gone",
+          n1_label: "open",
+          proof_quote: null,
+        },
+        {
+          n0_name: "postgres",
+          n1_ext: activeId,
+          n1_title: "Backend",
+          n1_label: "india_remote",
+          proof_quote: null,
+        },
       ],
     }));
 
@@ -56,9 +67,7 @@ describe("ask_jobs templates + fallback", () => {
         id: activeId,
         title: "Backend",
         company: "Acme",
-        location: null,
-        eligibility: "india_remote",
-        evidence: ["India ok"],
+        label: "india_remote",
         applyUrl: "https://example.com",
       },
     ];

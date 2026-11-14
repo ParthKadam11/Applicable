@@ -9,14 +9,18 @@ import { SIGN_IN_TO_SAVE } from "./auth-context.js";
 import { logToolCall } from "./logging.js";
 import { z } from "zod";
 import { askJobs } from "../graph/ask.js";
+import { explore } from "../graph/explore.js";
+import { skillGap } from "../graph/skill-gap.js";
 import {
   AskJobsInputSchema,
   EligibilityFilterSchema,
+  ExploreInputSchema,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   MySavedJobsInputSchema,
   SaveJobInputSchema,
   SearchJobsInputSchema,
+  SkillGapInputSchema,
   StatsInputObjectSchema,
   StatsInputSchema,
   SubmitCompanyInputSchema,
@@ -108,11 +112,63 @@ export function createApplicableMcpServer(
   );
 
   server.registerTool(
+    "explore",
+    {
+      title: "Explore graph paths",
+      description:
+        "Walk allowlisted hops (SIMILAR_TO, POSTS, REQUIRES, USES_SKILL, LABELED, SAVED; max 3) from skill|company|job|me. Returns compact path lines + thin job cards. Rehydrated from Postgres. start.type=me and SAVED require a personal MCP token.",
+      inputSchema: ExploreInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = ExploreInputSchema.parse(args);
+        const result = await timed(
+          "explore",
+          () => explore(db, parsed, { userId }),
+          (r) => r.lines.length,
+        );
+        if (result.source === "error" && result.error) {
+          return errResult(result.error);
+        }
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "skill_gap",
+    {
+      title: "Skill gap (India-OK unlocks)",
+      description:
+        "Top skills that unlock the most India-eligible jobs you are one skill short of. Pass my_skills[], or me:true (personal token) to derive skills from saved jobs.",
+      inputSchema: SkillGapInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = SkillGapInputSchema.parse(args);
+        const result = await timed(
+          "skill_gap",
+          () => skillGap(db, parsed, { userId }),
+          (r) => r.gaps.length,
+        );
+        if (result.source === "error" && result.error) {
+          return errResult(result.error);
+        }
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
     "ask_jobs",
     {
-      title: "Ask jobs (graph)",
+      title: "Ask jobs (graph, legacy alias)",
       description:
-        "Fixed graph queries: match_skills, similar_companies, company_jobs_by_skill. Results re-hydrated from Postgres. Falls back to keyword search if the graph is disabled/down. Public, same rate limit as other MCP tools.",
+        "Legacy alias for explore: match_skills, similar_companies, company_jobs_by_skill. Prefer the explore tool for path-style context. Falls back to keyword search if the graph is disabled/down.",
       inputSchema: {
         op: z.enum([
           "match_skills",

@@ -242,4 +242,37 @@ describe("classifyIndiaEligibility", () => {
     expect(r.india_eligibility).toBe("region_locked");
     expect(r.remote_scope).toBe("APAC");
   });
+
+  it("Sequoia India funding blurb is not india_remote", () => {
+    const r = classifyIndiaEligibility({
+      title: "Senior Software Engineer, Product",
+      locationRaw: "SF Bay Area",
+      descriptionText:
+        "We've raised $60M in funding, including our recent Series B led by Peak XV Partners (formerly Sequoia India), with participation from healthcare-focused Define Ventures and continued support from General Catalyst and Y Combinator. Build great product.",
+    });
+    expect(r.india_eligibility).not.toBe("india_remote");
+    expect(r.india_eligibility).not.toBe("india_onsite");
+    expect(r.eligibility_evidence.join(" ")).not.toMatch(/Sequoia India/i);
+  });
+
+  it("travel stipend anywhere is not open", () => {
+    const r = classifyIndiaEligibility({
+      title: "Full Stack Engineer",
+      locationRaw: "NY, SF or Remote",
+      descriptionText:
+        "About the role\nBuild cool stuff.\n\nBenefits\n- $4000/yr Travel Stipend to travel anywhere anytime to work alongside other Roboflowers\n- Health insurance",
+    });
+    expect(r.india_eligibility).not.toBe("open");
+    expect(r.eligibility_evidence.join(" ")).not.toMatch(/Travel Stipend/i);
+  });
+
+  it("Remote - India location still india_remote", () => {
+    const r = classifyIndiaEligibility({
+      title: "Data Engineer",
+      locationRaw: "Remote - India",
+      descriptionText: "Join our team.",
+    });
+    expect(r.india_eligibility).toBe("india_remote");
+    expect(r.eligibility_evidence[0]).toMatch(/India/i);
+  });
 });

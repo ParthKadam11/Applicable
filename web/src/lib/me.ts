@@ -95,6 +95,12 @@ export async function saveJob(userId: string, jobId: string) {
     })
     .onConflictDoNothing()
     .returning({ jobId: savedJobs.jobId });
+  if (inserted.length > 0) {
+    const { addSavedEdge, scheduleGraphSaved } = await import(
+      "@/lib/graph-saved"
+    );
+    scheduleGraphSaved(() => addSavedEdge(userId, jobId));
+  }
   return { saved: true as const, already: inserted.length === 0 };
 }
 
@@ -103,6 +109,12 @@ export async function unsaveJob(userId: string, jobId: string) {
     .delete(savedJobs)
     .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
     .returning({ jobId: savedJobs.jobId });
+  if (deleted.length > 0) {
+    const { removeSavedEdge, scheduleGraphSaved } = await import(
+      "@/lib/graph-saved"
+    );
+    scheduleGraphSaved(() => removeSavedEdge(userId, jobId));
+  }
   return { removed: deleted.length > 0 };
 }
 
@@ -319,6 +331,12 @@ export async function deleteAccount(userId: string) {
     .update(labelReports)
     .set({ userId: null })
     .where(eq(labelReports.userId, userId));
+
+  // Drop personal graph SAVED edges before cascade delete (best-effort).
+  const { removeUserFromGraph, scheduleGraphSaved } = await import(
+    "@/lib/graph-saved"
+  );
+  scheduleGraphSaved(() => removeUserFromGraph(userId));
 
   // saved_jobs + mcp_tokens cascade on user delete
   const deleted = await db

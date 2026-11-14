@@ -32,6 +32,7 @@
     "mcp:stdio": "tsx src/mcp/stdio.ts",
     "mcp:smoke": "tsx src/scripts/mcp-smoke.ts",
     "graph:sync": "tsx src/scripts/graph-sync.ts",
+    "bench:context": "tsx src/scripts/bench-context.ts",
     "smoke": "bash scripts/smoke.sh",
     "test": "vitest run",
     "test:watch": "vitest",
