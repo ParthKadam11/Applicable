@@ -149,12 +149,21 @@ afterAll(async () => {
 describe("preferences schema", () => {
   it("defaults empty object", () => {
     const p = normalizePreferences({});
-    expect(p.defaultLabels).toEqual(["open", "india_remote"]);
+    expect(p.defaultLabels).toEqual([
+      "open",
+      "india_remote",
+      "india_onsite",
+      "region_locked",
+      "unclear",
+    ]);
     expect(p.defaultRoles).toEqual([]);
     expect(p.hideNoSalary).toBe(false);
     expect(UserPreferencesSchema.parse({}).defaultLabels).toEqual([
       "open",
       "india_remote",
+      "india_onsite",
+      "region_locked",
+      "unclear",
     ]);
   });
 

@@ -31,12 +31,18 @@ beforeAll(async () => {
 });
 
 describe("parseJobsListSearchParams", () => {
-  it("defaults labels to open + india_remote", () => {
+  it("defaults labels to all eligibility values", () => {
     const r = parseJobsListSearchParams(new URLSearchParams());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.data.labels).toEqual(["open", "india_remote"]);
-    expect(r.data.limit).toBe(30);
+    expect(r.data.labels).toEqual([
+      "open",
+      "india_remote",
+      "india_onsite",
+      "region_locked",
+      "unclear",
+    ]);
+    expect(r.data.limit).toBe(40);
     expect(r.data.sort).toBe("newest");
   });
 
