@@ -42,6 +42,7 @@ import {
 import { formatSalaryText } from "@/lib/salary";
 
 export {
+  ALL_LABELS,
   decodeJobsCursor,
   encodeJobsCursor,
   JobsFilterFieldsSchema,

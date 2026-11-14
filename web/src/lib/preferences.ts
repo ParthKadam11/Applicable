@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { LabelSchema, RoleSchema } from "@/lib/jobs-filters";
+import { ALL_LABELS, LabelSchema, RoleSchema } from "@/lib/jobs-filters";
 
 export const UserPreferencesSchema = z.object({
   defaultLabels: z
     .array(LabelSchema)
     .min(1)
-    .default(["open", "india_remote"]),
+    .default([...ALL_LABELS]),
   defaultRoles: z.array(RoleSchema).default([]),
   hideNoSalary: z.boolean().default(false),
 });
@@ -13,7 +13,7 @@ export const UserPreferencesSchema = z.object({
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  defaultLabels: ["open", "india_remote"],
+  defaultLabels: [...ALL_LABELS],
   defaultRoles: [],
   hideNoSalary: false,
 };

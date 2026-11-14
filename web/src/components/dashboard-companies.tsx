@@ -360,28 +360,19 @@ export function DashboardCompanies({
       )}
 
       {nextCursor ? (
-        <div ref={loadMoreRef} className="py-6 text-center">
-          <button
-            type="button"
-            disabled={loadingMore}
-            onClick={() => void loadMore()}
-            className="text-[12px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-mark-deep disabled:opacity-40"
-          >
-            {loadingMore ? (
-              <span className="inline-flex items-center gap-1.5">
-                <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark" />
-                <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:120ms]" />
-                <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:240ms]" />
-              </span>
-            ) : (
-              "Load more"
-            )}
-          </button>
+        <div ref={loadMoreRef} className="flex justify-center py-8" aria-hidden>
+          {loadingMore ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark" />
+              <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:120ms]" />
+              <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:240ms]" />
+            </span>
+          ) : (
+            <span className="h-1 w-1 rounded-full bg-transparent" />
+          )}
         </div>
       ) : items.length > 0 ? (
-        <p className="py-6 text-center text-[12px] text-mute/70">
-          End of results
-        </p>
+        <div className="h-10" aria-hidden />
       ) : null}
     </div>
   );

@@ -10,6 +10,9 @@ export const LabelSchema = z.enum([
   "unclear",
 ]);
 
+/** Every eligibility label — used for “All” filter / uncapped jobs list. */
+export const ALL_LABELS = LabelSchema.options;
+
 export const RoleSchema = z.enum([
   "backend",
   "frontend",
@@ -29,7 +32,7 @@ export const JobsFilterFieldsSchema = z.object({
   labels: z
     .array(LabelSchema)
     .min(1)
-    .default(["open", "india_remote"]),
+    .default([...LabelSchema.options]),
   role: RoleSchema.optional(),
   /** Multi-role filter (from preferences.defaultRoles when URL has no role). */
   roles: z.array(RoleSchema).min(1).optional(),
@@ -51,7 +54,7 @@ export type JobsFilterFields = z.infer<typeof JobsFilterFieldsSchema>;
 
 export const JobsListQuerySchema = JobsFilterFieldsSchema.extend({
   cursor: z.string().min(1).optional(),
-  limit: z.number().int().min(1).max(100).default(30),
+  limit: z.number().int().min(1).max(100).default(40),
 });
 
 export type JobsListQuery = z.infer<typeof JobsListQuerySchema>;

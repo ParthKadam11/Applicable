@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { DashboardJobs } from "@/components/dashboard-jobs";
-import { listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
+import { ALL_LABELS, listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
 import { getPreferences } from "@/lib/me";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences";
 
@@ -31,20 +31,30 @@ export default async function DashboardJobsPage({
     preferences = null;
   }
 
-  const parsed = parseJobsListSearchParams(
-    toURLSearchParams(await searchParams),
-    preferences,
-  );
+  const rawSp = toURLSearchParams(await searchParams);
+  // Full job corpus unless the URL explicitly sets eligibility labels.
+  const prefsForParse = preferences
+    ? {
+        ...preferences,
+        defaultLabels: rawSp.get("labels")
+          ? preferences.defaultLabels
+          : [...ALL_LABELS],
+      }
+    : {
+        ...DEFAULT_PREFERENCES,
+        defaultLabels: [...ALL_LABELS],
+      };
+  const parsed = parseJobsListSearchParams(rawSp, prefsForParse);
   let initial = null;
   try {
     initial = await listJobs(
       parsed.ok
         ? parsed.data
         : {
-            labels: preferences?.defaultLabels ?? ["open", "india_remote"],
+            labels: [...ALL_LABELS],
             posted: "all",
             sort: "newest",
-            limit: 30,
+            limit: 40,
             ...(preferences?.hideNoSalary ? { has_salary: true as const } : {}),
             ...(preferences?.defaultRoles?.length === 1
               ? { role: preferences.defaultRoles[0] }

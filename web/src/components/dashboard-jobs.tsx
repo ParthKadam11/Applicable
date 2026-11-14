@@ -20,7 +20,15 @@ import {
   type UserPreferences,
 } from "@/lib/preferences";
 
+const ALL_LABELS_VALUE =
+  "open,india_remote,india_onsite,region_locked,unclear";
+
 const LABEL_OPTIONS = [
+  {
+    value: ALL_LABELS_VALUE,
+    label: "All",
+    hint: "Every open tech role we track",
+  },
   {
     value: "open,india_remote",
     label: "Open + India",
@@ -136,17 +144,24 @@ function highlightEvidence(quote: string, q: string | null) {
 
 function buildQuery(
   sp: URLSearchParams,
-  opts?: { companySlug?: string; companyOnly?: boolean },
+  opts?: {
+    companySlug?: string;
+    companyOnly?: boolean;
+    /** Effective filter values when URL omits them (prefs / UI defaults). */
+    defaults?: Partial<Record<string, string>>;
+  },
 ): string {
   const next = new URLSearchParams();
   const keys = opts?.companyOnly
     ? ["labels", "sort", "job"]
     : ["q", "labels", "role", "ats", "posted", "has_salary", "sort", "job"];
   for (const key of keys) {
-    const v = sp.get(key);
+    const v = sp.get(key) || opts?.defaults?.[key] || "";
     if (v) next.set(key, v);
   }
   if (opts?.companySlug) next.set("company", opts.companySlug);
+  // Keep pages large enough for smooth infinite scroll.
+  if (!next.get("limit")) next.set("limit", "40");
   return next.toString();
 }
 
@@ -192,7 +207,8 @@ export function DashboardJobs({
 
   const qsKey = searchParams.toString();
 
-  const labelsDefault = prefs.defaultLabels.join(",");
+  // Jobs tab lists the full corpus by default; eligibility filter can narrow it.
+  const labelsDefault = ALL_LABELS_VALUE;
   const roleDefault =
     prefs.defaultRoles.length === 1 ? prefs.defaultRoles[0]! : "";
   const hasSalaryDefault = prefs.hideNoSalary ? "true" : "";
@@ -204,6 +220,17 @@ export function DashboardJobs({
   const hasSalary = searchParams.get("has_salary") ?? hasSalaryDefault;
   const sort = searchParams.get("sort") ?? "newest";
   const jobId = searchParams.get("job");
+
+  const queryDefaults = useMemo(
+    () => ({
+      labels: labelsDefault,
+      role: roleDefault,
+      has_salary: hasSalaryDefault,
+      posted: "all",
+      sort: "newest",
+    }),
+    [labelsDefault, roleDefault, hasSalaryDefault],
+  );
 
   const patchParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -256,6 +283,7 @@ export function DashboardJobs({
           buildQuery(searchParams, {
             companySlug,
             companyOnly: Boolean(companySlug),
+            defaults: queryDefaults,
           }),
         );
         sp.delete("job");
@@ -316,6 +344,7 @@ export function DashboardJobs({
         buildQuery(searchParams, {
           companySlug,
           companyOnly: Boolean(companySlug),
+          defaults: queryDefaults,
         }),
       );
       sp.delete("job");
@@ -595,28 +624,19 @@ export function DashboardJobs({
           )}
 
           {nextCursor ? (
-            <div ref={loadMoreRef} className="py-6 text-center">
-              <button
-                type="button"
-                disabled={loadingMore}
-                onClick={() => void loadMore()}
-                className="text-[12px] font-semibold uppercase tracking-[0.06em] text-mute transition hover:text-mark-deep disabled:opacity-40"
-              >
-                {loadingMore ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark" />
-                    <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:120ms]" />
-                    <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:240ms]" />
-                  </span>
-                ) : (
-                  "Load more"
-                )}
-              </button>
+            <div ref={loadMoreRef} className="flex justify-center py-8" aria-hidden>
+              {loadingMore ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark" />
+                  <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:120ms]" />
+                  <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark [animation-delay:240ms]" />
+                </span>
+              ) : (
+                <span className="h-1 w-1 rounded-full bg-transparent" />
+              )}
             </div>
           ) : items.length > 0 ? (
-            <p className="py-6 text-center text-[12px] text-mute/70">
-              End of results
-            </p>
+            <div className="h-10" aria-hidden />
           ) : null}
         </div>
 
