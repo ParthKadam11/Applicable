@@ -38,8 +38,8 @@ export function WaitlistForm() {
       setStatus("ok");
       setMessage(
         data.already
-          ? "You’re already on the list."
-          : "You’re on the list. We’ll be in touch.",
+          ? "You're already on the list."
+          : "You're on the list. We'll be in touch.",
       );
       setEmail("");
     } catch {
@@ -50,12 +50,11 @@ export function WaitlistForm() {
 
   if (status === "ok") {
     return (
-      <div
-        className="rounded-2xl border border-line bg-paper-2/90 px-5 py-5 text-left shadow-[0_16px_40px_-28px_color-mix(in_srgb,var(--ink)_18%,transparent)]"
-        role="status"
-      >
-        <p className="text-[14px] font-medium text-ink">{message}</p>
-        <p className="mt-1.5 text-[13px] text-mute">
+      <div className="px-1 text-center" role="status">
+        <p className="font-display text-[15px] font-semibold tracking-tight text-ink">
+          {message}
+        </p>
+        <p className="mt-2 text-[13px] leading-relaxed text-mute">
           Watch your inbox — no spam, just the invite.
         </p>
       </div>
@@ -63,11 +62,11 @@ export function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="w-full text-left" noValidate>
+    <form onSubmit={onSubmit} className="w-full" noValidate>
       <label htmlFor="waitlist-email" className="sr-only">
         Email
       </label>
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-stretch sm:gap-2">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:gap-2.5">
         <input
           id="waitlist-email"
           name="email"
@@ -85,25 +84,30 @@ export function WaitlistForm() {
           }}
           placeholder="you@email.com"
           disabled={status === "loading"}
-          className="min-h-11 w-full flex-1 rounded-full border border-line bg-paper-2 px-4 text-[14px] text-ink outline-none placeholder:text-mute/70 transition focus:border-mark focus:ring-2 focus:ring-mark/25 disabled:opacity-60"
+          className="min-h-12 w-full flex-1 rounded-full border border-line bg-paper-2/95 px-5 text-[15px] tracking-[-0.01em] text-ink shadow-[0_8px_24px_-18px_color-mix(in_srgb,var(--ink)_28%,transparent)] outline-none placeholder:text-mute/65 transition focus:border-mark focus:ring-2 focus:ring-mark/25 disabled:opacity-60"
         />
-        <button
-          type="submit"
-          disabled={status === "loading"}
-          className="btn-ink min-h-11 shrink-0 touch-manipulation sm:min-w-[9.5rem]"
-        >
-          {status === "loading" ? "Joining…" : "Join waitlist"}
-        </button>
+        <div className="flex w-full flex-col sm:w-auto sm:items-end">
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="btn-ink min-h-12 w-full shrink-0 touch-manipulation px-6 sm:w-auto sm:min-w-[11rem]"
+          >
+            {status === "loading" ? "Joining…" : "Join waitlist"}
+          </button>
+          {message && status === "error" ? (
+            <p
+              className="mt-2 text-center text-[11px] tracking-wide text-danger sm:pr-1 sm:text-right"
+              role="alert"
+            >
+              {message}
+            </p>
+          ) : (
+            <p className="mt-2 text-center text-[11px] tracking-wide text-mute sm:pr-1 sm:text-right">
+              No spam. Unsubscribe anytime.
+            </p>
+          )}
+        </div>
       </div>
-      {message && status === "error" ? (
-        <p className="mt-2.5 px-1 text-[12px] text-danger" role="alert">
-          {message}
-        </p>
-      ) : (
-        <p className="mt-2.5 px-1 text-[12px] text-mute">
-          No spam. Unsubscribe anytime.
-        </p>
-      )}
     </form>
   );
 }

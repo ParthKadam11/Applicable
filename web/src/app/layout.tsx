@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces } from "next/font/google";
+import { headers } from "next/headers";
 import { FontLoader } from "@/components/font-loader";
 import { AppSessionProvider } from "@/components/session-provider";
 import { SITE_URL } from "@/lib/constants";
@@ -49,11 +50,22 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const h = await headers();
+  const host = (
+    h.get("x-forwarded-host") ||
+    h.get("host") ||
+    ""
+  ).toLowerCase();
+  // Waitlist subdomain must not mount next-auth — AUTH_URL is the main site
+  // and a failed /api/auth/session can crash SessionProvider on the client.
+  const isWaitlistHost =
+    h.get("x-joinwaitlist") === "1" || host.startsWith("joinwaitlist.");
+
   return (
     <html lang="en" className={`${fraunces.variable} font-sans`}>
       <head>
@@ -67,7 +79,11 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <FontLoader />
-        <AppSessionProvider>{children}</AppSessionProvider>
+        {isWaitlistHost ? (
+          children
+        ) : (
+          <AppSessionProvider>{children}</AppSessionProvider>
+        )}
       </body>
     </html>
   );

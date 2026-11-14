@@ -19,7 +19,11 @@ export function middleware(req: NextRequest) {
     const url = req.nextUrl.clone();
     url.pathname = "/waitlist";
     url.protocol = "http:";
-    return NextResponse.rewrite(url);
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-joinwaitlist", "1");
+    return NextResponse.rewrite(url, {
+      request: { headers: requestHeaders },
+    });
   }
 
   return NextResponse.next();

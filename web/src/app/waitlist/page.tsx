@@ -32,17 +32,17 @@ export default function WaitlistPage() {
         <div className="waitlist-in relative flex w-full max-w-md flex-col items-center text-center">
           <div className="hero-readability" aria-hidden />
 
-          <div className="relative flex items-center gap-2.5 sm:gap-3">
+          <div className="relative flex items-center gap-3.5 sm:gap-4">
             <BrandLogo
-              size={32}
-              className="rounded-[8px] shadow-[0_10px_28px_-14px_color-mix(in_srgb,var(--mark-deep)_50%,transparent)] sm:rounded-[9px]"
+              size={56}
+              className="rounded-[14px] shadow-[0_16px_36px_-16px_color-mix(in_srgb,var(--mark-deep)_55%,transparent)] sm:rounded-[16px]"
             />
-            <p className="font-display text-[16px] font-semibold tracking-[-0.02em] text-ink sm:text-[17px]">
+            <p className="font-display text-[1.85rem] font-semibold leading-none tracking-[-0.035em] text-ink sm:text-[2.15rem]">
               Applicable
             </p>
           </div>
 
-          <h1 className="font-hero relative mt-12 text-[1.75rem] font-medium italic leading-[1.15] tracking-[-0.035em] text-ink sm:mt-14 sm:text-[2.15rem]">
+          <h1 className="font-hero relative mt-10 text-[1.55rem] font-medium italic leading-[1.15] tracking-[-0.035em] text-ink sm:mt-12 sm:text-[1.85rem]">
             Get early access
           </h1>
 
