@@ -41,13 +41,13 @@ export default function WaitlistPage() {
             </p>
           </div>
 
-          <h1 className="font-hero mt-8 max-w-[18rem] text-[1.85rem] leading-[1.15] tracking-[-0.02em] text-ink xs:max-w-[20rem] sm:mt-9 sm:max-w-md sm:text-[2.35rem]">
-            Get early access
+          <h1 className="font-hero mt-8 max-w-[20rem] text-[1.65rem] leading-[1.18] tracking-[-0.02em] text-ink xs:max-w-[22rem] sm:mt-9 sm:max-w-lg sm:text-[2.1rem]">
+            Stop applying to &lsquo;remote&rsquo; jobs that aren&rsquo;t open
+            to India.
           </h1>
 
           <p className="mt-4 max-w-[18rem] text-[14px] leading-relaxed text-mute sm:mt-5 sm:max-w-sm sm:text-[15px]">
-            Remote jobs that actually hire from India — with proof from every
-            posting. We’re opening soon.
+            We’re opening access soon. Leave your email for early entry.
           </p>
 
           <div className="mt-8 w-full max-w-sm sm:mt-10">
