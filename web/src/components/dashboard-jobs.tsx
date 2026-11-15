@@ -22,8 +22,14 @@ import {
 
 const ALL_LABELS_VALUE =
   "open,india_remote,india_onsite,region_locked,unclear";
+const DEFAULT_LABELS_VALUE = "open,india_remote,india_onsite";
 
 const LABEL_OPTIONS = [
+  {
+    value: DEFAULT_LABELS_VALUE,
+    label: "Can apply",
+    hint: "Worldwide open + India remote/onsite",
+  },
   {
     value: ALL_LABELS_VALUE,
     label: "All",
@@ -31,7 +37,7 @@ const LABEL_OPTIONS = [
   },
   {
     value: "open,india_remote",
-    label: "Open + India",
+    label: "Open + India remote",
     hint: "Worldwide open and India-remote roles",
   },
   {
@@ -207,8 +213,11 @@ export function DashboardJobs({
 
   const qsKey = searchParams.toString();
 
-  // Jobs tab lists the full corpus by default; eligibility filter can narrow it.
-  const labelsDefault = ALL_LABELS_VALUE;
+  // Default: roles an India applicant can act on (prefs override when set).
+  const labelsDefault =
+    prefs.defaultLabels?.length > 0
+      ? prefs.defaultLabels.join(",")
+      : DEFAULT_LABELS_VALUE;
   const roleDefault =
     prefs.defaultRoles.length === 1 ? prefs.defaultRoles[0]! : "";
   const hasSalaryDefault = prefs.hideNoSalary ? "true" : "";

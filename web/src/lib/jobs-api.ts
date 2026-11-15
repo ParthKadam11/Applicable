@@ -278,6 +278,9 @@ export async function listJobs(q: JobsListQuery): Promise<{
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
     .where(and(...(await baseConditions(q))));
 
+  // Over-fetch then diversity-cap (max 3/company) so one ATS board can't flood a page.
+  const maxPerCompany = 3;
+  const fetchN = Math.min(500, Math.max(q.limit * 8, q.limit + 50));
   const rows = await db
     .select({
       id: jobs.id,
@@ -302,10 +305,20 @@ export async function listJobs(q: JobsListQuery): Promise<{
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
     .where(where)
     .orderBy(...orderBy)
-    .limit(q.limit + 1);
+    .limit(fetchN);
 
-  const hasMore = rows.length > q.limit;
-  const page = hasMore ? rows.slice(0, q.limit) : rows;
+  const perCompany = new Map<string, number>();
+  const diversified: typeof rows = [];
+  for (const r of rows) {
+    const n = perCompany.get(r.companyId) ?? 0;
+    if (n >= maxPerCompany) continue;
+    perCompany.set(r.companyId, n + 1);
+    diversified.push(r);
+    if (diversified.length >= q.limit + 1) break;
+  }
+
+  const hasMore = diversified.length > q.limit;
+  const page = hasMore ? diversified.slice(0, q.limit) : diversified;
   const items = page.map(mapRow);
 
   let nextCursor: string | null = null;

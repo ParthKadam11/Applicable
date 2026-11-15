@@ -27,12 +27,19 @@ export const AtsSchema = z.enum(["ashby", "greenhouse", "lever"]);
 export const PostedSchema = z.enum(["24h", "7d", "30d", "all"]);
 export const SortSchema = z.enum(["newest", "last_seen", "company"]);
 
+/** Default list: roles an India applicant can act on (not region_locked/unclear). */
+export const DEFAULT_JOB_LABELS = [
+  "open",
+  "india_remote",
+  "india_onsite",
+] as const satisfies ReadonlyArray<z.infer<typeof LabelSchema>>;
+
 export const JobsFilterFieldsSchema = z.object({
   q: z.string().trim().max(200).optional(),
   labels: z
     .array(LabelSchema)
     .min(1)
-    .default([...LabelSchema.options]),
+    .default([...DEFAULT_JOB_LABELS]),
   role: RoleSchema.optional(),
   /** Multi-role filter (from preferences.defaultRoles when URL has no role). */
   roles: z.array(RoleSchema).min(1).optional(),

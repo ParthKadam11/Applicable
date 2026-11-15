@@ -17,6 +17,17 @@ describe("MCP input schemas", () => {
     expect(() => SearchJobsInputSchema.parse({ limit: 51 })).toThrow();
   });
 
+  it("accepts role_keywords array and location", () => {
+    const parsed = SearchJobsInputSchema.parse({
+      query: "backend",
+      role_keywords: ["typescript", "node"],
+      location: "Bangalore",
+      limit: 5,
+    });
+    expect(parsed.role_keywords).toBe("typescript node");
+    expect(parsed.location).toBe("Bangalore");
+  });
+
   it("get_job requires uuid", () => {
     expect(() => GetJobInputSchema.parse({ id: "nope" })).toThrow();
     expect(

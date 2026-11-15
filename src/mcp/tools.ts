@@ -105,29 +105,57 @@ export async function searchJobs(db: Db, raw: SearchInput) {
   const limit = raw.limit ?? 20;
   const offset = decodeCursor(raw.cursor);
   const maxPerCompany = raw.max_per_company ?? 3;
+  const roleKeywords = Array.isArray(raw.role_keywords)
+    ? raw.role_keywords.join(" ")
+    : raw.role_keywords;
 
   const conditions = [
     techOpenBase(),
     inArray(jobTags.indiaEligibility, eligibility),
   ];
 
-  const searchText = [raw.query, raw.role_keywords]
+  const searchText = [raw.query, roleKeywords]
     .filter((s): s is string => Boolean(s?.trim()))
     .join(" ")
     .trim();
 
-  // Title+description match; title hits ranked higher via CASE in ORDER BY.
+  // Tokenize query/keywords; match ANY token in title OR description (not a phrase AND).
+  // Title hits ranked higher via CASE in ORDER BY.
   if (searchText) {
-    const needle = `%${searchText.replace(/[%_]/g, "\\$&")}%`;
-    conditions.push(
-      or(
+    const tokens = searchText
+      .split(/[\s,]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 1)
+      .slice(0, 8);
+    const tokenConds = (tokens.length > 0 ? tokens : [searchText]).map((tok) => {
+      const needle = `%${tok.replace(/[%_]/g, "\\$&")}%`;
+      return or(
         ilike(jobs.title, needle),
         ilike(jobs.descriptionText, needle),
-      )!,
-    );
+      )!;
+    });
+    conditions.push(or(...tokenConds)!);
   }
   if (raw.company) {
     conditions.push(ilike(companies.name, `%${raw.company}%`));
+  }
+  if (raw.location?.trim()) {
+    const loc = raw.location.trim();
+    // Common India city aliases (Bangalore ↔ Bengaluru).
+    const aliases = [loc];
+    if (/^bangalore$/i.test(loc)) aliases.push("Bengaluru");
+    if (/^bengaluru$/i.test(loc)) aliases.push("Bangalore");
+    if (/^bombay$/i.test(loc)) aliases.push("Mumbai");
+    if (/^mumbai$/i.test(loc)) aliases.push("Bombay");
+    if (/^madras$/i.test(loc)) aliases.push("Chennai");
+    if (/^chennai$/i.test(loc)) aliases.push("Madras");
+    if (/^calcutta$/i.test(loc)) aliases.push("Kolkata");
+    if (/^kolkata$/i.test(loc)) aliases.push("Calcutta");
+    conditions.push(
+      or(
+        ...aliases.map((a) => ilike(jobs.locationRaw, `%${a}%`)),
+      )!,
+    );
   }
   if (raw.posted_within_days) {
     const since = new Date(
@@ -149,13 +177,25 @@ export async function searchJobs(db: Db, raw: SearchInput) {
   const fetchN =
     maxPerCompany > 0 ? Math.min(500, Math.max(limit * 8, offset + 50)) : limit + 1;
 
-  const orderBy = searchText
-    ? [
-        sql`case when ${jobs.title} ilike ${'%' + searchText + '%'} then 0 else 1 end`,
-        desc(jobs.postedAt),
-        desc(jobs.lastSeenAt),
-      ]
-    : [desc(jobs.postedAt), desc(jobs.lastSeenAt)];
+  const titleTokens = searchText
+    ? searchText
+        .split(/[\s,]+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 1)
+        .slice(0, 8)
+    : [];
+  const orderBy =
+    titleTokens.length > 0
+      ? [
+          sql`case when ${or(
+            ...titleTokens.map(
+              (tok) => ilike(jobs.title, `%${tok.replace(/[%_]/g, "\\$&")}%`),
+            ),
+          )} then 0 else 1 end`,
+          desc(jobs.postedAt),
+          desc(jobs.lastSeenAt),
+        ]
+      : [desc(jobs.postedAt), desc(jobs.lastSeenAt)];
 
   const rows = await db
     .select({

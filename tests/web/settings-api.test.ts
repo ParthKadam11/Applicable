@@ -153,8 +153,6 @@ describe("preferences schema", () => {
       "open",
       "india_remote",
       "india_onsite",
-      "region_locked",
-      "unclear",
     ]);
     expect(p.defaultRoles).toEqual([]);
     expect(p.hideNoSalary).toBe(false);
@@ -162,8 +160,6 @@ describe("preferences schema", () => {
       "open",
       "india_remote",
       "india_onsite",
-      "region_locked",
-      "unclear",
     ]);
   });
 
@@ -260,13 +256,11 @@ describe("preferences + token + export + delete (db)", () => {
   it("PATCH preferences and GET defaults", async ({ skip }) => {
     if (!dbUp) skip();
     const before = await getPreferences(userA);
-    // Defaults match jobs-filters ALL_LABELS (all eligibility labels).
+    // Defaults: open + india_remote + india_onsite (actionable for India applicants).
     expect(before.defaultLabels).toEqual([
       "open",
       "india_remote",
       "india_onsite",
-      "region_locked",
-      "unclear",
     ]);
 
     const updated = await updatePreferences(userA, {

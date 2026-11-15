@@ -26,17 +26,26 @@ export const SearchJobsInputSchema = z.object({
       "India eligibility labels to include. Default: open + india_remote",
     ),
   role_keywords: z
-    .string()
-    .min(1)
+    .union([
+      z.string().min(1),
+      z.array(z.string().min(1)).min(1).transform((a) => a.join(" ")),
+    ])
     .optional()
     .describe(
-      "Optional keywords matched against title + description (e.g. backend, SRE)",
+      "Optional keywords matched against title + description (string or string[])",
     ),
   company: z
     .string()
     .min(1)
     .optional()
     .describe("Filter by company name (case-insensitive substring)"),
+  location: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Filter by location_raw substring (e.g. Bangalore, India, Remote)",
+    ),
   posted_within_days: z
     .number()
     .int()

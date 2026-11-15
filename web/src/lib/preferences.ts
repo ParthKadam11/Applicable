@@ -1,11 +1,18 @@
 import { z } from "zod";
-import { ALL_LABELS, LabelSchema, RoleSchema } from "@/lib/jobs-filters";
+import { LabelSchema, RoleSchema } from "@/lib/jobs-filters";
+
+/** Default browse: jobs an India applicant can usefully act on. */
+export const DEFAULT_BROWSE_LABELS = [
+  "open",
+  "india_remote",
+  "india_onsite",
+] as const satisfies ReadonlyArray<z.infer<typeof LabelSchema>>;
 
 export const UserPreferencesSchema = z.object({
   defaultLabels: z
     .array(LabelSchema)
     .min(1)
-    .default([...ALL_LABELS]),
+    .default([...DEFAULT_BROWSE_LABELS]),
   defaultRoles: z.array(RoleSchema).default([]),
   hideNoSalary: z.boolean().default(false),
 });
@@ -13,7 +20,7 @@ export const UserPreferencesSchema = z.object({
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  defaultLabels: [...ALL_LABELS],
+  defaultLabels: [...DEFAULT_BROWSE_LABELS],
   defaultRoles: [],
   hideNoSalary: false,
 };

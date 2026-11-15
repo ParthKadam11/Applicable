@@ -72,7 +72,25 @@ describe("classifyLocationRaw", () => {
     );
   });
 
-  it("ignores bare Remote", () => {
+  
+  it("locks Espoo/Bellevue/Lausanne/NYC/Kosovo location_raw", () => {
+    for (const loc of [
+      "Espoo",
+      "Bellevue, WA",
+      "Lausanne",
+      "NYC Office",
+      "Kosovo",
+      "Honduras",
+      "NY, SF or Remote",
+    ]) {
+      expect(
+        classifyLocationRaw(loc)?.india_eligibility,
+        loc,
+      ).toBe("region_locked");
+    }
+  });
+
+it("ignores bare Remote", () => {
     expect(classifyLocationRaw("Remote")).toBeNull();
   });
 });
