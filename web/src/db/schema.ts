@@ -38,6 +38,8 @@ export const users = pgTable(
     name: text("name"),
     avatarUrl: text("avatar_url"),
     preferences: jsonb("preferences").$type<Record<string, unknown>>().notNull().default({}),
+    /** Set when the dashboard onboarding modal is dismissed. */
+    onboardingSeenAt: timestamp("onboarding_seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

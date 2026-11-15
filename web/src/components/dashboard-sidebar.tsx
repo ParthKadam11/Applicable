@@ -17,6 +17,7 @@ import {
 import { BrandLogo } from "@/components/brand-logo";
 import { AgentLogo } from "@/components/agent-logo";
 import { Skel } from "@/components/ui/skeleton";
+import { openOnboardingModal } from "@/lib/onboarding";
 
 type TabItem = {
   href: string;
@@ -284,8 +285,18 @@ function AccountBlock({ onNavigate }: { onNavigate?: () => void }) {
       </div>
       <button
         type="button"
+        onClick={(e) => {
+          onNavigate?.();
+          openOnboardingModal(e.currentTarget);
+        }}
+        className="mt-1 w-full rounded-lg px-3 py-2 text-left text-[12px] font-medium text-mark-deep transition hover:bg-white/70 hover:text-ink"
+      >
+        Connect your AI
+      </button>
+      <button
+        type="button"
         onClick={() => void signOut({ callbackUrl: "/" })}
-        className="mt-1 w-full rounded-lg px-3 py-2 text-left text-[12px] text-mute transition hover:bg-white/70 hover:text-ink"
+        className="mt-0.5 w-full rounded-lg px-3 py-2 text-left text-[12px] text-mute transition hover:bg-white/70 hover:text-ink"
       >
         Sign out
       </button>

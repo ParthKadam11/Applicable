@@ -269,6 +269,8 @@ export const users = pgTable(
     avatarUrl: text("avatar_url"),
     /** Jobs / AI Search defaults. Shape validated in web preferences Zod. */
     preferences: jsonb("preferences").$type<Record<string, unknown>>().notNull().default({}),
+    /** Set when the dashboard onboarding modal is dismissed. */
+    onboardingSeenAt: timestamp("onboarding_seen_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

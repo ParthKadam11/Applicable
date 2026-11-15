@@ -438,6 +438,15 @@ button:focus-visible {
   color: var(--ink);
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Integration diagram - restrained, metallic motion (not brand-colored) */
 @keyframes rail-shimmer {
   0% {

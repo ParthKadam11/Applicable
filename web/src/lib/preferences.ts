@@ -15,6 +15,8 @@ export const UserPreferencesSchema = z.object({
     .default([...DEFAULT_BROWSE_LABELS]),
   defaultRoles: z.array(RoleSchema).default([]),
   hideNoSalary: z.boolean().default(false),
+  /** Free-text skills for matching / onboarding chips. */
+  skills: z.array(z.string().trim().min(1).max(40)).max(40).default([]),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
@@ -23,6 +25,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   defaultLabels: [...DEFAULT_BROWSE_LABELS],
   defaultRoles: [],
   hideNoSalary: false,
+  skills: [],
 };
 
 /** Coerce stored jsonb (possibly partial / empty) into validated preferences. */
@@ -39,6 +42,7 @@ export const PatchPreferencesSchema = z
     defaultLabels: z.array(LabelSchema).min(1).optional(),
     defaultRoles: z.array(RoleSchema).optional(),
     hideNoSalary: z.boolean().optional(),
+    skills: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
   })
   .strict();
 

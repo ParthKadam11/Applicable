@@ -108,6 +108,8 @@ function MenuRow({
 
 function ConnectAiPanel({ onDone }: { onDone?: () => void }) {
   const [tokens, setTokens] = useState<McpTokenPublic[] | null>(null);
+  const pathname = usePathname() || "/";
+  const onDashboard = pathname.startsWith("/dashboard");
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +138,18 @@ function ConnectAiPanel({ onDone }: { onDone?: () => void }) {
       <p className="text-[11px] font-semibold uppercase tracking-wide text-mute">
         Connect your AI
       </p>
+      {onDashboard ? (
+        <button
+          type="button"
+          onClick={() => {
+            onDone?.();
+            void import("@/lib/onboarding").then((m) => m.openOnboardingModal());
+          }}
+          className="mt-2 w-full rounded-xl bg-mark px-3 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-ink transition hover:bg-mark-deep hover:text-white"
+        >
+          Open quick start
+        </button>
+      ) : null}
       <div className="mt-2 flex items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-md border border-line bg-paper px-2 py-1 text-[10px] text-ink">
           {MCP_ENDPOINT}

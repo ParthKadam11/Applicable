@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { OnboardingHost } from "@/components/onboarding-modal";
 import { authHref } from "@/lib/nav";
 
 /** App shell — signed-in only. */
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
+      <OnboardingHost />
     </div>
   );
 }

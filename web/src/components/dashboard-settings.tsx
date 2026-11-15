@@ -339,6 +339,74 @@ export function DashboardSettings() {
         </div>
       </section>
 
+      {/* Skills */}
+      <section
+        id="skills"
+        className="scroll-mt-24 space-y-3 border-b border-line/80 pb-5"
+      >
+        <div>
+          <h2 className="font-display text-lg tracking-tight text-ink">
+            Skills
+          </h2>
+          <p className="mt-1 text-[13px] text-mute">
+            Optional chips used for better job matches in AI search.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {prefs.skills.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                const next = {
+                  ...prefs,
+                  skills: prefs.skills.filter((x) => x !== s),
+                };
+                setPrefs(next);
+                void savePrefs(next);
+              }}
+              className="rounded-full border border-line bg-white px-2.5 py-1 text-[12px] font-medium text-ink transition hover:border-danger hover:text-danger"
+              title="Remove skill"
+            >
+              {s} ×
+            </button>
+          ))}
+        </div>
+        <form
+          className="flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            const raw = String(fd.get("skill") ?? "").trim();
+            if (!raw) return;
+            if (prefs.skills.some((s) => s.toLowerCase() === raw.toLowerCase())) {
+              e.currentTarget.reset();
+              return;
+            }
+            const next = {
+              ...prefs,
+              skills: [...prefs.skills, raw].slice(0, 40),
+            };
+            setPrefs(next);
+            void savePrefs(next);
+            e.currentTarget.reset();
+          }}
+        >
+          <input
+            name="skill"
+            maxLength={40}
+            placeholder="Add a skill (e.g. Python)"
+            className="min-w-[12rem] flex-1 border-0 border-b border-line bg-transparent pb-2 text-[14px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
+          />
+          <button
+            type="submit"
+            className="text-[11px] font-semibold uppercase tracking-[0.06em] text-mark-deep transition hover:text-ink"
+          >
+            + Add
+          </button>
+        </form>
+      </section>
+
       {/* Preferences */}
       <section className="space-y-3 border-b border-line/80 pb-5">
         <div className="flex flex-wrap items-end justify-between gap-3">

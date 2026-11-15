@@ -229,6 +229,7 @@ export async function getUserProfile(userId: string) {
       avatarUrl: users.avatarUrl,
       createdAt: users.createdAt,
       preferences: users.preferences,
+      onboardingSeenAt: users.onboardingSeenAt,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -241,7 +242,46 @@ export async function getUserProfile(userId: string) {
     avatarUrl: row.avatarUrl,
     createdAt: row.createdAt.toISOString(),
     preferences: normalizePreferences(row.preferences),
+    onboardingSeenAt: row.onboardingSeenAt?.toISOString() ?? null,
   };
+}
+
+export async function getOnboardingState(userId: string): Promise<{
+  seen: boolean;
+  seenAt: string | null;
+  skills: string[];
+}> {
+  const [row] = await db
+    .select({
+      onboardingSeenAt: users.onboardingSeenAt,
+      preferences: users.preferences,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row) {
+    return { seen: false, seenAt: null, skills: [] };
+  }
+  const prefs = normalizePreferences(row.preferences);
+  return {
+    seen: row.onboardingSeenAt != null,
+    seenAt: row.onboardingSeenAt?.toISOString() ?? null,
+    skills: prefs.skills,
+  };
+}
+
+export async function markOnboardingSeen(
+  userId: string,
+): Promise<{ seenAt: string } | null> {
+  const now = new Date();
+  const updated = await db
+    .update(users)
+    .set({ onboardingSeenAt: now })
+    .where(eq(users.id, userId))
+    .returning({ onboardingSeenAt: users.onboardingSeenAt });
+  const at = updated[0]?.onboardingSeenAt;
+  if (!at) return null;
+  return { seenAt: at.toISOString() };
 }
 
 export async function getPreferences(userId: string): Promise<UserPreferences> {
