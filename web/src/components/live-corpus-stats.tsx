@@ -72,16 +72,16 @@ export function LiveCorpusStats({ stats, updatedLabel }: Props) {
 
   return (
     <div ref={ref}>
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-4">
         {stats.map((s) => (
           <div
             key={s.key}
-            className="bg-white px-4 py-5 sm:px-5 sm:py-6"
+            className="min-w-0 bg-white px-3 py-4 xs:px-4 xs:py-5 sm:px-5 sm:py-6"
           >
             <p className="text-[10px] font-semibold uppercase tracking-wide text-mute">
               {s.label}
             </p>
-            <p className="mt-2 font-display text-2xl text-ink sm:text-[1.75rem]">
+            <p className="mt-2 truncate font-display text-[1.35rem] text-ink xs:text-2xl sm:text-[1.75rem]">
               <CountUp value={s.value} active={active} />
             </p>
           </div>

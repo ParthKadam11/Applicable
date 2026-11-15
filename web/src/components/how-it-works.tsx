@@ -21,7 +21,7 @@ export function HowItWorks() {
       className="cv-auto scroll-mt-24 border-b border-line bg-soft"
     >
       <div className="mx-auto max-w-6xl px-4 pb-14 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <h2 className="max-w-2xl text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
+        <h2 className="max-w-2xl text-balance font-display text-[1.65rem] leading-[1.15] text-ink xs:text-[1.75rem] sm:text-4xl">
           What Applicable actually does
         </h2>
 
@@ -34,7 +34,7 @@ export function HowItWorks() {
               <h3 className="mt-3 font-display text-xl leading-snug text-ink sm:text-[1.35rem]">
                 {step.title}
               </h3>
-              <p className="mt-2 max-w-[17rem] text-pretty text-sm leading-relaxed text-mute">
+              <p className="mt-2 max-w-none text-pretty text-sm leading-relaxed text-mute sm:max-w-[17rem]">
                 {step.body}
               </p>
             </li>

@@ -323,7 +323,7 @@ export function SiteNav({ initialUser }: Props) {
         }`}
       >
         <GlassLayers scrolled={scrolled} />
-        <div className="relative z-10 mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-8 sm:py-3">
+        <div className="relative z-10 mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 xs:gap-3 sm:px-8 sm:py-3">
           <Link
             href="/"
             className="flex min-w-0 items-center gap-2 font-display text-[16px] tracking-tight text-ink sm:gap-2.5 sm:text-[17px]"
@@ -335,7 +335,7 @@ export function SiteNav({ initialUser }: Props) {
             <span className="truncate">Applicable</span>
           </Link>
 
-          <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
+          <div className="ml-auto flex shrink-0 items-center gap-2 xs:gap-3 sm:gap-4">
             <HowItWorksLink className="hidden text-[13px] font-normal text-mute transition hover:text-ink md:inline" />
 
             {GITHUB_PUBLIC ? (
@@ -352,7 +352,7 @@ export function SiteNav({ initialUser }: Props) {
 
             {awaitingAvatar ? (
               <span
-                className="hidden md:inline-flex"
+                className="inline-flex"
                 aria-hidden
                 aria-label="Loading account"
               >
@@ -378,20 +378,12 @@ export function SiteNav({ initialUser }: Props) {
                 ) : null}
               </div>
             ) : (
-              <div className="hidden items-center gap-1.5 md:flex">
-                <Link
-                  href={browseHref}
-                  className="inline-flex min-h-9 items-center rounded-full border border-line bg-white px-3 text-[11px] font-semibold uppercase tracking-wide text-ink transition hover:border-mark hover:bg-mark-soft"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href={browseHref}
-                  className="inline-flex min-h-9 items-center rounded-full bg-mark px-3.5 text-[11px] font-semibold uppercase tracking-wide text-ink shadow-[0_6px_18px_color-mix(in_srgb,var(--mark)_35%,transparent)] transition hover:bg-mark-deep hover:text-white"
-                >
-                  Browse jobs
-                </Link>
-              </div>
+              <Link
+                href={browseHref}
+                className="inline-flex min-h-9 items-center rounded-full bg-mark px-3 text-[11px] font-semibold uppercase tracking-wide text-ink shadow-[0_6px_18px_color-mix(in_srgb,var(--mark)_35%,transparent)] transition hover:bg-mark-deep hover:text-white sm:px-3.5"
+              >
+                Browse jobs
+              </Link>
             )}
 
             <button
@@ -510,22 +502,13 @@ export function SiteNav({ initialUser }: Props) {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <Link
-                    href={browseHref}
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white text-[12px] font-semibold uppercase tracking-wide text-ink"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href={browseHref}
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-mark text-[12px] font-semibold uppercase tracking-wide text-ink"
-                  >
-                    Browse jobs
-                  </Link>
-                </div>
+                <Link
+                  href={browseHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-mark text-[12px] font-semibold uppercase tracking-wide text-ink"
+                >
+                  Browse jobs
+                </Link>
               )}
             </div>
           </div>

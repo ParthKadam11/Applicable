@@ -166,7 +166,7 @@ export function McpSetup() {
           <p className="text-[11px] uppercase tracking-wide text-mute">
             Integrations
           </p>
-          <h2 className="mt-3 text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
+          <h2 className="mt-3 text-balance font-display text-[1.65rem] leading-[1.15] text-ink xs:text-[1.75rem] sm:text-4xl">
             Plug into the agent you already use
           </h2>
           <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
@@ -190,14 +190,14 @@ export function McpSetup() {
                 role="tab"
                 aria-selected={on}
                 onClick={() => setActive(item.id)}
-                className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition touch-manipulation ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[13px] transition touch-manipulation xs:gap-2 xs:px-3.5 xs:py-2 xs:text-sm ${
                   on
                     ? "border-mark bg-mark text-ink shadow-[0_4px_14px_color-mix(in_srgb,var(--mark)_35%,transparent)]"
                     : "border-line bg-white text-mute hover:border-mark hover:bg-mark-soft hover:text-ink"
                 }`}
               >
-                <span className="overflow-hidden rounded-md">
-                  <AgentLogo id={item.id} label={item.label} size="sm" />
+                <span className="inline-flex size-5 shrink-0 overflow-hidden rounded-md">
+                  <AgentLogo id={item.id} label={item.label} fill />
                 </span>
                 <span className="whitespace-nowrap">{item.label}</span>
               </button>

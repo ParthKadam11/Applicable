@@ -100,7 +100,7 @@ export async function SiteFooter() {
             </a>
           </div>
 
-          <div className="grid flex-1 grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-8 xs:gap-x-8 lg:grid-cols-4 lg:gap-6">
             <FooterColumn title="Product" links={FOOTER_PRODUCT} />
             <FooterColumn title="For agents" links={FOOTER_AGENTS} />
             <FooterColumn title="Resources" links={resources} />

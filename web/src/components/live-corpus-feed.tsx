@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CompanyLogo } from "@/components/company-logo";
 import type { CorpusCard } from "@/lib/live-corpus";
 
 const FEED_CAP = 12;
@@ -18,41 +19,36 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function Initial({ name }: { name: string }) {
-  const letter = name.trim().charAt(0).toUpperCase() || "?";
-  return (
-    <span
-      className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-soft text-[11px] font-semibold text-ink"
-      aria-hidden
-    >
-      {letter}
-    </span>
-  );
-}
-
 function JobRow({ card }: { card: CorpusCard }) {
   return (
     <Link
       href={card.href}
-      className="group flex gap-3 rounded-xl border border-line/80 bg-white px-3 py-2.5 transition hover:border-mark hover:bg-mark-soft/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mark"
+      className="group flex min-w-0 gap-2.5 rounded-xl border border-line/80 bg-white px-2.5 py-2.5 transition hover:border-mark hover:bg-mark-soft/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mark xs:gap-3 xs:px-3"
     >
-      <Initial name={card.company} />
+      <CompanyLogo
+        company={card.company}
+        website={card.companyWebsite}
+        size={32}
+        className="rounded-lg border border-line bg-soft text-[11px]"
+      />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <span
-            className="shrink-0 rounded-full px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-ink"
+            className="max-w-[55%] shrink-0 truncate rounded-full px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-ink"
             style={{
               background: `color-mix(in srgb, ${card.labelColor} 20%, white)`,
             }}
           >
             {card.label}
           </span>
-          <span className="truncate text-[12px] text-mute">{card.company}</span>
+          <span className="min-w-0 truncate text-[12px] text-mute">
+            {card.company}
+          </span>
         </div>
-        <p className="mt-0.5 truncate text-[13px] font-medium leading-snug text-ink group-hover:text-mark-deep">
+        <p className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-snug text-ink group-hover:text-mark-deep md:truncate">
           {card.title}
         </p>
-        <p className="mt-1 truncate text-[12px] leading-snug text-mute">
+        <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-mute md:truncate">
           <span className="text-ink/80">“{card.quote}”</span>
           <span className="text-line"> · </span>
           <span>{card.postedAgo.replace(/^Posted /i, "")}</span>
@@ -157,11 +153,11 @@ export function LiveCorpusFeed({ cards }: Props) {
           </div>
         </div>
       ) : (
-        <div className="corpus-fade-y relative grid h-[22rem] grid-cols-2 gap-3 overflow-hidden">
-          <div className="overflow-hidden">
+        <div className="corpus-fade-y relative grid h-[20rem] grid-cols-1 gap-3 overflow-hidden md:h-[22rem] md:grid-cols-2">
+          <div className="min-w-0 overflow-hidden">
             <MarqueeColumn cards={left.length ? left : list} />
           </div>
-          <div className="overflow-hidden">
+          <div className="hidden min-w-0 overflow-hidden md:block">
             <MarqueeColumn
               cards={right.length ? right : list}
               reverse

@@ -28,10 +28,10 @@ export function LiveCorpus({ stats, jobs }: Props) {
         <p className="text-[11px] font-semibold uppercase tracking-wide text-mark-deep">
           Live corpus
         </p>
-        <h2 className="mt-2 max-w-2xl text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
+        <h2 className="mt-2 max-w-2xl text-balance font-display text-[1.65rem] leading-[1.15] text-ink xs:text-[1.75rem] sm:text-4xl">
           Real roles. Real quotes. Updated continuously.
         </h2>
-        <p className="mt-3 max-w-xl text-pretty text-[15px] leading-relaxed text-mute">
+        <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-mute sm:text-[15px]">
           A live slice of Applicable’s India-eligibility graph — companies,
           open tech roles, and the line from each posting that proves the label.
         </p>
@@ -45,8 +45,8 @@ export function LiveCorpus({ stats, jobs }: Props) {
         {cards.length > 0 ? (
           <div className="mt-8 sm:mt-10">
             <LiveCorpusFeed cards={cards} />
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-xl text-pretty text-[13px] leading-relaxed text-mute">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <p className="min-w-0 max-w-xl text-pretty text-[13px] leading-relaxed text-mute">
                 Pulled live from company hiring boards. Every label backed by a
                 quote from the posting.
               </p>

@@ -26,7 +26,7 @@ export function HeroCopy() {
               With proof from every posting.
             </p>
 
-            <div className="hero-ctas mt-8 flex w-full max-w-xs flex-col items-stretch gap-2.5 xs:max-w-sm sm:mt-10 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-3">
+            <div className="hero-ctas mt-8 flex w-full max-w-[16.5rem] flex-col items-stretch gap-2.5 xs:max-w-sm sm:mt-10 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-3">
               <BrowseJobsLink className="btn-ink min-h-11 w-full touch-manipulation sm:w-auto sm:min-w-[10.5rem]" />
               <Link
                 href="/#mcp"
