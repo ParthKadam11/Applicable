@@ -54,7 +54,7 @@ import type {
 } from "./schemas.js";
 import { z } from "zod";
 
-type SearchInput = z.infer<typeof SearchJobsInputSchema>;
+type SearchInput = z.input<typeof SearchJobsInputSchema>;
 type GetCompanyInput = z.infer<typeof GetCompanyInputSchema>;
 type FindCompaniesInput = z.infer<typeof FindCompaniesInputSchema>;
 type GetJobInput = z.infer<typeof GetJobInputSchema>;
@@ -104,17 +104,27 @@ export async function searchJobs(db: Db, raw: SearchInput) {
       : DEFAULT_ELIGIBILITY;
   const limit = raw.limit ?? 20;
   const offset = decodeCursor(raw.cursor);
+  const maxPerCompany = raw.max_per_company ?? 3;
 
   const conditions = [
     techOpenBase(),
     inArray(jobTags.indiaEligibility, eligibility),
   ];
 
-  if (raw.query) {
-    conditions.push(ilike(jobs.title, `%${raw.query}%`));
-  }
-  if (raw.role_keywords) {
-    conditions.push(ilike(jobs.title, `%${raw.role_keywords}%`));
+  const searchText = [raw.query, raw.role_keywords]
+    .filter((s): s is string => Boolean(s?.trim()))
+    .join(" ")
+    .trim();
+
+  // Title+description match; title hits ranked higher via CASE in ORDER BY.
+  if (searchText) {
+    const needle = `%${searchText.replace(/[%_]/g, "\\$&")}%`;
+    conditions.push(
+      or(
+        ilike(jobs.title, needle),
+        ilike(jobs.descriptionText, needle),
+      )!,
+    );
   }
   if (raw.company) {
     conditions.push(ilike(companies.name, `%${raw.company}%`));
@@ -126,11 +136,33 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     conditions.push(gte(jobs.postedAt, since));
   }
 
+  const where = and(...conditions);
+
+  const [{ total } = { total: 0 }] = await db
+    .select({ total: countDistinct(jobs.id) })
+    .from(jobs)
+    .innerJoin(companies, eq(companies.id, jobs.companyId))
+    .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+    .where(where);
+
+  // Over-fetch then diversity-cap so a single company can't flood a page.
+  const fetchN =
+    maxPerCompany > 0 ? Math.min(500, Math.max(limit * 8, offset + 50)) : limit + 1;
+
+  const orderBy = searchText
+    ? [
+        sql`case when ${jobs.title} ilike ${'%' + searchText + '%'} then 0 else 1 end`,
+        desc(jobs.postedAt),
+        desc(jobs.lastSeenAt),
+      ]
+    : [desc(jobs.postedAt), desc(jobs.lastSeenAt)];
+
   const rows = await db
     .select({
       id: jobs.id,
       title: jobs.title,
       company: companies.name,
+      companyId: companies.id,
       companyWebsite: companies.website,
       location: jobs.locationRaw,
       eligibility: jobTags.indiaEligibility,
@@ -142,13 +174,26 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     .from(jobs)
     .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-    .where(and(...conditions))
-    .orderBy(desc(jobs.postedAt), desc(jobs.lastSeenAt))
-    .limit(limit + 1)
-    .offset(offset);
+    .where(where)
+    .orderBy(...orderBy)
+    .limit(fetchN)
+    .offset(maxPerCompany > 0 ? 0 : offset);
 
-  const hasMore = rows.length > limit;
-  const page = hasMore ? rows.slice(0, limit) : rows;
+  let ranked = rows;
+  if (maxPerCompany > 0) {
+    const perCompany = new Map<string, number>();
+    const diversified: typeof rows = [];
+    for (const r of rows) {
+      const n = perCompany.get(r.companyId) ?? 0;
+      if (n >= maxPerCompany) continue;
+      perCompany.set(r.companyId, n + 1);
+      diversified.push(r);
+    }
+    ranked = diversified.slice(offset, offset + limit + 1);
+  }
+
+  const hasMore = ranked.length > limit;
+  const page = hasMore ? ranked.slice(0, limit) : ranked;
 
   return {
     results: page.map((r) => ({
@@ -165,6 +210,7 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     })),
     next_cursor: hasMore ? encodeCursor(offset + limit) : null,
     count: page.length,
+    total: Number(total),
   };
 }
 
@@ -361,7 +407,92 @@ export async function findCompanies(db: Db, raw: FindCompaniesInput) {
     );
   }
 
-  let rows = await db
+  // Apply relational filters in SQL first (avoid 200-row prefetch misses).
+  let idFilter: string[] | undefined;
+  const intersect = (ids: string[]) => {
+    if (idFilter === undefined) {
+      idFilter = ids;
+    } else {
+      const allow = new Set(ids);
+      idFilter = idFilter.filter((id) => allow.has(id));
+    }
+  };
+
+  if (raw.investor) {
+    const needle = `%${raw.investor}%`;
+    const isYc =
+      /y\s*combinator|\byc\b/i.test(raw.investor.trim());
+    const matched = await db
+      .select({ companyId: companyInvestors.companyId })
+      .from(companyInvestors)
+      .innerJoin(investors, eq(investors.id, companyInvestors.investorId))
+      .where(ilike(investors.name, needle));
+    const ids = new Set(matched.map((m) => m.companyId));
+    if (isYc) {
+      const ycBatch = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .where(
+          and(
+            eq(companies.active, true),
+            sql`${companies.ycBatch} is not null and ${companies.ycBatch} <> ''`,
+          ),
+        );
+      for (const r of ycBatch) ids.add(r.id);
+    }
+    intersect([...ids]);
+  }
+  if (raw.founder) {
+    const needle = `%${raw.founder}%`;
+    const matched = await db
+      .select({ companyId: companyPeople.companyId })
+      .from(companyPeople)
+      .innerJoin(people, eq(people.id, companyPeople.personId))
+      .where(ilike(people.name, needle));
+    intersect(matched.map((m) => m.companyId));
+  }
+  if (raw.industry) {
+    const needle = `%${raw.industry}%`;
+    const matched = await db
+      .select({ companyId: companyFacts.companyId })
+      .from(companyFacts)
+      .where(
+        and(
+          inArray(companyFacts.factType, ["industry", "tag"]),
+          ilike(companyFacts.value, needle),
+        ),
+      );
+    intersect(matched.map((m) => m.companyId));
+  }
+  if (raw.has_india_jobs) {
+    const matched = await db
+      .selectDistinct({ companyId: jobs.companyId })
+      .from(jobs)
+      .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+      .innerJoin(companies, eq(companies.id, jobs.companyId))
+      .where(
+        and(
+          isNull(jobs.closedAt),
+          eq(companies.active, true),
+          or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
+          inArray(jobTags.indiaEligibility, [
+            "open",
+            "india_remote",
+            "india_onsite",
+          ]),
+        ),
+      );
+    intersect(matched.map((m) => m.companyId));
+  }
+
+  if (idFilter !== undefined) {
+    if (idFilter.length === 0) {
+      return { companies: [], count: 0 };
+    }
+    conditions.push(inArray(companies.id, idFilter));
+  }
+
+  const rows = await db
     .select({
       id: companies.id,
       name: companies.name,
@@ -376,58 +507,8 @@ export async function findCompanies(db: Db, raw: FindCompaniesInput) {
     .from(companies)
     .where(and(...conditions))
     .orderBy(companies.name)
-    .limit(200);
+    .limit(limit);
 
-  if (raw.investor) {
-    const needle = `%${raw.investor}%`;
-    const matched = await db
-      .select({ companyId: companyInvestors.companyId })
-      .from(companyInvestors)
-      .innerJoin(investors, eq(investors.id, companyInvestors.investorId))
-      .where(ilike(investors.name, needle));
-    const ids = new Set(matched.map((m) => m.companyId));
-    rows = rows.filter((r) => ids.has(r.id));
-  }
-  if (raw.founder) {
-    const needle = `%${raw.founder}%`;
-    const matched = await db
-      .select({ companyId: companyPeople.companyId })
-      .from(companyPeople)
-      .innerJoin(people, eq(people.id, companyPeople.personId))
-      .where(ilike(people.name, needle));
-    const ids = new Set(matched.map((m) => m.companyId));
-    rows = rows.filter((r) => ids.has(r.id));
-  }
-  if (raw.industry) {
-    const needle = `%${raw.industry}%`;
-    const matched = await db
-      .select({ companyId: companyFacts.companyId })
-      .from(companyFacts)
-      .where(
-        and(
-          inArray(companyFacts.factType, ["industry", "tag"]),
-          ilike(companyFacts.value, needle),
-        ),
-      );
-    const ids = new Set(matched.map((m) => m.companyId));
-    rows = rows.filter((r) => ids.has(r.id));
-  }
-  if (raw.has_india_jobs) {
-    const matched = await db
-      .select({ companyId: jobs.companyId })
-      .from(jobs)
-      .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-      .where(
-        and(
-          isNull(jobs.closedAt),
-          inArray(jobTags.indiaEligibility, ["open", "india_remote"]),
-        ),
-      );
-    const ids = new Set(matched.map((m) => m.companyId));
-    rows = rows.filter((r) => ids.has(r.id));
-  }
-
-  rows = rows.slice(0, limit);
   return {
     companies: rows.map((r) => ({
       id: r.id,
@@ -514,6 +595,7 @@ export type McpStatsResult = {
     baseline_accuracy: number | null;
     learned_accuracy: number | null;
     accuracy_delta: number | null;
+    status: string;
   };
   history?: DailyStatsRow[];
 };
@@ -656,6 +738,10 @@ export async function getMcpStats(
     const learned = loadLatestReport("learned");
     const bAcc = baseline?.accuracy ?? null;
     const lAcc = learned?.accuracy ?? null;
+    const status =
+      bAcc != null || lAcc != null
+        ? "ok"
+        : "pending hand labels (run eval:baseline / eval:learned after gold-test)";
     result.learning = {
       corrections: Number(correctionsCount),
       patterns_learned: Number(patternsCount),
@@ -663,12 +749,21 @@ export async function getMcpStats(
       learned_accuracy: lAcc,
       accuracy_delta:
         bAcc != null && lAcc != null ? lAcc - bAcc : null,
+      status,
     };
   } catch (err) {
     console.error(
       "[api/stats] learning stats failed:",
       err instanceof Error ? err.message : err,
     );
+    result.learning = {
+      corrections: 0,
+      patterns_learned: 0,
+      baseline_accuracy: null,
+      learned_accuracy: null,
+      accuracy_delta: null,
+      status: "pending hand labels",
+    };
   }
 
   statsCache = { at: Date.now(), key: cacheKey, value: result };

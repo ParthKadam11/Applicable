@@ -130,8 +130,13 @@ export async function enrichCompanies(
         );
       }
 
-      // 2. Website
-      if (!opts.skipWebsite && co.website) {
+      // 2. Website (skip empty / example.com placeholders)
+      if (
+        !opts.skipWebsite &&
+        co.website &&
+        !/example\.com/i.test(co.website) &&
+        /^https?:\/\//i.test(co.website)
+      ) {
         try {
           const web = await enrichFromWebsite(co.website);
           facts.push(...web.facts);

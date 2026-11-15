@@ -37,7 +37,12 @@ async function main() {
     ),
     await askJobs(
       db,
-      { op: "company_jobs_by_skill", skill: "react", max_results: 10 },
+      {
+        op: "company_jobs_by_skill",
+        skill: "react",
+        company_slug: slug,
+        max_results: 10,
+      },
       client,
     ),
   ];

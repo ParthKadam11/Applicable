@@ -15,7 +15,9 @@ export const SearchJobsInputSchema = z.object({
     .string()
     .min(1)
     .optional()
-    .describe("Free-text search against job title (case-insensitive)"),
+    .describe(
+      "Free-text search against title + description (title matches ranked higher)",
+    ),
   eligibility: z
     .array(EligibilityFilterSchema)
     .min(1)
@@ -27,7 +29,9 @@ export const SearchJobsInputSchema = z.object({
     .string()
     .min(1)
     .optional()
-    .describe("Optional keywords matched against title (e.g. backend, SRE)"),
+    .describe(
+      "Optional keywords matched against title + description (e.g. backend, SRE)",
+    ),
   company: z
     .string()
     .min(1)
@@ -47,6 +51,15 @@ export const SearchJobsInputSchema = z.object({
     .max(50)
     .default(20)
     .describe("Max results (1–50, default 20)"),
+  max_per_company: z
+    .number()
+    .int()
+    .min(0)
+    .max(50)
+    .default(3)
+    .describe(
+      "Max jobs per company on a page (default 3). Set 0 to disable diversity cap.",
+    ),
   cursor: z
     .string()
     .optional()
@@ -79,6 +92,11 @@ export const AskJobsInputSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("company_jobs_by_skill"),
     skill: z.string().min(1).max(64),
+    company_slug: z
+      .string()
+      .min(1)
+      .max(200)
+      .describe("Required company slug — only return jobs at this company"),
     labels: z
       .array(EligibilityFilterSchema)
       .min(1)

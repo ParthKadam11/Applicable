@@ -119,17 +119,24 @@ export function factsFromYcOss(yc: YcOssCompany): ExtractedFact[] {
     });
   }
   if (yc.all_locations?.trim()) {
-    const loc = yc.all_locations.trim();
-    const parts = loc.split(",").map((s) => s.trim());
+    // Multi-HQ strings are semicolon/pipe separated; use the first location only.
+    const firstLoc = yc.all_locations
+      .trim()
+      .split(/\s*[;|]\s*/)[0]!
+      .trim();
+    const parts = firstLoc.split(",").map((s) => s.trim()).filter(Boolean);
+    const city = parts[0] ?? firstLoc;
+    // Prefer last token as country (handles "San Francisco, CA, USA")
+    const country = parts.length >= 2 ? parts[parts.length - 1]! : parts[0]!;
     push({
       factType: "hq",
-      value: loc,
+      value: firstLoc,
       sourceUrl,
-      quote: loc,
+      quote: firstLoc,
       sourceKind: "yc_oss",
       confidence: 0.95,
-      city: parts[0],
-      country: parts[parts.length - 1],
+      city,
+      country,
     });
   }
   // Use singular `industry` only. The `industries` array mixes the real

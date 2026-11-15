@@ -59,11 +59,15 @@ const APPLY_CONTEXT: RegExp[] = [
 ];
 
 const TITLE_COUNTRY_CODE =
-  /\(\s*(US|USA|UK|AU|NZ|SG|CA|EU|DE|NL|IE|FR|ES|IT|CH|SE|NO|DK|FI|BE|AT|PT|PL|IN)\s*\)/i;
+  /\(\s*(US|USA|UK|AU|NZ|SG|CA|EU|DE|NL|IE|FR|ES|IT|CH|SE|NO|DK|FI|BE|AT|PT|PL|IN|AR|ARG|UY|BR|CO|MX|CL|PE|PL|KRK)\s*\)/i;
 
-/** Title segments like "| Germany |", "| UK |", "- Spain -". */
+/** Title segments like "| Germany |", "| UK |", "- Spain -", "ARG/UY based only". */
 const TITLE_GEO_PIPE =
-  /(?:^|[\|\u2013\u2014\-\/:,])\s*(US|USA|UK|U\.S\.A?\.?|United States|United Kingdom|Ireland|Germany|France|Spain|Italy|Netherlands|Canada|Australia|New Zealand|Singapore|Japan|Brazil|Mexico|Sweden|Norway|Denmark|Finland|Belgium|Austria|Switzerland|Portugal|Poland|EMEA|APAC|LATAM|Europe|Americas)\s*(?:[\|\u2013\u2014\-\/:,]|$)/i;
+  /(?:^|[\|\u2013\u2014\-\/:,])\s*(US|USA|UK|U\.S\.A?\.?|United States|United Kingdom|Ireland|Germany|France|Spain|Italy|Netherlands|Canada|Australia|New Zealand|Singapore|Japan|Brazil|Mexico|Argentina|Uruguay|Colombia|Chile|Peru|Poland|Sweden|Norway|Denmark|Finland|Belgium|Austria|Switzerland|Portugal|EMEA|APAC|LATAM|Europe|Americas|Africa)\s*(?:[\|\u2013\u2014\-\/:,]|$)/i;
+
+/** Explicit based-only / country-code scopes in titles: "(ARG/UY based only)", "(BR based only)". */
+const TITLE_BASED_ONLY =
+  /\(\s*(?:[A-Z]{2,3}(?:\s*[\/&,]\s*[A-Z]{2,3})*)\s+based\s+only\s*\)|(?:\b(?:ARG|UY|BR|CO|MX|CL|AR)\b(?:\s*[\/&,]\s*\b(?:ARG|UY|BR|CO|MX|CL|AR)\b)*)\s+based\s+only\b/i;
 
 const REGION_LOCKED_PHRASES: RegExp[] = [
   /\bUS work authorization\b/i,
@@ -71,6 +75,7 @@ const REGION_LOCKED_PHRASES: RegExp[] = [
   /\beligible to work in the (?:US|U\.S\.|United States)\b/i,
   /\bmust reside in\b/i,
   /\bmust be based in\b/i,
+  /\bbased in\b.{0,60}\b(?:Colombia|Argentina|Uruguay|Brazil|Chile|Peru|Mexico|Poland|Canada|UK|United Kingdom|United States|USA|Germany|France|Spain)\b/i,
   /\bmust (?:live|be located) in\b/i,
   /\bUS only\b/i,
   /\bU\.S\. only\b/i,
@@ -188,9 +193,35 @@ const SPECIFIC_GEO: RegExp[] = [
   /\bSingapore\b/i,
   /\bKorea\b/i,
   /\bBrazil\b/i,
+  /\bMéxico\b/i,
   /\bMexico\b/i,
   /\bIsrael\b/i,
   /\bTel Aviv\b/i,
+  /\bArgentina\b/i,
+  /\bUruguay\b/i,
+  /\bColombia\b/i,
+  /\bChile\b/i,
+  /\bPeru\b/i,
+  /\bPerú\b/i,
+  /\bBogot[aá]\b/i,
+  /\bBuenos Aires\b/i,
+  /\bMontevideo\b/i,
+  /\bS[aã]o Paulo\b/i,
+  /\bBelo Horizonte\b/i,
+  /\bKrak[oó]w\b/i,
+  /\bDenver\b/i,
+  /\bKitchener\b/i,
+  /\bWaterloo\b/i,
+  /\bAfrica\b/i,
+  /\bNigeria\b/i,
+  /\bKenya\b/i,
+  /\bSouth Africa\b/i,
+  /\bUnited States of America\b/i,
+  // Country-code scopes (word-ish / slash forms)
+  /\bARG\b/,
+  /\bUY\b/,
+  /\bBR\b/,
+  /\bCO\b(?!\s*[-.]?\s*\d)/, // avoid CO as Colorado zip noise when possible
 ];
 
 /** Kept for callers / tests that still import LOCKED_LOCATION behavior via classifyLocationRaw. */
@@ -392,7 +423,11 @@ const INDIA_CITY =
   /\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata)\b/i;
 
 const LOCATION_OPEN =
-  /\banywhere\b|\bworldwide\b|\bwork from anywhere\b|\bglobal(?:\s+remote)?\b/i;
+  /\banywhere\b|\bworld[\s-]?wide\b|\bwork from anywhere\b|\bglobal(?:\s+remote)?\b/i;
+
+/** Equipment / contractor gear — never valid as eligibility evidence. */
+const CONTRACTOR_GEAR_EVIDENCE =
+  /\b(?:supply a secure computer|high[‑-]speed internet|stable internet connection|company[‑-]sponsored benefits|your own (?:laptop|computer|equipment))\b/i;
 
 /** Named mega-region → stored on remote_scope when region_locked. */
 function namedRegionFromText(text: string): RemoteScope | null {
@@ -439,6 +474,7 @@ function hasSpecificGeo(text: string): boolean {
 
 function findTitleGeoEvidence(title: string): string | null {
   if (!title.trim()) return null;
+  if (TITLE_BASED_ONLY.test(title)) return title.trim();
   const code = TITLE_COUNTRY_CODE.exec(title);
   if (code) return title.trim();
   const pipe = TITLE_GEO_PIPE.exec(title);
@@ -447,6 +483,10 @@ function findTitleGeoEvidence(title: string): string | null {
     return title.trim();
   }
   return null;
+}
+
+export function isContractorGearEvidenceText(evidence: string): boolean {
+  return CONTRACTOR_GEAR_EVIDENCE.test(evidence);
 }
 
 /** "Anywhere/worldwide" scoped to a specific non-India country is not open. */
@@ -536,13 +576,18 @@ function findGenericOpenWithHiringContext(corpus: string): string | null {
 function indiaSplit(
   evidence: string,
   corpus: string,
+  extras?: { title?: string; isRemoteFlag?: boolean | null },
 ): {
   india_eligibility: "india_remote" | "india_onsite";
   remote_scope: RemoteScope;
 } {
+  const title = extras?.title ?? "";
   const remote =
+    extras?.isRemoteFlag === true ||
     REMOTE_HINT.test(evidence) ||
     REMOTE_HINT.test(corpus) ||
+    REMOTE_HINT.test(title) ||
+    /\(\s*Remote\s*\)/i.test(title) ||
     /\bIST\b|Indian Standard Time/i.test(evidence);
   if (remote) {
     return { india_eligibility: "india_remote", remote_scope: "country" };
@@ -550,7 +595,10 @@ function indiaSplit(
   return { india_eligibility: "india_onsite", remote_scope: "onsite" };
 }
 
-export function classifyLocationRaw(locationRaw: string | null | undefined): {
+export function classifyLocationRaw(
+  locationRaw: string | null | undefined,
+  extras?: { title?: string; isRemoteFlag?: boolean | null },
+): {
   india_eligibility: IndiaEligibility;
   eligibility_evidence: string[];
   remote_scope: RemoteScope;
@@ -561,7 +609,7 @@ export function classifyLocationRaw(locationRaw: string | null | undefined): {
   if (/^remote(?:[- ]friendly)?$/i.test(loc)) return null;
 
   if (INDIA_CITY.test(loc) && !hasBlocker(loc)) {
-    const split = indiaSplit(loc, loc);
+    const split = indiaSplit(loc, loc, extras);
     return {
       india_eligibility: split.india_eligibility,
       eligibility_evidence: [loc],
@@ -645,6 +693,7 @@ export function classifyIndiaEligibility(input: {
   descriptionText: string;
   locationRaw?: string | null;
   title?: string;
+  isRemoteFlag?: boolean | null;
 }): {
   india_eligibility: IndiaEligibility;
   eligibility_evidence: string[];
@@ -652,12 +701,16 @@ export function classifyIndiaEligibility(input: {
 } {
   const title = input.title ?? "";
   const plainDescription = stripBenefitsSections(stripHtml(input.descriptionText));
-  const fromLoc = classifyLocationRaw(input.locationRaw);
+  const fromLoc = classifyLocationRaw(input.locationRaw, {
+    title,
+    isRemoteFlag: input.isRemoteFlag,
+  });
   const titleGeo = findTitleGeoEvidence(title);
 
-  // India / unclear from location alone - decisive.
-  // Location "open" (Anywhere/Global) is NOT decisive if the title names a geo.
-  if (
+  // Title/location country-code or "based only" beats India-only early return.
+  if (titleGeo && !INDIA_CITY.test(titleGeo)) {
+    // fall through to geoEvidence lock below
+  } else if (
     fromLoc &&
     (fromLoc.india_eligibility === "india_remote" ||
       fromLoc.india_eligibility === "india_onsite" ||
@@ -730,14 +783,22 @@ export function classifyIndiaEligibility(input: {
     };
   }
 
-  // Contractor / EOR → open (global hire path) when no geo lock.
+  // Contractor / EOR → open when no geo lock. Never use gear/equipment text as evidence;
+  // prefer location_raw when it is worldwide/open.
   for (const re of CONTRACTOR_OPEN) {
     const sentence = sentenceMatching(corpus, re);
     if (!sentence) continue;
     if (isNegativeEligibilitySentence(sentence)) continue;
+    if (CONTRACTOR_GEAR_EVIDENCE.test(sentence)) continue;
+    const loc = input.locationRaw?.trim() ?? "";
+    const evidence =
+      loc && LOCATION_OPEN.test(loc) && !hasSpecificGeo(loc)
+        ? loc
+        : sentence;
+    if (CONTRACTOR_GEAR_EVIDENCE.test(evidence)) continue;
     return {
       india_eligibility: "open",
-      eligibility_evidence: [sentence],
+      eligibility_evidence: [evidence],
       remote_scope: "worldwide",
     };
   }
@@ -767,7 +828,10 @@ export function classifyIndiaEligibility(input: {
       }
     }
     if (!found) continue;
-    const split = indiaSplit(found, corpus);
+    const split = indiaSplit(found, corpus, {
+      title,
+      isRemoteFlag: input.isRemoteFlag,
+    });
     return {
       india_eligibility: split.india_eligibility,
       eligibility_evidence: [found],

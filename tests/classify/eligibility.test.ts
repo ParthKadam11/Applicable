@@ -275,4 +275,66 @@ describe("classifyIndiaEligibility", () => {
     expect(r.india_eligibility).toBe("india_remote");
     expect(r.eligibility_evidence[0]).toMatch(/India/i);
   });
+
+  it("ARG/UY based only title → region_locked", () => {
+    const r = classifyIndiaEligibility({
+      title: "Senior Fullstack Engineer (ARG/UY based only)",
+      locationRaw: "Argentina/Uruguay (Remote)",
+      descriptionText: "Build product.",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+    expect(r.eligibility_evidence[0]).toMatch(/ARG\/UY|Argentina/i);
+  });
+
+  it("BR based only + São Paulo → region_locked", () => {
+    const r = classifyIndiaEligibility({
+      title: "Senior Fullstack Engineer (BR based only)",
+      locationRaw: "São Paulo/Belo Horizonte (Remote)",
+      descriptionText: "Build product.",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+  });
+
+  it("Bogota / Based in Colombia → region_locked not open", () => {
+    const r = classifyIndiaEligibility({
+      title: "Information Security Engineer | GRC",
+      locationRaw: "Bogota",
+      descriptionText:
+        "Based in Colombia, you'll work directly with our group CISO. As a contractor you'll supply a secure computer.",
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+    expect(r.eligibility_evidence.join(" ")).not.toMatch(/secure computer/i);
+  });
+
+  it("India location + (Remote) title + isRemoteFlag → india_remote", () => {
+    const r = classifyIndiaEligibility({
+      title: "Software Engineer (Remote)",
+      locationRaw: "India",
+      descriptionText: "Join us.",
+      isRemoteFlag: true,
+    });
+    expect(r.india_eligibility).toBe("india_remote");
+  });
+
+  it("World Wide - Remote uses location as open evidence not gear", () => {
+    const r = classifyIndiaEligibility({
+      title: "Language Specialist",
+      locationRaw: "World Wide - Remote",
+      descriptionText:
+        "As a contractor you'll supply a secure computer and high-speed internet; company-sponsored benefits.",
+    });
+    expect(r.india_eligibility).toBe("open");
+    expect(r.eligibility_evidence[0]).toMatch(/World Wide/i);
+    expect(r.eligibility_evidence.join(" ")).not.toMatch(/secure computer/i);
+  });
+
+  it("Krakow location → region_locked", () => {
+    const r = classifyIndiaEligibility({
+      title: "Lead Software Engineer (Java)",
+      locationRaw: "Krakow",
+      descriptionText: "Join the team.",
+      isRemoteFlag: true,
+    });
+    expect(r.india_eligibility).toBe("region_locked");
+  });
 });

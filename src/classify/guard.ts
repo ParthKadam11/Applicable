@@ -64,9 +64,20 @@ export function guardEvidence(
       });
     }
     if (valid.length === 0) {
-      next.india_eligibility = "unclear";
-      next.eligibility_evidence = [];
-      next.remote_scope = "unknown";
+      // Prefer a meaningful location_raw as evidence rather than demoting to unclear.
+      // Bare "Remote" is never decisive on its own.
+      const loc = (locationRaw ?? "").trim();
+      const locUsable =
+        loc.length >= 3 &&
+        !/^remote(?:[- ]friendly)?$/i.test(loc) &&
+        isSubstring(corpus, loc);
+      if (locUsable) {
+        next.eligibility_evidence = [loc];
+      } else {
+        next.india_eligibility = "unclear";
+        next.eligibility_evidence = [];
+        next.remote_scope = "unknown";
+      }
     } else {
       next.eligibility_evidence = valid;
     }

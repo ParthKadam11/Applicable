@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { jobTags, jobs, type Job } from "../db/schema.js";
-import { isNegativeEligibilitySentence } from "./eligibility.js";
+import {
+  isContractorGearEvidenceText,
+  isNegativeEligibilitySentence,
+} from "./eligibility.js";
 import { guardEvidence } from "./guard.js";
 import { retryAfterMsFromError } from "./llm/errors.js";
 import { createLlmProvider, type LlmProvider } from "./llm/index.js";
@@ -15,6 +18,13 @@ import {
   type ClassificationResult,
   type ClassifiedTag,
 } from "./types.js";
+import {
+  isEligibilityEvidence,
+  isEvidenceSubstring,
+  isFundingOrInvestorEvidence,
+  sanitizePostingForPatterns,
+} from "../learn/evidence-guard.js";
+import { loadPatterns, matchPatterns } from "../learn/patterns.js";
 
 export { retryAfterMsFromError };
 
@@ -27,6 +37,8 @@ export interface ClassifyOptions {
   llmOnlyIfUnclear?: boolean;
   /** Reclassify even when job_tags.content_hash matches. */
   force?: boolean;
+  /** Optional DB for learned-pattern fill (prod workers pass this). */
+  db?: Db;
 }
 
 function mergeLlmIntoRules(
@@ -176,7 +188,12 @@ function tagFromRow(
 export async function classifyJobContent(
   job: Pick<
     Job,
-    "title" | "descriptionText" | "locationRaw" | "contentHash" | "compensationRaw"
+    | "title"
+    | "descriptionText"
+    | "locationRaw"
+    | "contentHash"
+    | "compensationRaw"
+    | "isRemoteFlag"
   >,
   options: ClassifyOptions = {},
 ): Promise<ClassifiedTag> {
@@ -184,13 +201,57 @@ export async function classifyJobContent(
     title: job.title,
     descriptionText: job.descriptionText,
     locationRaw: job.locationRaw,
+    isRemoteFlag: job.isRemoteFlag,
   });
 
   // Prefer structured ATS compensation (Ashby) over free-text regex.
   const fromAts = compensationFromAtsRaw(job.compensationRaw);
   let result = fromAts ? { ...rules, compensation: fromAts } : rules;
-  let classifier: "rules" | "llm" | "cache" = "rules";
+  let classifier: "rules" | "llm" | "cache" | "pattern" = "rules";
   let model: string | null = null;
+
+  // Learned patterns: fill unclear / override when weight ≥ 2 (prod path).
+  if (options.db && result.india_eligibility === "unclear") {
+    try {
+      const patterns = await loadPatterns(options.db);
+      const posting = [
+        job.title,
+        job.locationRaw ? `Location: ${job.locationRaw}` : "",
+        sanitizePostingForPatterns(job.descriptionText),
+      ]
+        .filter(Boolean)
+        .join("\n");
+      const hit = matchPatterns(posting, patterns);
+      if (hit) {
+        const phrase = hit.phrase;
+        const inPosting =
+          isEvidenceSubstring(
+            phrase,
+            job.title,
+            job.locationRaw,
+            job.descriptionText,
+          ) || posting.toLowerCase().includes(phrase.toLowerCase());
+        const usable =
+          inPosting &&
+          !isFundingOrInvestorEvidence(phrase) &&
+          !isContractorGearEvidenceText(phrase) &&
+          (isEligibilityEvidence(phrase) || phrase.length >= 8);
+        if (usable) {
+          result = {
+            ...result,
+            india_eligibility: hit.label,
+            eligibility_evidence: [phrase],
+          };
+          classifier = "pattern";
+        }
+      }
+    } catch (err) {
+      console.warn(
+        "[classify] pattern load failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
 
   if (options.rulesOnly !== true) {
     const provider = options.llm ?? createLlmProvider();
@@ -244,6 +305,25 @@ export async function classifyJobContent(
     }
   }
 
+  // Drop contractor-gear quotes; prefer location_raw for open worldwide.
+  if (result.eligibility_evidence.some((e) => isContractorGearEvidenceText(e))) {
+    const loc = job.locationRaw?.trim() ?? "";
+    const cleaned = result.eligibility_evidence.filter(
+      (e) => !isContractorGearEvidenceText(e),
+    );
+    if (cleaned.length > 0) {
+      result = { ...result, eligibility_evidence: cleaned };
+    } else if (loc) {
+      result = { ...result, eligibility_evidence: [loc] };
+    } else {
+      result = {
+        ...result,
+        india_eligibility: "unclear",
+        eligibility_evidence: [],
+      };
+    }
+  }
+
   const guarded = guardEvidence(
     job.descriptionText,
     job.title,
@@ -253,7 +333,7 @@ export async function classifyJobContent(
 
   return {
     ...guarded.result,
-    classifier,
+    classifier: classifier === "pattern" ? "rules" : classifier,
     model,
     classifiedAt: new Date(),
     contentHash: job.contentHash,
@@ -333,7 +413,7 @@ export async function classifyAndStoreJob(
     }
   }
 
-  const tag = await classifyJobContent(job, options);
+  const tag = await classifyJobContent(job, { ...options, db: options.db ?? db });
   await persistClassification(db, jobId, tag);
   return tag;
 }

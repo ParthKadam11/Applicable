@@ -10,6 +10,7 @@ describe("MCP input schemas", () => {
     const parsed = SearchJobsInputSchema.parse({ query: "backend" });
     expect(parsed.eligibility).toEqual(["open", "india_remote"]);
     expect(parsed.limit).toBe(20);
+    expect(parsed.max_per_company).toBe(3);
   });
 
   it("search_jobs rejects limit > 50", () => {

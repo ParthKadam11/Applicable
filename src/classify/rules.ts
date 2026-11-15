@@ -108,6 +108,7 @@ export function classifyWithRules(input: {
   title: string;
   descriptionText: string;
   locationRaw?: string | null;
+  isRemoteFlag?: boolean | null;
 }): ClassificationResult {
   const text = [
     input.title,
@@ -121,6 +122,7 @@ export function classifyWithRules(input: {
     title: input.title,
     descriptionText: input.descriptionText,
     locationRaw: input.locationRaw,
+    isRemoteFlag: input.isRemoteFlag,
   });
   const interview = classifyInterview(text);
   const contractor = classifyContractor(text);
