@@ -297,58 +297,14 @@ function SidebarChrome({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** App shell sidebar — sections + icons, integrations dropdown, account foot. */
+/**
+ * Desktop workspace sidebar. Mobile chrome lives in the layout SiteHeader
+ * (Jobs / Companies / Saved / account sheet).
+ */
 export function DashboardSidebar() {
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur-md lg:hidden">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <BrandLogo size={24} className="rounded-[6px]" />
-          <span className="font-display text-[15px] tracking-tight text-ink">
-            Applicable
-          </span>
-        </Link>
-        <button
-          type="button"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex size-10 items-center justify-center rounded-xl border border-line text-ink"
-        >
-          <span className="sr-only">Menu</span>
-          <span className="flex w-4 flex-col gap-1" aria-hidden>
-            <span
-              className={`h-0.5 w-full bg-ink transition ${open ? "translate-y-1.5 rotate-45" : ""}`}
-            />
-            <span
-              className={`h-0.5 w-full bg-ink transition ${open ? "opacity-0" : ""}`}
-            />
-            <span
-              className={`h-0.5 w-full bg-ink transition ${open ? "-translate-y-1.5 -rotate-45" : ""}`}
-            />
-          </span>
-        </button>
-      </div>
-
-      {open ? (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal>
-          <button
-            type="button"
-            className="absolute inset-0 bg-ink/25"
-            aria-label="Close menu"
-            onClick={() => setOpen(false)}
-          />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(18.5rem,90vw)] flex-col border-r border-line bg-paper shadow-[8px_0_40px_-24px_color-mix(in_srgb,var(--ink)_40%,transparent)]">
-            <SidebarChrome onNavigate={() => setOpen(false)} />
-          </aside>
-        </div>
-      ) : null}
-
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[16rem] flex-col border-r border-line bg-paper lg:flex">
-        <SidebarChrome />
-      </aside>
-    </>
+    <aside className="fixed bottom-0 left-0 top-14 z-30 hidden w-[16rem] flex-col border-r border-line bg-paper lg:flex">
+      <SidebarChrome />
+    </aside>
   );
 }

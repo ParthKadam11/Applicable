@@ -1,34 +1,56 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Host joinwaitlist.parthkadam.tech → /waitlist (keep /api/waitlist as-is). */
+function hasSessionCookie(req: NextRequest): boolean {
+  return Boolean(
+    req.cookies.get("__Secure-authjs.session-token")?.value ||
+      req.cookies.get("authjs.session-token")?.value,
+  );
+}
+
+/**
+ * - joinwaitlist.* → /waitlist rewrite
+ * - /dashboard/* requires a session cookie (full check still happens in layout)
+ */
 export function middleware(req: NextRequest) {
   const host = (req.headers.get("host") || "").toLowerCase();
-  if (!host.startsWith("joinwaitlist.")) {
+  const { pathname, search } = req.nextUrl;
+
+  if (host.startsWith("joinwaitlist.")) {
+    if (
+      pathname === "/" ||
+      pathname === "" ||
+      pathname === "/waitlist" ||
+      pathname.startsWith("/waitlist/")
+    ) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/waitlist";
+      url.protocol = "http:";
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-joinwaitlist", "1");
+      return NextResponse.rewrite(url, {
+        request: { headers: requestHeaders },
+      });
+    }
     return NextResponse.next();
   }
 
-  const { pathname } = req.nextUrl;
-  if (
-    pathname === "/" ||
-    pathname === "" ||
-    pathname === "/waitlist" ||
-    pathname.startsWith("/waitlist/")
-  ) {
-    // Behind nginx TLS, nextUrl is https — internal rewrite must stay http
-    // or Next tries to proxy https://localhost:3010 and EPROTO 500s.
+  if (pathname.startsWith("/dashboard") && !hasSessionCookie(req)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/waitlist";
-    url.protocol = "http:";
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-joinwaitlist", "1");
-    return NextResponse.rewrite(url, {
-      request: { headers: requestHeaders },
-    });
+    url.pathname = "/auth";
+    url.search = "";
+    url.searchParams.set("callbackUrl", `${pathname}${search}`);
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/waitlist", "/waitlist/:path*"],
+  matcher: [
+    "/",
+    "/waitlist",
+    "/waitlist/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+  ],
 };

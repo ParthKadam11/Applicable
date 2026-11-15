@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces } from "next/font/google";
 import { headers } from "next/headers";
+import { auth } from "@/auth";
 import { FontLoader } from "@/components/font-loader";
 import { AppSessionProvider } from "@/components/session-provider";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
@@ -67,6 +69,8 @@ export default async function RootLayout({
   const isWaitlistHost =
     h.get("x-joinwaitlist") === "1" || host.startsWith("joinwaitlist.");
 
+  const session = isWaitlistHost ? null : await auth();
+
   return (
     <html lang="en" className={`${fraunces.variable} font-sans`}>
       <head>
@@ -83,7 +87,8 @@ export default async function RootLayout({
         {isWaitlistHost ? (
           children
         ) : (
-          <AppSessionProvider>
+          <AppSessionProvider session={session}>
+            <SiteHeader session={session} />
             {children}
             <SiteFooter />
           </AppSessionProvider>

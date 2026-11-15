@@ -1,10 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { BrandLogo } from "@/components/brand-logo";
 
+function safeCallbackUrl(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+    return "/dashboard/jobs";
+  }
+  if (raw.startsWith("/auth")) return "/dashboard/jobs";
+  return raw;
+}
+
 export function AuthSignIn() {
+  const sp = useSearchParams();
+  const callbackUrl = safeCallbackUrl(sp.get("callbackUrl"));
+
   return (
     <div className="flex h-full min-h-[100dvh] flex-col items-center justify-center px-6 py-12 sm:px-10 lg:px-14">
       <div className="mx-auto flex w-full max-w-[22rem] flex-col items-center text-center">
@@ -23,7 +35,7 @@ export function AuthSignIn() {
           type="button"
           onClick={() =>
             void signIn("google", {
-              callbackUrl: "/dashboard/jobs",
+              callbackUrl,
               redirect: true,
             })
           }

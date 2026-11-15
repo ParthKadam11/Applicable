@@ -1,11 +1,9 @@
 import { MePanel } from "@/components/me-panel";
-import { SiteHeader } from "@/components/site-header";
 
 export default function MePage() {
   return (
     <div className="min-h-dvh bg-paper">
       <div className="sky">
-        <SiteHeader active="me" />
         <div className="mx-auto max-w-5xl px-5 pb-6 pt-10 sm:px-8 sm:pt-12">
           <p className="font-mono text-[11px] uppercase text-mark-deep">You</p>
           <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">

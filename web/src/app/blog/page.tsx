@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { LINKS } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -12,7 +11,6 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <div className="min-h-dvh bg-paper">
-      <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:px-8 sm:pt-14">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-mark-deep">
           Resources

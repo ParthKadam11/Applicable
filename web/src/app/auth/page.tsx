@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AuthHeroField } from "@/components/auth-hero-field";
@@ -8,10 +9,25 @@ import { filterEntryLevelJobs } from "@/lib/entry-level";
 
 export const dynamic = "force-dynamic";
 
+function safeCallbackUrl(raw: string | string[] | undefined): string {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard/jobs";
+  }
+  if (value.startsWith("/auth")) return "/dashboard/jobs";
+  return value;
+}
+
 /** Split auth: interactive hero + entry-level Browse Jobs · Google sign-in. */
-export default async function AuthPage() {
+export default async function AuthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string | string[] }>;
+}) {
   const session = await auth();
-  if (session?.user) redirect("/dashboard/jobs");
+  const sp = await searchParams;
+  const callbackUrl = safeCallbackUrl(sp.callbackUrl);
+  if (session?.user) redirect(callbackUrl);
 
   const page = await fetchJobs({
     eligibility: "open,india_remote",
@@ -33,7 +49,15 @@ export default async function AuthPage() {
         </section>
 
         <section className="order-1 bg-white lg:order-2">
-          <AuthSignIn />
+          <Suspense
+            fallback={
+              <div className="flex min-h-[100dvh] items-center justify-center text-sm text-mute">
+                Loading…
+              </div>
+            }
+          >
+            <AuthSignIn />
+          </Suspense>
         </section>
       </div>
     </div>

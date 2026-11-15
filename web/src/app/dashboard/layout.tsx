@@ -1,15 +1,23 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { authHref } from "@/lib/nav";
 
-/** Pure app shell — no marketing header/footer. */
-export default function DashboardLayout({
+/** App shell — signed-in only. */
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect(authHref("/dashboard/jobs"));
+  }
+
   return (
     <div className="min-h-dvh bg-paper">
       <DashboardSidebar />
-      <div className="min-h-dvh pt-14 lg:pl-[16rem] lg:pt-0">
+      <div className="min-h-dvh lg:pl-[16rem]">
         <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           {children}
         </main>
