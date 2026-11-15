@@ -1,30 +1,9 @@
-import dynamic from "next/dynamic";
 import { BrowseJobsLink } from "@/components/browse-jobs-link";
+import { LiveCorpusFeed } from "@/components/live-corpus-feed";
 import { LiveCorpusStats } from "@/components/live-corpus-stats";
 import type { JobRow, Stats } from "@/lib/api";
 import { formatLastUpdatedAgo } from "@/lib/footer";
 import { corpusStatsFrom, toCorpusCards } from "@/lib/live-corpus";
-
-const LiveCorpusFeed = dynamic(
-  () =>
-    import("@/components/live-corpus-feed").then((m) => m.LiveCorpusFeed),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="grid h-[16rem] gap-2 sm:grid-cols-2"
-        aria-hidden
-      >
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-[4.5rem] animate-pulse rounded-xl border border-line/70 bg-soft/60"
-          />
-        ))}
-      </div>
-    ),
-  },
-);
 
 type Props = {
   stats: Stats | null;
