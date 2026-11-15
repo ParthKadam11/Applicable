@@ -151,13 +151,13 @@ afterAll(async () => {
 });
 
 describe("parseCompaniesListSearchParams", () => {
-  it("defaults has_open true and sort most_open", () => {
+  it("defaults has_open false and sort name", () => {
     const r = parseCompaniesListSearchParams(new URLSearchParams());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.data.has_open).toBe(true);
-    expect(r.data.sort).toBe("most_open");
-    expect(r.data.limit).toBe(30);
+    expect(r.data.has_open).toBe(false);
+    expect(r.data.sort).toBe("name");
+    expect(r.data.limit).toBe(40);
   });
 
   it("rejects invalid params", () => {

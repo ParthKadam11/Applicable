@@ -10,27 +10,7 @@ import {
   useTransition,
 } from "react";
 import { CompanyLogo } from "@/components/company-logo";
-import { SoftSelect } from "@/components/ui/soft-select";
 import type { ApiCompany } from "@/lib/companies-api";
-
-const ATS_OPTIONS = [
-  { value: "", label: "All ATS" },
-  { value: "ashby", label: "Ashby" },
-  { value: "greenhouse", label: "Greenhouse" },
-  { value: "lever", label: "Lever" },
-] as const;
-
-const HAS_OPEN_OPTIONS = [
-  { value: "true", label: "Has open roles", hint: "≥1 open or India-remote" },
-  { value: "false", label: "All active" },
-] as const;
-
-const SORT_OPTIONS = [
-  { value: "most_open", label: "Most open" },
-  { value: "most_jobs", label: "Most jobs" },
-  { value: "name", label: "Name A–Z" },
-  { value: "recently_added", label: "Recently added" },
-] as const;
 
 type ListResponse = {
   items: ApiCompany[];
@@ -40,10 +20,11 @@ type ListResponse = {
 
 function buildQuery(sp: URLSearchParams): string {
   const next = new URLSearchParams();
-  for (const key of ["q", "ats", "has_open", "sort"]) {
-    const v = sp.get(key);
-    if (v) next.set(key, v);
-  }
+  const q = sp.get("q");
+  if (q) next.set("q", q);
+  next.set("has_open", "false");
+  next.set("sort", "name");
+  next.set("limit", "40");
   return next.toString();
 }
 
@@ -69,26 +50,21 @@ export function DashboardCompanies({
   const debounceRef = useRef<number | null>(null);
   const [qDraft, setQDraft] = useState(searchParams.get("q") ?? "");
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadingMoreRef = useRef(false);
 
-  const qsKey = searchParams.toString();
-  const ats = searchParams.get("ats") ?? "";
-  const hasOpen = searchParams.get("has_open") ?? "true";
-  const sort = searchParams.get("sort") ?? "most_open";
+  const qsKey = searchParams.get("q") ?? "";
 
   const patchParams = useCallback(
     (patch: Record<string, string | null>) => {
-      const sp = new URLSearchParams(searchParams.toString());
-      for (const [k, v] of Object.entries(patch)) {
-        if (v == null || v === "") sp.delete(k);
-        else sp.set(k, v);
-      }
-      // Defaults stay in URL when non-default so shareable; keep has_open/sort explicit
-      if (!sp.has("has_open")) sp.set("has_open", "true");
-      if (!sp.has("sort")) sp.set("sort", "most_open");
+      const sp = new URLSearchParams();
+      const q = patch.q !== undefined ? patch.q : searchParams.get("q");
+      if (q) sp.set("q", q);
       startTransition(() => {
-        router.replace(`/dashboard/companies?${sp.toString()}`, {
-          scroll: false,
-        });
+        const qs = sp.toString();
+        router.replace(
+          qs ? `/dashboard/companies?${qs}` : "/dashboard/companies",
+          { scroll: false },
+        );
       });
     },
     [router, searchParams],
@@ -104,8 +80,6 @@ export function DashboardCompanies({
       setFailed(false);
       try {
         const sp = new URLSearchParams(buildQuery(searchParams));
-        if (!sp.has("has_open")) sp.set("has_open", "true");
-        if (!sp.has("sort")) sp.set("sort", "most_open");
         const res = await fetch(`/api/companies?${sp.toString()}`);
         if (!res.ok) {
           if (!cancelled) setFailed(true);
@@ -124,16 +98,14 @@ export function DashboardCompanies({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- qsKey captures URL state
-  }, [qsKey]);
+  }, [qsKey, searchParams]);
 
-  async function loadMore() {
-    if (!nextCursor || loadingMore) return;
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const sp = new URLSearchParams(buildQuery(searchParams));
-      if (!sp.has("has_open")) sp.set("has_open", "true");
-      if (!sp.has("sort")) sp.set("sort", "most_open");
       sp.set("cursor", nextCursor);
       const res = await fetch(`/api/companies?${sp.toString()}`);
       if (!res.ok) return;
@@ -145,9 +117,10 @@ export function DashboardCompanies({
       });
       setNextCursor(body.nextCursor);
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }
+  }, [nextCursor, searchParams]);
 
   useEffect(() => {
     const el = loadMoreRef.current;
@@ -156,12 +129,11 @@ export function DashboardCompanies({
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) void loadMore();
       },
-      { rootMargin: "200px" },
+      { root: null, rootMargin: "320px", threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextCursor, items.length]);
+  }, [nextCursor, items.length, loadMore]);
 
   async function submitSuggest() {
     setSuggestMsg(null);
@@ -248,7 +220,7 @@ export function DashboardCompanies({
         </div>
       ) : null}
 
-      <div className="space-y-3 border-b border-line/80 pb-4">
+      <div className="border-b border-line/80 pb-4">
         <input
           type="search"
           placeholder="Search companies…"
@@ -263,29 +235,6 @@ export function DashboardCompanies({
           }}
           className="w-full border-0 border-b border-line bg-transparent pb-2.5 text-[15px] text-ink outline-none placeholder:text-mute/70 focus:border-mark"
         />
-        <div className="-mx-1 flex flex-wrap items-center gap-0.5">
-          <SoftSelect
-            label="ATS"
-            value={ats}
-            defaultValue=""
-            options={[...ATS_OPTIONS]}
-            onChange={(v) => patchParams({ ats: v || null })}
-          />
-          <SoftSelect
-            label="Open roles"
-            value={hasOpen}
-            defaultValue="true"
-            options={[...HAS_OPEN_OPTIONS]}
-            onChange={(v) => patchParams({ has_open: v })}
-          />
-          <SoftSelect
-            label="Sort"
-            value={sort}
-            defaultValue="most_open"
-            options={[...SORT_OPTIONS]}
-            onChange={(v) => patchParams({ sort: v })}
-          />
-        </div>
       </div>
 
       {failed ? (
@@ -312,9 +261,7 @@ export function DashboardCompanies({
           ))}
         </ul>
       ) : items.length === 0 ? (
-        <p className="py-16 text-center text-sm text-mute">
-          No companies match.
-        </p>
+        <p className="py-16 text-center text-sm text-mute">No companies found.</p>
       ) : (
         <ul>
           {items.map((co, i) => {
@@ -360,7 +307,7 @@ export function DashboardCompanies({
       )}
 
       {nextCursor ? (
-        <div ref={loadMoreRef} className="flex justify-center py-8" aria-hidden>
+        <div ref={loadMoreRef} className="flex justify-center py-10" aria-hidden>
           {loadingMore ? (
             <span className="inline-flex items-center gap-1.5">
               <span className="auth-load-dot h-1.5 w-1.5 rounded-full bg-mark" />
@@ -372,7 +319,9 @@ export function DashboardCompanies({
           )}
         </div>
       ) : items.length > 0 ? (
-        <div className="h-10" aria-hidden />
+        <p className="py-6 text-center text-[12px] text-mute">
+          End of list · {items.length} shown
+        </p>
       ) : null}
     </div>
   );

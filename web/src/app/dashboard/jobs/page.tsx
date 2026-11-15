@@ -1,8 +1,6 @@
 import { Suspense } from "react";
-import { auth } from "@/auth";
 import { DashboardJobs } from "@/components/dashboard-jobs";
 import { ALL_LABELS, listJobs, parseJobsListSearchParams } from "@/lib/jobs-api";
-import { getPreferences } from "@/lib/me";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences";
 
 export const dynamic = "force-dynamic";
@@ -23,28 +21,23 @@ export default async function DashboardJobsPage({
 }: {
   searchParams: Promise<Sp>;
 }) {
-  let preferences = null;
-  try {
-    const session = await auth();
-    if (session?.user?.id) preferences = await getPreferences(session.user.id);
-  } catch {
-    preferences = null;
-  }
-
   const rawSp = toURLSearchParams(await searchParams);
-  // Full job corpus unless the URL explicitly sets eligibility labels.
-  const prefsForParse = preferences
-    ? {
-        ...preferences,
-        defaultLabels: rawSp.get("labels")
-          ? preferences.defaultLabels
-          : [...ALL_LABELS],
-      }
-    : {
-        ...DEFAULT_PREFERENCES,
-        defaultLabels: [...ALL_LABELS],
-      };
-  const parsed = parseJobsListSearchParams(rawSp, prefsForParse);
+  // No filter UI — always list the full open tech corpus (+ optional q).
+  const forParse = new URLSearchParams();
+  const q = rawSp.get("q");
+  const job = rawSp.get("job");
+  if (q) forParse.set("q", q);
+  if (job) forParse.set("job", job);
+  forParse.set("labels", ALL_LABELS.join(","));
+  forParse.set("sort", "newest");
+  forParse.set("limit", "40");
+
+  const parsed = parseJobsListSearchParams(forParse, {
+    ...DEFAULT_PREFERENCES,
+    defaultLabels: [...ALL_LABELS],
+    defaultRoles: [],
+    hideNoSalary: false,
+  });
   let initial = null;
   try {
     initial = await listJobs(
@@ -55,12 +48,7 @@ export default async function DashboardJobsPage({
             posted: "all",
             sort: "newest",
             limit: 40,
-            ...(preferences?.hideNoSalary ? { has_salary: true as const } : {}),
-            ...(preferences?.defaultRoles?.length === 1
-              ? { role: preferences.defaultRoles[0] }
-              : preferences?.defaultRoles && preferences.defaultRoles.length > 1
-                ? { roles: preferences.defaultRoles }
-                : {}),
+            ...(q ? { q } : {}),
           },
     );
   } catch {
@@ -68,15 +56,8 @@ export default async function DashboardJobsPage({
   }
 
   return (
-    <Suspense
-      fallback={
-        <p className="text-sm text-mute">Loading jobs…</p>
-      }
-    >
-      <DashboardJobs
-        initial={initial}
-        initialPreferences={preferences ?? DEFAULT_PREFERENCES}
-      />
+    <Suspense fallback={<p className="text-sm text-mute">Loading jobs…</p>}>
+      <DashboardJobs initial={initial} />
     </Suspense>
   );
 }

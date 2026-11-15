@@ -13,10 +13,10 @@ export const CompaniesSortSchema = z.enum([
 export const CompaniesListQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   ats: AtsSchema.optional(),
-  has_open: z.boolean().default(true),
-  sort: CompaniesSortSchema.default("most_open"),
+  has_open: z.boolean().default(false),
+  sort: CompaniesSortSchema.default("name"),
   cursor: z.string().min(1).optional(),
-  limit: z.number().int().min(1).max(100).default(30),
+  limit: z.number().int().min(1).max(100).default(40),
 });
 
 export type CompaniesListQuery = z.infer<typeof CompaniesListQuerySchema>;

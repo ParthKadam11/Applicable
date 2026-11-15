@@ -11,108 +11,12 @@ import {
 } from "react";
 import { CompanyLogo } from "@/components/company-logo";
 import { SaveJobButton } from "@/components/save-job-button";
-import { SoftSelect } from "@/components/ui/soft-select";
 import type { ApiJob, ApiJobDetail } from "@/lib/jobs-api";
 import { ELIGIBILITY_LABELS } from "@/lib/constants";
 import { formatIst } from "@/lib/format";
-import {
-  DEFAULT_PREFERENCES,
-  type UserPreferences,
-} from "@/lib/preferences";
-
+/** Show every open tech role — filter UI removed from dashboard. */
 const ALL_LABELS_VALUE =
   "open,india_remote,india_onsite,region_locked,unclear";
-const DEFAULT_LABELS_VALUE = "open,india_remote,india_onsite";
-
-const LABEL_OPTIONS = [
-  {
-    value: DEFAULT_LABELS_VALUE,
-    label: "Can apply",
-    hint: "Worldwide open + India remote/onsite",
-  },
-  {
-    value: ALL_LABELS_VALUE,
-    label: "All",
-    hint: "Every open tech role we track",
-  },
-  {
-    value: "open,india_remote",
-    label: "Open + India remote",
-    hint: "Worldwide open and India-remote roles",
-  },
-  {
-    value: "open",
-    label: "Worldwide open",
-    hint: "Can apply from anywhere",
-  },
-  {
-    value: "india_remote",
-    label: "India remote",
-    hint: "Remote roles open to India",
-  },
-  {
-    value: "india_onsite",
-    label: "India onsite",
-    hint: "In-office / hybrid in India",
-  },
-  {
-    value: "region_locked",
-    label: "Region locked",
-    hint: "Geo-restricted postings",
-  },
-  {
-    value: "unclear",
-    label: "Unclear",
-    hint: "Eligibility not clear from the posting",
-  },
-] as const;
-
-const ROLE_OPTIONS = [
-  { value: "", label: "All roles" },
-  { value: "backend", label: "Backend" },
-  { value: "frontend", label: "Frontend" },
-  { value: "fullstack", label: "Fullstack" },
-  { value: "devops", label: "DevOps" },
-  { value: "data", label: "Data" },
-  { value: "mobile", label: "Mobile" },
-  { value: "other", label: "Other" },
-] as const;
-
-const ATS_OPTIONS = [
-  { value: "", label: "All ATS" },
-  { value: "ashby", label: "Ashby" },
-  { value: "greenhouse", label: "Greenhouse" },
-  { value: "lever", label: "Lever" },
-  { value: "smartrecruiters", label: "SmartRecruiters" },
-] as const;
-
-const POSTED_OPTIONS = [
-  { value: "all", label: "Any time" },
-  { value: "24h", label: "Last 24h" },
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" },
-] as const;
-
-const SALARY_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "true", label: "Listed", hint: "Has salary in the posting" },
-  { value: "false", label: "Not listed" },
-] as const;
-
-const EARLY_CAREER_OPTIONS = [
-  { value: "", label: "Any seniority" },
-  {
-    value: "true",
-    label: "Early career",
-    hint: "Intern, entry, or mid with ≤2 years",
-  },
-] as const;
-
-const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "last_seen", label: "Last seen" },
-  { value: "company", label: "Company A–Z" },
-] as const;
 
 type ListResponse = {
   items: ApiJob[];
@@ -163,31 +67,17 @@ function buildQuery(
   opts?: {
     companySlug?: string;
     companyOnly?: boolean;
-    /** Effective filter values when URL omits them (prefs / UI defaults). */
-    defaults?: Partial<Record<string, string>>;
   },
 ): string {
   const next = new URLSearchParams();
-  const keys = opts?.companyOnly
-    ? ["labels", "sort", "job"]
-    : [
-        "q",
-        "labels",
-        "role",
-        "ats",
-        "posted",
-        "has_salary",
-        "early_career",
-        "sort",
-        "job",
-      ];
-  for (const key of keys) {
-    const v = sp.get(key) || opts?.defaults?.[key] || "";
-    if (v) next.set(key, v);
+  if (!opts?.companyOnly) {
+    const q = sp.get("q");
+    if (q) next.set("q", q);
   }
+  next.set("labels", ALL_LABELS_VALUE);
+  next.set("sort", "newest");
   if (opts?.companySlug) next.set("company", opts.companySlug);
-  // Keep pages large enough for smooth infinite scroll.
-  if (!next.get("limit")) next.set("limit", "40");
+  next.set("limit", "40");
   return next.toString();
 }
 
@@ -196,15 +86,15 @@ export function DashboardJobs({
   companySlug,
   basePath = "/dashboard/jobs",
   hideChrome = false,
-  initialPreferences,
 }: {
   initial: ListResponse | null;
-  /** When set, scopes list to this company slug and simplifies filters. */
+  /** When set, scopes list to this company slug. */
   companySlug?: string;
   basePath?: string;
-  /** Hide page title / non-label filters (company detail page). */
+  /** Hide page title (company detail page). */
   hideChrome?: boolean;
-  initialPreferences?: UserPreferences;
+  /** @deprecated Filters removed from UI; ignored. */
+  initialPreferences?: unknown;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -227,48 +117,18 @@ export function DashboardJobs({
   const debounceRef = useRef<number | null>(null);
   const [qDraft, setQDraft] = useState(searchParams.get("q") ?? "");
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [prefs, setPrefs] = useState<UserPreferences>(
-    initialPreferences ?? DEFAULT_PREFERENCES,
-  );
-
-  const qsKey = searchParams.toString();
-
-  // Default: roles an India applicant can act on (prefs override when set).
-  const labelsDefault =
-    prefs.defaultLabels?.length > 0
-      ? prefs.defaultLabels.join(",")
-      : DEFAULT_LABELS_VALUE;
-  const roleDefault =
-    prefs.defaultRoles.length === 1 ? prefs.defaultRoles[0]! : "";
-  const hasSalaryDefault = prefs.hideNoSalary ? "true" : "";
-
-  const labels = searchParams.get("labels") ?? labelsDefault;
-  const role = searchParams.get("role") ?? roleDefault;
-  const ats = searchParams.get("ats") ?? "";
-  const posted = searchParams.get("posted") ?? "all";
-  const hasSalary = searchParams.get("has_salary") ?? hasSalaryDefault;
-  const earlyCareer = searchParams.get("early_career") ?? "";
-  const sort = searchParams.get("sort") ?? "newest";
+  const qsKey = searchParams.get("q") ?? "";
   const jobId = searchParams.get("job");
-
-  const queryDefaults = useMemo(
-    () => ({
-      labels: labelsDefault,
-      role: roleDefault,
-      has_salary: hasSalaryDefault,
-      posted: "all",
-      sort: "newest",
-    }),
-    [labelsDefault, roleDefault, hasSalaryDefault],
-  );
 
   const patchParams = useCallback(
     (patch: Record<string, string | null>) => {
-      const sp = new URLSearchParams(searchParams.toString());
-      for (const [k, v] of Object.entries(patch)) {
-        if (v == null || v === "") sp.delete(k);
-        else sp.set(k, v);
-      }
+      const sp = new URLSearchParams();
+      const q =
+        patch.q !== undefined ? patch.q : searchParams.get("q");
+      const job =
+        patch.job !== undefined ? patch.job : searchParams.get("job");
+      if (q) sp.set("q", q);
+      if (job) sp.set("job", job);
       startTransition(() => {
         const qs = sp.toString();
         router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
@@ -284,19 +144,10 @@ export function DashboardJobs({
   useEffect(() => {
     void (async () => {
       try {
-        const [savedRes, prefRes] = await Promise.all([
-          fetch("/api/me/saved?ids=1"),
-          fetch("/api/me/preferences"),
-        ]);
+        const savedRes = await fetch("/api/me/saved?ids=1");
         if (savedRes.ok) {
           const body = (await savedRes.json()) as { ids?: string[] };
           setSavedIds(new Set(body.ids ?? []));
-        }
-        if (prefRes.ok) {
-          const body = (await prefRes.json()) as {
-            preferences?: UserPreferences;
-          };
-          if (body.preferences) setPrefs(body.preferences);
         }
       } catch {
         /* ignore */
@@ -313,10 +164,8 @@ export function DashboardJobs({
           buildQuery(searchParams, {
             companySlug,
             companyOnly: Boolean(companySlug),
-            defaults: queryDefaults,
           }),
         );
-        sp.delete("job");
         const res = await fetch(`/api/jobs?${sp.toString()}`);
         if (!res.ok) {
           if (!cancelled) setFailed(true);
@@ -374,10 +223,8 @@ export function DashboardJobs({
         buildQuery(searchParams, {
           companySlug,
           companyOnly: Boolean(companySlug),
-          defaults: queryDefaults,
         }),
       );
-      sp.delete("job");
       sp.set("cursor", nextCursor);
       const res = await fetch(`/api/jobs?${sp.toString()}`);
       if (!res.ok) return;
@@ -450,7 +297,7 @@ export function DashboardJobs({
         </header>
       ) : null}
 
-      <div className="space-y-3 border-b border-line/80 pb-4">
+      <div className="border-b border-line/80 pb-4">
         {!hideChrome ? (
           <input
             type="search"
@@ -469,61 +316,6 @@ export function DashboardJobs({
         ) : (
           <p className="text-[13px] text-mute sm:text-[14px]">{headerLine}</p>
         )}
-        <div className="-mx-1 flex flex-wrap items-center gap-0.5">
-          <SoftSelect
-            label="Eligibility"
-            value={labels}
-            defaultValue={labelsDefault}
-            options={[...LABEL_OPTIONS]}
-            onChange={(v) => patchParams({ labels: v })}
-          />
-          {!hideChrome ? (
-            <>
-              <SoftSelect
-                label="Role"
-                value={role}
-                defaultValue={roleDefault}
-                options={[...ROLE_OPTIONS]}
-                onChange={(v) => patchParams({ role: v || null })}
-              />
-              <SoftSelect
-                label="ATS"
-                value={ats}
-                defaultValue=""
-                options={[...ATS_OPTIONS]}
-                onChange={(v) => patchParams({ ats: v || null })}
-              />
-              <SoftSelect
-                label="Posted"
-                value={posted}
-                defaultValue="all"
-                options={[...POSTED_OPTIONS]}
-                onChange={(v) => patchParams({ posted: v })}
-              />
-              <SoftSelect
-                label="Salary"
-                value={hasSalary}
-                defaultValue={hasSalaryDefault}
-                options={[...SALARY_OPTIONS]}
-                onChange={(v) => patchParams({ has_salary: v || null })}
-              />
-              <SoftSelect
-                label="Seniority"
-                value={earlyCareer}
-                defaultValue=""
-                options={[...EARLY_CAREER_OPTIONS]}
-                onChange={(v) => patchParams({ early_career: v || null })}
-              />
-              <SoftSelect
-                label="Sort"
-                value={sort}
-                defaultValue="newest"
-                options={[...SORT_OPTIONS]}
-                onChange={(v) => patchParams({ sort: v })}
-              />
-            </>
-          ) : null}
-        </div>
       </div>
 
       <div
@@ -559,7 +351,7 @@ export function DashboardJobs({
             </ul>
           ) : items.length === 0 ? (
             <p className="py-16 text-center text-sm text-mute">
-              No jobs match. Try removing a filter.
+              No jobs found.
             </p>
           ) : (
             <ul>

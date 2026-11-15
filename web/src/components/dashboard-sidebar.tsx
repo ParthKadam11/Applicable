@@ -8,10 +8,10 @@ import {
   Bookmark,
   Building2,
   ChevronDown,
-  Plug,
+  Menu,
   Search,
   Settings,
-  Sparkles,
+  X,
   Briefcase,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -129,10 +129,8 @@ function IntegrationsDropdown({ onNavigate }: { onNavigate?: () => void }) {
         onClick={() => setOpen((v) => !v)}
         className={`${tabClass(integrationsActive)} w-full`}
       >
-        <span
-          className={integrationsActive ? "text-mark-deep" : "text-mute"}
-        >
-          <Plug className="size-4" strokeWidth={1.75} />
+        <span className={integrationsActive ? "text-mark-deep" : "text-mute"}>
+          <SparklesIcon />
         </span>
         <span className="min-w-0 flex-1 truncate text-left">Integrations</span>
         <ChevronDown
@@ -141,29 +139,30 @@ function IntegrationsDropdown({ onNavigate }: { onNavigate?: () => void }) {
         />
       </button>
       {open ? (
-        <div className="mt-0.5 ml-2 space-y-0.5 border-l border-line/80 pl-2">
+        <div className="mt-0.5 space-y-0.5 border-l border-line/70 py-1 pl-2 ml-3">
           {INTEGRATIONS.map((item) => {
-            const pathOnly = item.href.split("#")[0] ?? item.href;
-            const on =
-              item.id === "personal-mcp"
+            const pathOnly = item.href.split("#")[0]!;
+            const on = item.href.includes("#")
+              ? pathname === "/dashboard/integrations"
+              : item.id === "mcp"
                 ? pathname === "/dashboard/integrations"
-                : item.id === "mcp"
-                  ? pathname === "/dashboard/integrations"
-                  : pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
+                : pathname === pathOnly || pathname.startsWith(`${pathOnly}/`);
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 onClick={onNavigate}
-                className={tabClass(Boolean(on))}
+                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12.5px] transition ${
+                  on
+                    ? "bg-mark-soft/80 text-ink"
+                    : "text-mute hover:bg-white/70 hover:text-ink"
+                }`}
               >
                 {item.logo ? (
-                  <span className="overflow-hidden rounded-md">
-                    <AgentLogo id={item.id} label={item.label} size="sm" />
-                  </span>
+                  <AgentLogo id={item.id} label={item.label} size="sm" />
                 ) : (
-                  <span className="text-mute">
-                    <Sparkles className="size-4" strokeWidth={1.75} />
+                  <span className="inline-flex size-5 items-center justify-center rounded-md bg-soft text-[10px] font-semibold text-ink">
+                    MCP
                   </span>
                 )}
                 <span className="truncate">{item.label}</span>
@@ -173,6 +172,25 @@ function IntegrationsDropdown({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SparklesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"
+      />
+    </svg>
   );
 }
 
@@ -277,8 +295,8 @@ function AccountBlock({ onNavigate }: { onNavigate?: () => void }) {
 
 function SidebarChrome({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="px-4 pb-3 pt-5">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 px-4 pb-3 pt-4">
         <Link
           href="/"
           onClick={onNavigate}
@@ -298,13 +316,74 @@ function SidebarChrome({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /**
- * Desktop workspace sidebar. Mobile chrome lives in the layout SiteHeader
- * (Jobs / Companies / Saved / account sheet).
+ * Desktop sidebar flush to the top (no marketing header offset).
+ * Mobile: sticky top bar + slide-over menu.
  */
 export function DashboardSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
   return (
-    <aside className="fixed bottom-0 left-0 top-14 z-30 hidden w-[16rem] flex-col border-r border-line bg-paper lg:flex">
-      <SidebarChrome />
-    </aside>
+    <>
+      <header className="sticky top-0 z-40 border-b border-line bg-paper lg:hidden">
+        <div className="flex h-12 items-center justify-between gap-3 px-4">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <BrandLogo size={24} className="rounded-[6px]" />
+            <span className="font-display text-[15px] tracking-tight text-ink">
+              Applicable
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="inline-flex size-10 items-center justify-center rounded-xl border border-line/80 bg-white text-ink"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            {mobileOpen ? (
+              <X className="size-4" strokeWidth={2} />
+            ) : (
+              <Menu className="size-4" strokeWidth={2} />
+            )}
+          </button>
+        </div>
+      </header>
+
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
+          <button
+            type="button"
+            className="absolute inset-0 bg-ink/30"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,88vw)] flex-col border-r border-line bg-paper shadow-[0_24px_48px_-24px_color-mix(in_srgb,var(--ink)_40%,transparent)]">
+            <SidebarChrome onNavigate={() => setMobileOpen(false)} />
+          </aside>
+        </div>
+      ) : null}
+
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[16rem] flex-col border-r border-line bg-paper lg:flex">
+        <SidebarChrome />
+      </aside>
+    </>
   );
 }

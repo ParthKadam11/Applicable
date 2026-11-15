@@ -24,8 +24,6 @@ export default async function DashboardCompaniesPage({
   searchParams: Promise<Sp>;
 }) {
   const raw = toURLSearchParams(await searchParams);
-  if (!raw.has("has_open")) raw.set("has_open", "true");
-  if (!raw.has("sort")) raw.set("sort", "most_open");
 
   const parsed = parseCompaniesListSearchParams(raw);
   let initial = null;
@@ -34,9 +32,9 @@ export default async function DashboardCompaniesPage({
       parsed.ok
         ? parsed.data
         : {
-            has_open: true,
-            sort: "most_open",
-            limit: 30,
+            has_open: false,
+            sort: "name",
+            limit: 40,
           },
     );
   } catch {
