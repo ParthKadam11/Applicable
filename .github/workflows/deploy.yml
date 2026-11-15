@@ -5,7 +5,7 @@ name: Deploy
 #   VPS_HOST          — e.g. 123.45.67.89 or mcp.applicable.click
 #   VPS_USER          — SSH user (e.g. root or deploy)
 #   VPS_SSH_KEY       — full private key INCLUDING BEGIN/END lines + real newlines
-#   VPS_DEPLOY_PATH   — app dir on VPS (default /opt/applicable)
+#   VPS_DEPLOY_PATH   — app dir on VPS (default /home/deployer/apps/CaniApply)
 #   MCP_SMOKE_URL     — e.g. https://mcp.applicable.click (optional; skips smoke if unset)
 
 on:
@@ -79,7 +79,11 @@ jobs:
           script: |
             set -euo pipefail
             DEPLOY_PATH="${{ secrets.VPS_DEPLOY_PATH }}"
-            DEPLOY_PATH="${DEPLOY_PATH:-/opt/applicable}"
+            DEPLOY_PATH="${DEPLOY_PATH:-/home/deployer/apps/CaniApply}"
+            if [ ! -d "$DEPLOY_PATH" ]; then
+              echo "::error::Deploy path missing: $DEPLOY_PATH (set VPS_DEPLOY_PATH secret)"
+              exit 1
+            fi
             cd "$DEPLOY_PATH"
 
             echo "==> git status (before)"
@@ -159,19 +163,25 @@ jobs:
             exit 0
           fi
           URL="${SMOKE_URL%/}"
+          URL="${URL%/mcp}"
+          # Old host 301s; curl -L would turn POST→GET and fail. Use branded host.
+          case "$URL" in
+            *mcp.parthkadam.tech*) URL="https://mcp.applicable.click" ;;
+          esac
           echo "Smoke against $URL"
 
-          curl -fsSL --max-time 30 "$URL/health" | grep -q '"ok":true'
+          curl -fsS --max-time 30 "$URL/health" | grep -q '"ok":true'
           echo "PASS /health"
 
-          INIT=$(curl -fsSL --max-time 30 -X POST "$URL/" \
+          # No -L: preserve POST. MCP is at host root.
+          INIT=$(curl -fsS --max-time 30 -X POST "$URL/" \
             -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"gha-smoke","version":"0.0.1"}}}')
           echo "$INIT" | grep -q applicable
           echo "PASS initialize"
 
-          STATS=$(curl -fsSL --max-time 30 -X POST "$URL/" \
+          STATS=$(curl -fsS --max-time 30 -X POST "$URL/" \
             -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
             -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"stats","arguments":{}}}')
