@@ -3,6 +3,7 @@ import { Fraunces } from "next/font/google";
 import { headers } from "next/headers";
 import { FontLoader } from "@/components/font-loader";
 import { AppSessionProvider } from "@/components/session-provider";
+import { SiteFooter } from "@/components/site-footer";
 import { SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
@@ -82,7 +83,10 @@ export default async function RootLayout({
         {isWaitlistHost ? (
           children
         ) : (
-          <AppSessionProvider>{children}</AppSessionProvider>
+          <AppSessionProvider>
+            {children}
+            <SiteFooter />
+          </AppSessionProvider>
         )}
       </body>
     </html>

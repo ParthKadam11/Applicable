@@ -1,5 +1,4 @@
 import { MePanel } from "@/components/me-panel";
-import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 export default function MePage() {
@@ -20,7 +19,6 @@ export default function MePage() {
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
         <MePanel />
       </div>
-      <SiteFooter />
     </div>
   );
 }
