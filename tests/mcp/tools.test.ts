@@ -29,6 +29,67 @@ describe("MCP tools against live DB", () => {
     }
   });
 
+  it("search_jobs pagination: next_cursor when shown < total; page 2 has no dupes", async () => {
+    if (!(await dbUp())) return;
+    const page1 = await searchJobs(db, {
+      eligibility: ["open", "india_remote"],
+      limit: 20,
+      max_per_company: 3,
+    });
+    expect(page1.total).toBeGreaterThan(page1.count);
+    expect(page1.next_cursor).toBeTruthy();
+
+    const page2 = await searchJobs(db, {
+      eligibility: ["open", "india_remote"],
+      limit: 20,
+      max_per_company: 3,
+      cursor: page1.next_cursor!,
+    });
+    expect(page2.count).toBeGreaterThan(0);
+    const ids1 = new Set(page1.results.map((r) => r.id));
+    for (const r of page2.results) {
+      expect(ids1.has(r.id)).toBe(false);
+    }
+  });
+
+  it("search_jobs intern + backend returns Cloudflare SWE intern; no AI-trainer noise", async () => {
+    if (!(await dbUp())) return;
+    const result = await searchJobs(db, {
+      eligibility: ["open", "india_remote", "india_onsite", "region_locked", "unclear"],
+      seniority: ["intern"],
+      role_keywords: "backend",
+      limit: 50,
+      max_per_company: 0,
+    });
+    const titles = result.results.map((r) => `${r.title} @ ${r.company}`);
+    expect(
+      titles.some(
+        (t) =>
+          /cloudflare/i.test(t) && /software engineer intern/i.test(t),
+      ),
+    ).toBe(true);
+    for (const t of titles) {
+      expect(t).not.toMatch(/dialect specialist|ai trainer|language (specialist|expert)|annotat|data label/i);
+    }
+  });
+
+  it("search_jobs early_career + backend excludes dialect/AI-trainer gigs", async () => {
+    if (!(await dbUp())) return;
+    const result = await searchJobs(db, {
+      eligibility: ["open", "india_remote"],
+      early_career: true,
+      role_keywords: "backend",
+      limit: 50,
+      max_per_company: 0,
+    });
+    for (const r of result.results) {
+      expect(r.title).not.toMatch(
+        /dialect specialist|ai trainer|language (specialist|expert)|annotat|data label/i,
+      );
+      expect(r.company).not.toMatch(/meridial/i);
+    }
+  });
+
   it(
     "stats matches raw SQL eligibility counts",
     async () => {

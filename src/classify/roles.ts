@@ -43,6 +43,28 @@ const NON_TECH_TITLE: RegExp[] = [
   /\bbrand designer\b|\bvisual designer\b/i,
   /\bcontent (?:writer|marketing|strategist)\b|\bcopywriter\b/i,
   /\bcommunity manager\b/i,
+  // Staffing / AI-training / data-labeling gigs (not SWE roles)
+  /\bai[\s-]?trainer\b/i,
+  /\bfreelance\s+ai\s+trainer\b/i,
+  /\b(?:data[\s-]?)?label(?:l?ing|er|ing)\b/i,
+  /\bannotat(?:or|ion|e|ing)\b/i,
+  /\bdialect\s+specialist\b/i,
+  /\blanguage\s+(?:specialist|expert|data\s+contributor)\b/i,
+  /\b(?:ai\s+)?rater\b/i,
+  /\bai\s+tutor\b/i,
+  /\b(?:crowd|task)\s*(?:worker|contributor)\b/i,
+];
+
+/** Agencies that primarily post labeling / AI-trainer gigs. */
+const NON_TECH_AGENCIES: RegExp[] = [
+  /\bmeridial\b/i,
+  /\boutlier\b/i,
+  /\bscale\s*ai\b/i,
+  /\bremotasks?\b/i,
+  /\bappen\b/i,
+  /\blionbridge\b/i,
+  /\btelus\s*(?:international)?\b/i,
+  /\bclickworker\b/i,
 ];
 
 /** Explicit engineering signal that overrides a soft non-tech match. */
@@ -57,18 +79,67 @@ const TECH_SIGNAL: RegExp[] = [
   /\bsre\b/i,
   /\bdevops\b/i,
   /\bbackend\b|\bfrontend\b|\bfull[- ]?stack\b/i,
-  /\bmachine learning\b|\b\bML\b|\b\bAI\b/i,
+  /\bmachine learning\b|\b\bML\b(?:\s+engineer)?/i,
   /\bsecurity engineer\b/i,
   /\bqa engineer\b|\btest engineer\b/i,
   /\bdeveloper advocate\b|\bdeveloper relations\b|\b\bDevRel\b/i,
   /\bsolutions engineer\b|\bsupport engineer\b|\bsales engineer\b/i,
 ];
 
+/**
+ * Staffing / AI-trainer / labeling noise. Stronger than soft title rules:
+ * "AI Trainer" must not become ml via \bAI\b patterns.
+ */
+export function isStaffingNoise(
+  title: string,
+  companyName = "",
+  descriptionText = "",
+): boolean {
+  const t = title.trim();
+  if (!t && !companyName) return false;
+
+  // Agency + soft labeling/trainer signal in title/description
+  if (NON_TECH_AGENCIES.some((re) => re.test(companyName))) {
+    if (
+      /\b(?:trainer|annotat|label|dialect|language\s+(?:specialist|expert|data)|rater|tutor|specialist)\b/i.test(
+        t,
+      ) ||
+      /\b(?:ai[\s-]?trainer|data[\s-]?label|annotat|dialect)\b/i.test(
+        descriptionText.slice(0, 800),
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // Title patterns — even at real product companies
+  if (
+    /\b(?:ai[\s-]?trainer|freelance\s+ai|dialect\s+specialist|language\s+(?:specialist|expert|data\s+contributor)|(?:data[\s-]?)?label(?:l?ing|er)|annotat(?:or|ion)|(?:ai\s+)?rater|ai\s+tutor)\b/i.test(
+      t,
+    )
+  ) {
+    // Keep real SWE/ML engineer titles
+    if (
+      /\b(?:software|backend|frontend|full[\s-]?stack|platform|infrastructure|security|data)\s+engineer\b/i.test(
+        t,
+      ) ||
+      /\bmachine\s+learning\s+engineer\b/i.test(t) ||
+      /\bml\s+engineer\b/i.test(t)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
 const ROLE_PATTERNS: Array<{ family: RoleFamily; re: RegExp }> = [
   { family: "ml", re: /\bmachine learning\b/i },
-  { family: "ml", re: /\b\bML\b(?:\s+engineer)?/ },
-  { family: "ml", re: /\b\bAI\b(?:\s+engineer)?/ },
-  { family: "ml", re: /\bLLM\b/ },
+  { family: "ml", re: /\bML\s+engineer\b/i },
+  { family: "ml", re: /\bAI\s+engineer\b/i },
+  { family: "ml", re: /\bLLM\s+engineer\b/i },
+  { family: "ml", re: /\b(?:ML|AI|LLM)\b(?=.*\bengineer)/i },
   { family: "data", re: /\bdata scientist\b/i },
   { family: "data", re: /\bdata engineer\b/i },
   { family: "data", re: /\banalytics engineer\b/i },
@@ -117,7 +188,12 @@ function isNonTechTitle(title: string): boolean {
 export function classifyRoleFamily(
   title: string,
   descriptionText = "",
+  companyName = "",
 ): { role_family: RoleFamily; evidence: string | null } {
+  if (isStaffingNoise(title, companyName, descriptionText)) {
+    return { role_family: "non_tech", evidence: title || companyName || null };
+  }
+
   if (isNonTechTitle(title)) {
     return { role_family: "non_tech", evidence: title };
   }

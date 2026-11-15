@@ -83,6 +83,7 @@ export function classifyWithRules(input: {
   descriptionText: string;
   locationRaw?: string | null;
   isRemoteFlag?: boolean | null;
+  companyName?: string | null;
 }): ClassificationResult {
   const text = [
     input.title,
@@ -101,7 +102,11 @@ export function classifyWithRules(input: {
   const interview = classifyInterview(text);
   const contractor = classifyContractor(text);
   const seniority = classifySeniority(input.title, input.descriptionText);
-  const role = classifyRoleFamily(input.title, input.descriptionText);
+  const role = classifyRoleFamily(
+    input.title,
+    input.descriptionText,
+    input.companyName ?? "",
+  );
   const compensation = parseCompensation(text);
 
   return {

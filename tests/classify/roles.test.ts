@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { classifyRoleFamily, isTechRole } from "../../src/classify/roles.js";
+import {
+  classifyRoleFamily,
+  isStaffingNoise,
+  isTechRole,
+} from "../../src/classify/roles.js";
 
 describe("classifyRoleFamily", () => {
   it("keeps engineering families", () => {
@@ -41,6 +45,49 @@ describe("classifyRoleFamily", () => {
 
   it("keeps sales engineer as tech solutions", () => {
     expect(classifyRoleFamily("Sales Engineer").role_family).toBe("solutions");
+  });
+
+  it("flags AI-trainer / dialect / labeling as non_tech", () => {
+    expect(
+      classifyRoleFamily(
+        "Bhojpuri Dialect Specialist - Freelance AI Trainer Project",
+        "",
+        "Meridial",
+      ).role_family,
+    ).toBe("non_tech");
+    expect(
+      classifyRoleFamily("AI Trainer", "", "Acme").role_family,
+    ).toBe("non_tech");
+    expect(
+      classifyRoleFamily("Data Labeling Specialist", "", "Outlier").role_family,
+    ).toBe("non_tech");
+    expect(
+      classifyRoleFamily("Language Expert - AI Rater", "", "Appen").role_family,
+    ).toBe("non_tech");
+  });
+
+  it("does not flag real SWE/ML engineers at labeling agencies", () => {
+    expect(
+      classifyRoleFamily("Software Engineer", "", "Scale AI").role_family,
+    ).toBe("other");
+    expect(
+      classifyRoleFamily("Machine Learning Engineer", "", "Scale AI")
+        .role_family,
+    ).toBe("ml");
+  });
+});
+
+describe("isStaffingNoise", () => {
+  it("matches title + agency patterns", () => {
+    expect(
+      isStaffingNoise(
+        "Haryanvi Dialect Specialist - Freelance AI Trainer Project",
+        "Meridial",
+      ),
+    ).toBe(true);
+    expect(isStaffingNoise("Software Engineer Intern (2027)", "Cloudflare")).toBe(
+      false,
+    );
   });
 });
 

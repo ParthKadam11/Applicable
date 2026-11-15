@@ -97,6 +97,106 @@ function techOpenBase() {
   );
 }
 
+function escapeIlike(tok: string): string {
+  return tok.replace(/[%_]/g, "\\$&");
+}
+
+function escapeRegex(tok: string): string {
+  return tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Map search tokens onto role_family values. */
+function roleFamilyForToken(tok: string): string | null {
+  const t = tok.toLowerCase().replace(/[-_\s]/g, "");
+  const map: Record<string, string> = {
+    backend: "backend",
+    frontend: "frontend",
+    fullstack: "fullstack",
+    mobile: "mobile",
+    infra: "infra",
+    infrastructure: "infra",
+    devops: "infra",
+    sre: "infra",
+    ml: "ml",
+    ai: "ml",
+    data: "data",
+    security: "security",
+    qa: "qa",
+    solutions: "solutions",
+  };
+  return map[t] ?? null;
+}
+
+/**
+ * Tech-stack / "Technologies include" cues for role-family keywords.
+ * Used so "backend" matches SWE roles with Go/Rust/microservices stacks
+ * without relying on boilerplate About-Us laundry lists alone.
+ */
+// Postgres POSIX regex caps quantifiers at 255.
+const ROLE_STACK_RE: Record<string, string> = {
+  backend:
+    "(technologies?[[:space:]]+include.{0,255}(go|golang|rust|java|python|node|typescript|microservices)|[[:<:]](back[[:space:]-]?end|server[[:space:]-]?side|microservices)[[:>:]])",
+  frontend:
+    "(technologies?[[:space:]]+include.{0,255}(react|vue|angular|typescript|javascript|css)|[[:<:]](front[[:space:]-]?end|ui engineer)[[:>:]])",
+  fullstack:
+    "(technologies?[[:space:]]+include.{0,255}(react|node|typescript)|[[:<:]]full[[:space:]-]?stack[[:>:]])",
+  mobile:
+    "(technologies?[[:space:]]+include.{0,255}(ios|android|swift|kotlin|flutter|react native)|[[:<:]](mobile|ios|android)[[:>:]])",
+  infra:
+    "(technologies?[[:space:]]+include.{0,255}(kubernetes|terraform|aws|gcp|azure|docker)|[[:<:]](devops|sre|infrastructure|platform)[[:>:]])",
+  ml: "(technologies?[[:space:]]+include.{0,255}(pytorch|tensorflow|llm|cuda)|[[:<:]](machine learning|deep learning|ML|LLM)[[:>:]])",
+  data: "(technologies?[[:space:]]+include.{0,255}(spark|dbt|airflow|snowflake|bigquery)|[[:<:]](data engineer|analytics engineer)[[:>:]])",
+  security:
+    "(technologies?[[:space:]]+include.{0,255}(appsec|infosec)|[[:<:]](security engineer|application security)[[:>:]])",
+  qa: "(technologies?[[:space:]]+include.{0,255}(cypress|playwright|selenium)|[[:<:]](qa engineer|sdet|test engineer)[[:>:]])",
+};
+
+const ENG_TITLE_RE =
+  "(engineer|developer|software|[[:<:]]SWE[[:>:]]|[[:<:]]SDE[[:>:]]|intern)";
+
+/** Title / role_family / tech-stack match — not bare boilerplate description. */
+function tokenMatchCondition(tok: string) {
+  const needle = `%${escapeIlike(tok)}%`;
+  const family = roleFamilyForToken(tok);
+  const parts = [
+    ilike(jobs.title, needle),
+    ilike(jobs.department, needle),
+  ];
+
+  if (family) {
+    parts.push(eq(jobTags.roleFamily, family));
+    const stack = ROLE_STACK_RE[family];
+    if (stack) {
+      parts.push(
+        sql`(
+          ${jobs.title} ~* ${ENG_TITLE_RE}
+          and ${jobs.descriptionText} ~* ${stack}
+        )`,
+      );
+    }
+  } else {
+    const re = escapeRegex(tok);
+    // Skill / free-text: title already covered; description only in
+    // requirements / tech-stack sections (skip About-Us boilerplate).
+    parts.push(
+      sql`(
+        ${jobs.descriptionText} ~*
+          ${`(technologies?[[:space:]]+include|tech(nology)?[[:space:]]+stack|requirements|qualifications|responsibilities|about the (role|job)|what you.?ll).{0,255}${re}`}
+      )`,
+    );
+  }
+
+  return or(...parts)!;
+}
+
+function tokenizeSearch(searchText: string): string[] {
+  return searchText
+    .split(/[\s,]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 1)
+    .slice(0, 8);
+}
+
 export async function searchJobs(db: Db, raw: SearchInput) {
   const eligibility =
     raw.eligibility && raw.eligibility.length > 0
@@ -119,22 +219,9 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     .join(" ")
     .trim();
 
-  // Tokenize query/keywords; match ANY token in title OR description (not a phrase AND).
-  // Title hits ranked higher via CASE in ORDER BY.
-  if (searchText) {
-    const tokens = searchText
-      .split(/[\s,]+/)
-      .map((t) => t.trim())
-      .filter((t) => t.length > 1)
-      .slice(0, 8);
-    const tokenConds = (tokens.length > 0 ? tokens : [searchText]).map((tok) => {
-      const needle = `%${tok.replace(/[%_]/g, "\\$&")}%`;
-      return or(
-        ilike(jobs.title, needle),
-        ilike(jobs.descriptionText, needle),
-      )!;
-    });
-    conditions.push(or(...tokenConds)!);
+  const tokens = searchText ? tokenizeSearch(searchText) : [];
+  if (tokens.length > 0) {
+    conditions.push(or(...tokens.map((tok) => tokenMatchCondition(tok)))!);
   }
   if (raw.company) {
     conditions.push(ilike(companies.name, `%${raw.company}%`));
@@ -189,41 +276,45 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
     .where(where);
 
-  // Over-fetch then diversity-cap so a single company can't flood a page.
-  const fetchN =
-    maxPerCompany > 0 ? Math.min(500, Math.max(limit * 8, offset + 50)) : limit + 1;
+  const totalN = Number(total);
 
-  const titleTokens = searchText
-    ? searchText
-        .split(/[\s,]+/)
-        .map((t) => t.trim())
-        .filter((t) => t.length > 1)
-        .slice(0, 8)
-    : [];
-  const orderBy =
-    titleTokens.length > 0
-      ? [
-          sql`case when ${or(
-            ...titleTokens.map(
-              (tok) => ilike(jobs.title, `%${tok.replace(/[%_]/g, "\\$&")}%`),
+  // Rank: title hit (0) > role_family / tech-stack (1) > other (2).
+  // Use 0+0 not bare 0 — Postgres treats ORDER BY <int> as a column position.
+  const matchRank =
+    tokens.length > 0
+      ? sql`case
+          when ${or(
+            ...tokens.map((tok) =>
+              ilike(jobs.title, `%${escapeIlike(tok)}%`),
             ),
-          )} then 0 else 1 end`,
-          desc(jobs.postedAt),
-          desc(jobs.lastSeenAt),
-        ]
-      : [desc(jobs.postedAt), desc(jobs.lastSeenAt)];
+          )} then 0
+          when ${or(
+            ...tokens.flatMap((tok) => {
+              const family = roleFamilyForToken(tok);
+              if (!family) return [sql`false`];
+              const stack = ROLE_STACK_RE[family];
+              return [
+                eq(jobTags.roleFamily, family),
+                stack
+                  ? sql`(
+                      ${jobs.title} ~* ${ENG_TITLE_RE}
+                      and ${jobs.descriptionText} ~* ${stack}
+                    )`
+                  : sql`false`,
+              ];
+            }),
+          )} then 1
+          else 2
+        end`
+      : sql`0+0`;
 
-  const rows = await db
+  // Lightweight id scan over the FULL filtered set, then diversity-cap +
+  // paginate. Avoids the old over-fetch bug where one company exhausted the
+  // window and next_cursor was dropped while total ≫ shown.
+  const idRows = await db
     .select({
       id: jobs.id,
-      title: jobs.title,
-      company: companies.name,
-      companyId: companies.id,
-      companyWebsite: companies.website,
-      location: jobs.locationRaw,
-      eligibility: jobTags.indiaEligibility,
-      evidence: jobTags.eligibilityEvidence,
-      applyUrl: jobs.applyUrl,
+      companyId: jobs.companyId,
       postedAt: jobs.postedAt,
       lastSeenAt: jobs.lastSeenAt,
     })
@@ -231,26 +322,66 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     .innerJoin(companies, eq(companies.id, jobs.companyId))
     .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
     .where(where)
-    .orderBy(...orderBy)
-    .limit(fetchN)
-    .offset(maxPerCompany > 0 ? 0 : offset);
+    .orderBy(
+      sql`${matchRank} asc`,
+      sql`${jobs.postedAt} desc nulls last`,
+      desc(jobs.lastSeenAt),
+    );
 
-  let ranked = rows;
+  let orderedIds = idRows.map((r) => r.id);
   if (maxPerCompany > 0) {
     const perCompany = new Map<string, number>();
-    const diversified: typeof rows = [];
-    for (const r of rows) {
+    const diversified: string[] = [];
+    for (const r of idRows) {
       const n = perCompany.get(r.companyId) ?? 0;
       if (n >= maxPerCompany) continue;
       perCompany.set(r.companyId, n + 1);
-      diversified.push(r);
+      diversified.push(r.id);
     }
-    ranked = diversified.slice(offset, offset + limit + 1);
+    orderedIds = diversified;
   }
 
-  const hasMore = ranked.length > limit;
-  const page = hasMore ? ranked.slice(0, limit) : ranked;
-  const totalN = Number(total);
+  const pageIds = orderedIds.slice(offset, offset + limit + 1);
+  const hasMorePages = pageIds.length > limit;
+  const pageIdList = hasMorePages ? pageIds.slice(0, limit) : pageIds;
+
+  let page: Array<{
+    id: string;
+    title: string;
+    company: string;
+    companyId: string;
+    companyWebsite: string | null;
+    location: string | null;
+    eligibility: string | null;
+    evidence: string[] | null;
+    applyUrl: string;
+    postedAt: Date | null;
+    lastSeenAt: Date | null;
+  }> = [];
+
+  if (pageIdList.length > 0) {
+    const detailRows = await db
+      .select({
+        id: jobs.id,
+        title: jobs.title,
+        company: companies.name,
+        companyId: companies.id,
+        companyWebsite: companies.website,
+        location: jobs.locationRaw,
+        eligibility: jobTags.indiaEligibility,
+        evidence: jobTags.eligibilityEvidence,
+        applyUrl: jobs.applyUrl,
+        postedAt: jobs.postedAt,
+        lastSeenAt: jobs.lastSeenAt,
+      })
+      .from(jobs)
+      .innerJoin(companies, eq(companies.id, jobs.companyId))
+      .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+      .where(inArray(jobs.id, pageIdList));
+
+    const byId = new Map(detailRows.map((r) => [r.id, r]));
+    page = pageIdList.map((id) => byId.get(id)!).filter(Boolean);
+  }
 
   const limitedInventory =
     Boolean(raw.early_career) && totalN < 5
@@ -278,7 +409,7 @@ export async function searchJobs(db: Db, raw: SearchInput) {
       posted_at: r.postedAt?.toISOString() ?? null,
       last_seen_at: r.lastSeenAt?.toISOString() ?? null,
     })),
-    next_cursor: hasMore ? encodeCursor(offset + limit) : null,
+    next_cursor: hasMorePages ? encodeCursor(offset + limit) : null,
     count: page.length,
     total: totalN,
     ...(limitedInventory ? { limited_inventory: limitedInventory } : {}),

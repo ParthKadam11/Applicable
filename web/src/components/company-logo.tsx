@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { companyLogoDomain, companyLogoUrl } from "@/lib/company-logo";
+import { useEffect, useState } from "react";
+import {
+  companyLogoCandidates,
+  companyLogoDomain,
+} from "@/lib/company-logo";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -16,7 +19,7 @@ function initial(name: string) {
   return letter ? letter.toUpperCase() : "?";
 }
 
-/** Real company mark from website/domain; falls back to initial. */
+/** Real company mark from website/domain; multi-CDN fallback → initial. */
 export function CompanyLogo({
   company,
   website,
@@ -24,33 +27,45 @@ export function CompanyLogo({
   size = 36,
 }: Props) {
   const domain = companyLogoDomain(company, website);
-  const [failed, setFailed] = useState(false);
-  const showImg = Boolean(domain) && !failed;
+  const candidates = domain ? companyLogoCandidates(domain) : [];
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    setIdx(0);
+  }, [domain, company, website]);
+
+  const src = candidates[idx] ?? null;
+  const showImg = Boolean(src);
 
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[0.7rem] bg-white text-[13px] font-semibold text-ink",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[0.7rem] bg-white text-[13px] font-semibold text-ink ring-1 ring-line/60",
         className,
       )}
       style={{ width: size, height: size }}
       aria-hidden
     >
       {showImg ? (
-        // eslint-disable-next-line @next/next/no-img-element -- remote logo CDN; onError fallback
+        // eslint-disable-next-line @next/next/no-img-element -- remote logo CDN; onError cascades
         <img
-          src={companyLogoUrl(domain!)}
+          key={src}
+          src={src!}
           alt=""
           width={size}
           height={size}
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
-          className="size-full object-cover"
+          onError={() => {
+            setIdx((i) => (i + 1 < candidates.length ? i + 1 : candidates.length));
+          }}
+          className="size-full object-contain p-0.5"
         />
       ) : (
-        <span>{initial(company)}</span>
+        <span className="bg-soft size-full inline-flex items-center justify-center">
+          {initial(company)}
+        </span>
       )}
     </span>
   );

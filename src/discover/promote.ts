@@ -265,6 +265,7 @@ async function promoteOne(
       return { kind: "done" };
     }
 
+    // Prefer a real domain; empty string when unknown (never example.com).
     const website = websiteFromDomain(cand.domain);
     const [company] = await db
       .insert(companies)
@@ -280,6 +281,15 @@ async function promoteOne(
         set: {
           name: displayName,
           active: true,
+          // Upgrade placeholder websites when we learn a real domain.
+          website: sql`case
+            when ${companies.website} is null
+              or ${companies.website} = ''
+              or ${companies.website} ilike '%example.com%'
+              or ${companies.website} ilike '%example.invalid%'
+            then excluded.website
+            else ${companies.website}
+          end`,
         },
       })
       .returning();

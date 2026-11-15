@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { jobTags, jobs, type Job } from "../db/schema.js";
+import { companies, jobTags, jobs, type Job } from "../db/schema.js";
 import {
   isContractorGearEvidenceText,
   isNegativeEligibilitySentence,
@@ -199,7 +199,7 @@ export async function classifyJobContent(
     | "contentHash"
     | "compensationRaw"
     | "isRemoteFlag"
-  >,
+  > & { companyName?: string | null },
   options: ClassifyOptions = {},
 ): Promise<ClassifiedTag> {
   const rules = classifyWithRules({
@@ -207,6 +207,7 @@ export async function classifyJobContent(
     descriptionText: job.descriptionText,
     locationRaw: job.locationRaw,
     isRemoteFlag: job.isRemoteFlag,
+    companyName: job.companyName,
   });
 
   // Prefer structured ATS compensation (Ashby) over free-text regex.
@@ -424,7 +425,16 @@ export async function classifyAndStoreJob(
     }
   }
 
-  const tag = await classifyJobContent(job, { ...options, db: options.db ?? db });
+  const [company] = await db
+    .select({ name: companies.name })
+    .from(companies)
+    .where(eq(companies.id, job.companyId))
+    .limit(1);
+
+  const tag = await classifyJobContent(
+    { ...job, companyName: company?.name ?? null },
+    { ...options, db: options.db ?? db },
+  );
   await persistClassification(db, jobId, tag);
   return tag;
 }

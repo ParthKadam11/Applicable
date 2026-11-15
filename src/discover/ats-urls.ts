@@ -63,7 +63,13 @@ export function domainFromUrl(url: string | null | undefined): string | null {
   }
 }
 
+/** Build a website URL from a domain. Returns empty string when unknown — never example.com. */
 export function websiteFromDomain(domain: string | null | undefined): string {
-  if (!domain) return "https://example.com";
-  return `https://${domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  if (!domain?.trim()) return "";
+  const host = domain
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "")
+    .replace(/^www\./, "");
+  if (!host || host === "example.com" || host.endsWith(".example")) return "";
+  return `https://${host}`;
 }

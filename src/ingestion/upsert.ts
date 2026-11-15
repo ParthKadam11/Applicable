@@ -1,8 +1,11 @@
 import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 import type { NormalizedJob } from "../ats/types.js";
-import { classifyRoleFamily } from "../classify/roles.js";
+import {
+  classifyRoleFamily,
+  isStaffingNoise,
+} from "../classify/roles.js";
 import type { Db } from "../db/client.js";
-import { jobs } from "../db/schema.js";
+import { companies, jobs } from "../db/schema.js";
 import { contentHash } from "../utils/hash.js";
 
 export interface UpsertResult {
@@ -28,10 +31,26 @@ export async function upsertJobs(
     return { upserted: 0, closed, skippedNonTech: 0, hashes };
   }
 
+  const [company] = await db
+    .select({ name: companies.name })
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+  const companyName = company?.name ?? "";
+
   const techJobs: NormalizedJob[] = [];
   const nonTechExternalIds: string[] = [];
   for (const job of fetched) {
-    const { role_family } = classifyRoleFamily(job.title);
+    // Staffing / AI-trainer noise: keep the row; classify flags non_tech later.
+    if (isStaffingNoise(job.title, companyName, job.descriptionText)) {
+      techJobs.push(job);
+      continue;
+    }
+    const { role_family } = classifyRoleFamily(
+      job.title,
+      job.descriptionText,
+      companyName,
+    );
     if (role_family === "non_tech") {
       nonTechExternalIds.push(job.externalId);
       continue;
