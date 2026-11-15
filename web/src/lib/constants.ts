@@ -1,7 +1,7 @@
 export const SITE_URL = "https://applicable.click";
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ||
-  "https://mcp.parthkadam.tech";
+  "https://mcp.applicable.click";
 export const MCP_URL = `${API_BASE}/mcp`;
 
 export const REVALIDATE_SECONDS = 300;
