@@ -100,12 +100,12 @@ function evidenceQuoteFromJob(evidence: unknown): string | null {
 }
 
 /**
- * ~30 recent India-relevant jobs with evidence, ≤2 per company.
+ * Compact landing feed (~12 jobs with evidence, ≤2 per company).
  * Cached 10 minutes; falls back to last good in-process snapshot.
  */
 export async function fetchLandingFeedJobs(): Promise<JobRow[]> {
   const body = await getJson<JobsResponse>(
-    "/api/jobs?eligibility=open,india_remote,india_onsite&limit=80",
+    "/api/jobs?eligibility=open,india_remote,india_onsite&limit=40",
     { revalidate: 600 },
   );
   const rows = body?.results ?? [];
@@ -127,7 +127,7 @@ export async function fetchLandingFeedJobs(): Promise<JobRow[]> {
     if (n >= 2) continue;
     perCompany.set(key, n + 1);
     picked.push(job);
-    if (picked.length >= 30) break;
+    if (picked.length >= 12) break;
   }
 
   if (picked.length === 0) return lastLandingFeed ?? [];

@@ -529,18 +529,18 @@ button:focus-visible {
 }
 
 .corpus-marquee-col {
-  animation: corpus-scroll-y 48s linear infinite;
-  will-change: transform;
+  animation: corpus-scroll-y 42s linear infinite;
+  transform: translate3d(0, 0, 0);
 }
 
-.corpus-col-wrap:nth-child(2) .corpus-marquee-col {
-  animation-duration: 56s;
+.corpus-marquee-col--rev {
+  animation-duration: 48s;
   animation-direction: reverse;
 }
 
 .corpus-marquee-x {
-  animation: corpus-scroll-x 55s linear infinite;
-  will-change: transform;
+  animation: corpus-scroll-x 40s linear infinite;
+  transform: translate3d(0, 0, 0);
 }
 
 .corpus-feed:hover .corpus-marquee-col,

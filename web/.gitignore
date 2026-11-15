@@ -23,6 +23,9 @@
 # lighthouse dumps (keep PNGs)
 /screenshots/lighthouse-*.json
 
+# local QA captures (never commit)
+/qa-screenshots/
+
 # production
 /build
 
