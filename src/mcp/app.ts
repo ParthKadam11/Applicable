@@ -233,7 +233,7 @@ export function createMcpHttpApp() {
     }
   });
 
-  app.use("/mcp", (req, res, next) => {
+  const mcpRateLimit = (req: Request, res: Response, next: NextFunction) => {
     const ip = clientIp(req);
     if (!rateLimiter.allow(ip)) {
       res.status(429).json({
@@ -244,7 +244,7 @@ export function createMcpHttpApp() {
       return;
     }
     next();
-  });
+  };
 
   const handleMcp = async (req: Request, res: Response) => {
     const auth = await resolveMcpAuth(
@@ -281,15 +281,20 @@ export function createMcpHttpApp() {
     }
   };
 
-  app.post("/mcp", (req, res) => void handleMcp(req, res));
-  app.get("/mcp", (req, res) => void handleMcp(req, res));
-  app.delete("/mcp", (_req, res) => {
+  const methodNotAllowed = (_req: Request, res: Response) => {
     res.status(405).json({
       jsonrpc: "2.0",
       error: { code: -32000, message: "Method not allowed." },
       id: null,
     });
-  });
+  };
+
+  // Preferred: host root (https://mcp.applicable.click/). /mcp kept as alias.
+  for (const path of ["/", "/mcp"] as const) {
+    app.post(path, mcpRateLimit, (req, res) => void handleMcp(req, res));
+    app.get(path, mcpRateLimit, (req, res) => void handleMcp(req, res));
+    app.delete(path, methodNotAllowed);
+  }
 
   return app;
 }
