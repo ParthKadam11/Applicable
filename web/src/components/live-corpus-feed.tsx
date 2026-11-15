@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { CompanyLogo } from "@/components/company-logo";
+import { authHref } from "@/lib/nav";
 import type { CorpusCard } from "@/lib/live-corpus";
 
 const FEED_CAP = 12;
+const JOBS_HREF = "/dashboard/jobs";
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -20,9 +23,15 @@ function usePrefersReducedMotion() {
 }
 
 function JobRow({ card }: { card: CorpusCard }) {
+  const { data, status } = useSession();
+  const href =
+    status === "authenticated" && data?.user
+      ? JOBS_HREF
+      : authHref(JOBS_HREF);
+
   return (
     <Link
-      href={card.href}
+      href={href}
       className="group flex min-w-0 gap-2.5 rounded-xl border border-line/80 bg-white px-2.5 py-2.5 transition hover:border-mark hover:bg-mark-soft/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mark xs:gap-3 xs:px-3"
     >
       <CompanyLogo
