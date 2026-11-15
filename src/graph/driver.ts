@@ -72,6 +72,7 @@ async function runHttp(
   // Content-hash key: unique per distinct request; stable for exact retries.
   // cell_id must stay the configured shard id ("cell-0"), never a random UUID.
   const idempotencyKey = hydraMutationIdempotencyKey(cypher, params);
+  const timeoutMs = Number(process.env.HYDRA_HTTP_TIMEOUT_MS ?? 15_000);
   const res = await fetch(`${httpBaseUrl()}/v1/graphs/${graphId}/query`, {
     method: "POST",
     headers: {
@@ -86,6 +87,7 @@ async function runHttp(
       parameters: params,
       mutation_idempotency_key: idempotencyKey,
     }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await res.text();
   let json: {

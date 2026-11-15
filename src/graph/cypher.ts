@@ -298,19 +298,25 @@ export async function countGraphTotals(
     params?: Record<string, unknown>,
   ) => Promise<{ records: Array<Record<string, unknown>> }>,
 ): Promise<{ nodes: number; edges: number }> {
-  let nodes = 0;
-  for (const label of GRAPH_NODE_LABELS) {
-    const q = countNodesByLabelQuery(label);
-    const r = await run(q.cypher, q.params);
-    nodes += Number(r.records[0]?.n ?? 0);
-  }
-  let edges = 0;
-  for (const rel of GRAPH_EDGE_TYPES) {
-    const q = countEdgesByTypeQuery(rel);
-    const r = await run(q.cypher, q.params);
-    edges += Number(r.records[0]?.n ?? 0);
-  }
-  return { nodes, edges };
+  // Parallel label/rel counts (same totals; was ~N sequential Hydra round-trips).
+  const nodeParts = await Promise.all(
+    GRAPH_NODE_LABELS.map(async (label) => {
+      const q = countNodesByLabelQuery(label);
+      const r = await run(q.cypher, q.params);
+      return Number(r.records[0]?.n ?? 0);
+    }),
+  );
+  const edgeParts = await Promise.all(
+    GRAPH_EDGE_TYPES.map(async (rel) => {
+      const q = countEdgesByTypeQuery(rel);
+      const r = await run(q.cypher, q.params);
+      return Number(r.records[0]?.n ?? 0);
+    }),
+  );
+  return {
+    nodes: nodeParts.reduce((a, b) => a + b, 0),
+    edges: edgeParts.reduce((a, b) => a + b, 0),
+  };
 }
 
 /** Assert builders never embed raw user strings in cypher text. */

@@ -54,6 +54,7 @@ export const companies = pgTable(
     index("companies_active_idx").on(table.active),
     index("companies_created_at_idx").on(table.createdAt),
     index("companies_name_idx").on(table.name),
+    index("companies_enriched_at_idx").on(table.enrichedAt),
   ],
 );
 
@@ -195,6 +196,7 @@ export const jobTags = pgTable(
   (table) => [
     index("job_tags_india_eligibility_idx").on(table.indiaEligibility),
     index("job_tags_role_family_idx").on(table.roleFamily),
+    index("job_tags_content_hash_idx").on(table.contentHash),
   ],
 );
 

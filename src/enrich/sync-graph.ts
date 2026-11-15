@@ -130,23 +130,43 @@ export async function syncCompanyEnrichmentToGraph(
       .innerJoin(people, eq(people.id, companyPeople.personId))
       .where(eq(companyPeople.companyId, companyId));
 
-    for (const cp of cps) {
-      const personNodeId = stableGraphId("person", cp.personId);
+    if (cps.length) {
+      const personRows = cps.map((cp) => ({
+        id: stableGraphId("person", cp.personId),
+        name: cp.name,
+        ext_id: cp.personId,
+      }));
       await run(
         "person",
         `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Person, n.name = row.name, n.ext_id = row.ext_id`,
-        {
-          rows: [
-            { id: personNodeId, name: cp.name, ext_id: cp.personId },
-          ],
-        },
+        { rows: personRows },
       );
-      const rel = cp.role === "works_at" ? "WORKS_AT" : "FOUNDED";
-      await run(
-        rel.toLowerCase(),
-        `UNWIND $rows AS row MATCH (a:Person {id: row.src}), (b:Company {id: row.dst}) CREATE (a)-[:${rel}]->(b)`,
-        { rows: [{ src: personNodeId, dst: companyNodeId }] },
-      );
+      const founded = cps
+        .filter((cp) => cp.role !== "works_at")
+        .map((cp) => ({
+          src: stableGraphId("person", cp.personId),
+          dst: companyNodeId,
+        }));
+      const works = cps
+        .filter((cp) => cp.role === "works_at")
+        .map((cp) => ({
+          src: stableGraphId("person", cp.personId),
+          dst: companyNodeId,
+        }));
+      if (founded.length) {
+        await run(
+          "founded",
+          `UNWIND $rows AS row MATCH (a:Person {id: row.src}), (b:Company {id: row.dst}) CREATE (a)-[:FOUNDED]->(b)`,
+          { rows: founded },
+        );
+      }
+      if (works.length) {
+        await run(
+          "works_at",
+          `UNWIND $rows AS row MATCH (a:Person {id: row.src}), (b:Company {id: row.dst}) CREATE (a)-[:WORKS_AT]->(b)`,
+          { rows: works },
+        );
+      }
     }
 
     const cis = await db
@@ -159,25 +179,30 @@ export async function syncCompanyEnrichmentToGraph(
       .innerJoin(investors, eq(investors.id, companyInvestors.investorId))
       .where(eq(companyInvestors.companyId, companyId));
 
-    for (const ci of cis) {
-      const invNodeId = stableGraphId("investor", ci.investorId);
+    if (cis.length) {
       await run(
         "investor",
         `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Investor, n.name = row.name, n.ext_id = row.ext_id`,
         {
-          rows: [
-            { id: invNodeId, name: ci.name, ext_id: ci.investorId },
-          ],
+          rows: cis.map((ci) => ({
+            id: stableGraphId("investor", ci.investorId),
+            name: ci.name,
+            ext_id: ci.investorId,
+          })),
         },
       );
       await run(
         "invested_in",
         `UNWIND $rows AS row MATCH (a:Investor {id: row.src}), (b:Company {id: row.dst}) CREATE (a)-[:INVESTED_IN]->(b)`,
-        { rows: [{ src: invNodeId, dst: companyNodeId }] },
+        {
+          rows: cis.map((ci) => ({
+            src: stableGraphId("investor", ci.investorId),
+            dst: companyNodeId,
+          })),
+        },
       );
     }
 
-    // Also write Person linkedin when present on people row
     return { ok: true, steps };
   } catch (err) {
     return {

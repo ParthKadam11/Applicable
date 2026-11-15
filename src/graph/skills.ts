@@ -288,16 +288,9 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * Extract canonical skills from title + description.
- * Deterministic; case-insensitive; word-boundary for short tokens.
- * Ambiguous words require qualified context (see AMBIGUOUS_BARE_TOKENS).
- */
-export function extractSkills(title: string, description: string): string[] {
-  const text = `${title}\n${description}`.toLowerCase();
-  const found = new Set<string>();
-  for (const { term, canonical } of MATCH_TERMS) {
-    if (found.has(canonical)) continue;
+/** Precompiled once — extractSkills is called thousands of times per graph sync. */
+const MATCH_PATTERNS: Array<{ canonical: string; pattern: RegExp }> =
+  MATCH_TERMS.map(({ term, canonical }) => {
     const pattern =
       term.includes(" ") ||
       term.includes(".") ||
@@ -308,6 +301,19 @@ export function extractSkills(title: string, description: string): string[] {
             `(?:^|[^a-z0-9_+#])${escapeRegExp(term)}(?:[^a-z0-9_+#]|$)`,
             "i",
           );
+    return { canonical, pattern };
+  });
+
+/**
+ * Extract canonical skills from title + description.
+ * Deterministic; case-insensitive; word-boundary for short tokens.
+ * Ambiguous words require qualified context (see AMBIGUOUS_BARE_TOKENS).
+ */
+export function extractSkills(title: string, description: string): string[] {
+  const text = `${title}\n${description}`.toLowerCase();
+  const found = new Set<string>();
+  for (const { canonical, pattern } of MATCH_PATTERNS) {
+    if (found.has(canonical)) continue;
     if (pattern.test(text)) {
       found.add(canonical);
     }

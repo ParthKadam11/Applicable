@@ -85,10 +85,14 @@ export async function registerIngestWorkers(boss: PgBoss): Promise<void> {
     await enqueueActiveCompanies(boss);
     // Refresh today's snapshot after each ingest wave is enqueued.
     await writeDailyStats(db);
+    const { invalidateMcpStatsCache } = await import("../mcp/tools.js");
+    invalidateMcpStatsCache();
   });
 
   await boss.work(DAILY_STATS_QUEUE, async () => {
     await writeDailyStats(db);
+    const { invalidateMcpStatsCache } = await import("../mcp/tools.js");
+    invalidateMcpStatsCache();
   });
 }
 

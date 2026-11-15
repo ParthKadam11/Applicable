@@ -518,10 +518,28 @@ export type McpStatsResult = {
   history?: DailyStatsRow[];
 };
 
+const STATS_TTL_MS = 60_000;
+let statsCache: { at: number; key: string; value: McpStatsResult } | null =
+  null;
+
+/** Drop cached MCP stats (call after ingest / graph sync). */
+export function invalidateMcpStatsCache(): void {
+  statsCache = null;
+}
+
 export async function getMcpStats(
   db: Db,
   raw: StatsInput = {},
 ): Promise<McpStatsResult> {
+  const cacheKey = JSON.stringify(raw ?? {});
+  if (
+    statsCache &&
+    statsCache.key === cacheKey &&
+    Date.now() - statsCache.at < STATS_TTL_MS
+  ) {
+    return statsCache.value;
+  }
+
   const openActive = and(isNull(jobs.closedAt), eq(companies.active, true));
   const techOpen = and(
     openActive,
@@ -653,6 +671,7 @@ export async function getMcpStats(
     );
   }
 
+  statsCache = { at: Date.now(), key: cacheKey, value: result };
   return result;
 }
 

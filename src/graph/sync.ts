@@ -200,6 +200,12 @@ export async function runGraphSync(
         `skipped=${result.skipped} skip_reasons=${JSON.stringify(skipReasons)} ` +
         `ms=${result.durationMs}`,
     );
+    try {
+      const { invalidateMcpStatsCache } = await import("../mcp/tools.js");
+      invalidateMcpStatsCache();
+    } catch {
+      /* optional */
+    }
     return result;
   };
 
@@ -521,8 +527,11 @@ export async function runGraphSync(
       result.edgesAdded += part.length;
     }
 
-    for (const m of pendingMarks) {
-      await markSynced(db, m.jobId, m.hash);
+    // Batch mark synced (avoid per-job UPDATE round-trips).
+    for (const part of chunk(pendingMarks, 200)) {
+      await Promise.all(
+        part.map((m) => markSynced(db, m.jobId, m.hash)),
+      );
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
