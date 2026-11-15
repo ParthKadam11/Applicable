@@ -3,7 +3,6 @@ import { stableGraphId } from "../graph/ids.js";
 import {
   GRAPH_EDGE_TYPES,
   GRAPH_NODE_LABELS,
-  upsertNodesByLabel,
 } from "../graph/cypher.js";
 
 const HYDRA_TIMEOUT_MS = 8_000;
@@ -27,7 +26,6 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
-/** Extend local unions without breaking existing typed helpers. */
 export function learningNodeLabels() {
   return [...GRAPH_NODE_LABELS, "Correction", "Pattern"] as const;
 }
@@ -55,35 +53,45 @@ export type PushCorrectionArgs = {
   patternWeight: number | null;
 };
 
+export type GraphPushResult = {
+  ok: boolean;
+  error?: string;
+  steps: Array<{ step: string; ok: boolean; error?: string }>;
+};
+
 /**
  * Write Correction (+ optional Pattern) nodes and link to Job / Company.
- * Never throws to callers — returns { ok, error }.
+ * Logs every dialect failure; returns structured step results (not silent).
  */
 export async function pushCorrectionToGraph(
   args: PushCorrectionArgs,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<GraphPushResult> {
   const client = createGraphClient();
+  const steps: GraphPushResult["steps"] = [];
   if (!client.enabled) {
-    return { ok: false, error: "graph_disabled" };
+    const error = "graph_disabled";
+    console.warn(`[learn:graph] ${error}`);
+    return { ok: false, error, steps: [{ step: "enable", ok: false, error }] };
   }
+
+  const runStep = async (step: string, fn: () => Promise<unknown>) => {
+    try {
+      await withTimeout(fn(), HYDRA_TIMEOUT_MS, `hydra:${step}`);
+      steps.push({ step, ok: true });
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      console.error(`[learn:graph] step=${step} FAILED: ${error}`);
+      steps.push({ step, ok: false, error });
+      throw err;
+    }
+  };
 
   try {
     const correctionNodeId = stableGraphId("correction", args.correctionId);
     const jobNodeId = stableGraphId("job", args.jobId);
     const companyNodeId = stableGraphId("company", args.companyId);
 
-    const corrUpsert = upsertNodesByLabel("Evidence" as "Evidence", [
-      {
-        id: correctionNodeId,
-        ext_id: args.correctionId,
-        quote: args.evidence.slice(0, 2000),
-        // Evidence label reused as carrier if Correction unsupported —
-        // Prefer dedicated Correction label via raw UNWIND.
-      },
-    ]);
-    void corrUpsert;
-
-    await withTimeout(
+    await runStep("correction_upsert", () =>
       client.run(
         `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Correction, n.ext_id = row.ext_id, n.old_label = row.old_label, n.new_label = row.new_label, n.evidence = row.evidence, n.source = row.source`,
         {
@@ -99,20 +107,15 @@ export async function pushCorrectionToGraph(
           ],
         },
       ),
-      HYDRA_TIMEOUT_MS,
-      "hydra:correction",
     );
 
-    // Ensure Job + Company stubs exist (idempotent)
-    await withTimeout(
+    await runStep("job_stub", () =>
       client.run(
         `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Job, n.ext_id = row.ext_id`,
         { rows: [{ id: jobNodeId, ext_id: args.jobId }] },
       ),
-      HYDRA_TIMEOUT_MS,
-      "hydra:job",
     );
-    await withTimeout(
+    await runStep("company_stub", () =>
       client.run(
         `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Company, n.ext_id = row.ext_id, n.name = row.name`,
         {
@@ -125,75 +128,117 @@ export async function pushCorrectionToGraph(
           ],
         },
       ),
-      HYDRA_TIMEOUT_MS,
-      "hydra:company",
     );
 
-    await withTimeout(
+    // HydraDB rejects plain MATCH…CREATE for some label pairs; use UNWIND batch
+    // shapes documented in cypher-compat (MATCH endpoints + CREATE, or bare ids).
+    await runStep("edge_corrected_by", () =>
       client.run(
-        `MATCH (j:Job {id: $jid}), (c:Correction {id: $cid}) CREATE (j)-[:CORRECTED_BY]->(c)`,
-        { jid: jobNodeId, cid: correctionNodeId },
+        `UNWIND $rows AS row MATCH (a:Job {id: row.src}), (b:Correction {id: row.dst}) CREATE (a)-[:CORRECTED_BY]->(b)`,
+        { rows: [{ src: jobNodeId, dst: correctionNodeId }] },
       ),
-      HYDRA_TIMEOUT_MS,
-      "hydra:edge-job",
     );
-    await withTimeout(
+    await runStep("edge_about_company", () =>
       client.run(
-        `MATCH (co:Company {id: $coid}), (c:Correction {id: $cid}) CREATE (c)-[:ABOUT_COMPANY]->(co)`,
-        { coid: companyNodeId, cid: correctionNodeId },
+        `UNWIND $rows AS row MATCH (a:Correction {id: row.src}), (b:Company {id: row.dst}) CREATE (a)-[:ABOUT_COMPANY]->(b)`,
+        { rows: [{ src: correctionNodeId, dst: companyNodeId }] },
       ),
-      HYDRA_TIMEOUT_MS,
-      "hydra:edge-company",
     );
 
     if (args.patternPhrase) {
       const patternId = stableGraphId("pattern", args.patternPhrase);
-      await withTimeout(
+      await runStep("pattern_upsert", () =>
         client.run(
           `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Pattern, n.phrase = row.phrase, n.label = row.label, n.weight = row.weight`,
           {
             rows: [
               {
                 id: patternId,
-                phrase: args.patternPhrase.slice(0, 200),
+                phrase: args.patternPhrase!.slice(0, 200),
                 label: args.patternLabel ?? args.newLabel,
                 weight: args.patternWeight ?? 1,
               },
             ],
           },
         ),
-        HYDRA_TIMEOUT_MS,
-        "hydra:pattern",
       );
-      await withTimeout(
+      await runStep("edge_uses_pattern", () =>
         client.run(
-          `MATCH (c:Correction {id: $cid}), (p:Pattern {id: $pid}) CREATE (c)-[:USES_PATTERN]->(p)`,
-          { cid: correctionNodeId, pid: patternId },
+          `UNWIND $rows AS row MATCH (a:Correction {id: row.src}), (b:Pattern {id: row.dst}) CREATE (a)-[:USES_PATTERN]->(b)`,
+          { rows: [{ src: correctionNodeId, dst: patternId }] },
         ),
-        HYDRA_TIMEOUT_MS,
-        "hydra:edge-pattern",
       );
     }
 
-    return { ok: true };
+    return { ok: true, steps };
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : String(err),
-    };
+    const error = err instanceof Error ? err.message : String(err);
+    console.error(`[learn:graph] pushCorrectionToGraph failed: ${error}`);
+    return { ok: false, error, steps };
   }
 }
 
-/**
- * Top-k similar past corrections via Pattern phrase overlap, falling back empty.
- * Graph query: Correction -USES_PATTERN-> Pattern <-USES_PATTERN- Correction
- */
+export async function countLearningGraphNodes(): Promise<{
+  enabled: boolean;
+  correction_nodes: number;
+  pattern_nodes: number;
+  corrected_by_edges: number;
+  uses_pattern_edges: number;
+  errors: string[];
+}> {
+  const client = createGraphClient();
+  const errors: string[] = [];
+  if (!client.enabled) {
+    return {
+      enabled: false,
+      correction_nodes: 0,
+      pattern_nodes: 0,
+      corrected_by_edges: 0,
+      uses_pattern_edges: 0,
+      errors: ["graph_disabled"],
+    };
+  }
+  const count = async (cypher: string, label: string) => {
+    try {
+      const r = await withTimeout(
+        client.run(cypher),
+        HYDRA_TIMEOUT_MS,
+        label,
+      );
+      return Number(r.records[0]?.n ?? 0);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${label}: ${msg}`);
+      console.error(`[learn:graph] count failed ${label}: ${msg}`);
+      return -1;
+    }
+  };
+  return {
+    enabled: true,
+    correction_nodes: await count(
+      `MATCH (n:Correction) RETURN count(*) AS n`,
+      "count_correction",
+    ),
+    pattern_nodes: await count(
+      `MATCH (n:Pattern) RETURN count(*) AS n`,
+      "count_pattern",
+    ),
+    corrected_by_edges: await count(
+      `MATCH ()-[r:CORRECTED_BY]->() RETURN count(*) AS n`,
+      "count_corrected_by",
+    ),
+    uses_pattern_edges: await count(
+      `MATCH ()-[r:USES_PATTERN]->() RETURN count(*) AS n`,
+      "count_uses_pattern",
+    ),
+    errors,
+  };
+}
+
 export async function fetchSimilarCorrectionsFromGraph(
   phraseHints: string[],
   k = 3,
-): Promise<
-  Array<{ evidence: string; new_label: string; phrase: string }>
-> {
+): Promise<Array<{ evidence: string; new_label: string; phrase: string }>> {
   const client = createGraphClient();
   if (!client.enabled || phraseHints.length === 0) return [];
 
@@ -223,16 +268,52 @@ export async function fetchSimilarCorrectionsFromGraph(
         if (results.length >= k) return results;
       }
     }
-  } catch {
+  } catch (err) {
+    console.error(
+      "[learn:graph] fetchSimilarCorrectionsFromGraph:",
+      err instanceof Error ? err.message : err,
+    );
     return results;
   }
   return results;
 }
 
 /**
- * Company → Job → Label prior from graph (majority label among active jobs).
- * Falls back empty on timeout/error.
+ * Lookup a Pattern by phrase id — used for e2e graph traces.
  */
+export async function lookupPatternInGraph(phrase: string): Promise<{
+  found: boolean;
+  label?: string;
+  weight?: number;
+  error?: string;
+}> {
+  const client = createGraphClient();
+  if (!client.enabled) return { found: false, error: "graph_disabled" };
+  const pid = stableGraphId("pattern", phrase);
+  try {
+    const r = await withTimeout(
+      client.run(
+        `MATCH (p:Pattern {id: $pid}) RETURN p.phrase AS phrase, p.label AS label, p.weight AS weight`,
+        { pid },
+      ),
+      HYDRA_TIMEOUT_MS,
+      "hydra:lookup-pattern",
+    );
+    const rec = r.records[0];
+    if (!rec) return { found: false };
+    return {
+      found: true,
+      label: String(rec.label ?? ""),
+      weight: Number(rec.weight ?? 0),
+    };
+  } catch (err) {
+    return {
+      found: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export async function companyLabelPriorFromGraph(
   companyId: string,
 ): Promise<{ label: string; n: number } | null> {
@@ -242,26 +323,13 @@ export async function companyLabelPriorFromGraph(
   try {
     const r = await withTimeout(
       client.run(
-        `MATCH (c:Company {id: $cid})-[:POSTS]->(j:Job) WHERE j.active = true RETURN j.label AS label, count(*) AS n`,
+        `MATCH (c:Company {id: $cid})-[:POSTS]->(j:Job) RETURN j.label AS label, count(*) AS n`,
         { cid: companyNodeId },
       ),
       HYDRA_TIMEOUT_MS,
       "hydra:company-prior",
     );
-    // Hydra may not support WHERE after MATCH well — if empty, try without filter
-    let rows = r.records;
-    if (rows.length === 0) {
-      const r2 = await withTimeout(
-        client.run(
-          `MATCH (c:Company {id: $cid})-[:POSTS]->(j:Job) RETURN j.label AS label, count(*) AS n`,
-          { cid: companyNodeId },
-        ),
-        HYDRA_TIMEOUT_MS,
-        "hydra:company-prior2",
-      );
-      rows = r2.records;
-    }
-    const ranked = rows
+    const ranked = r.records
       .map((rec) => ({
         label: String(rec.label ?? ""),
         n: Number(rec.n ?? 0),
@@ -270,7 +338,11 @@ export async function companyLabelPriorFromGraph(
       .sort((a, b) => b.n - a.n);
     if (ranked[0] && ranked[0].n >= 2) return ranked[0];
     return null;
-  } catch {
+  } catch (err) {
+    console.error(
+      "[learn:graph] companyLabelPriorFromGraph:",
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }

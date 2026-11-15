@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  acceptLlmCrosscheckCorrection,
+  classifyEvidenceFailure,
+  evidenceNamesCountryOrRegionRestriction,
   isFundingOrInvestorEvidence,
+  selectBestEligibilityEvidence,
   validateEligibilityEvidence,
 } from "../../src/learn/evidence-guard.js";
 import { extractPatternPhrase } from "../../src/learn/patterns.js";
@@ -17,7 +21,29 @@ describe("evidence guard (learning)", () => {
       descriptionText: `About us\n${evidence}\nWe hire globally.`,
     });
     expect(v.ok).toBe(false);
-    expect(v.reason).toBe("funding_or_investor");
+    expect(v.reason).toBe("funding_investor");
+  });
+
+  it("rejects contractor gear / benefits as eligibility evidence", () => {
+    const evidence =
+      "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits";
+    expect(classifyEvidenceFailure(evidence, "Eng", "World Wide - Remote", evidence)).toBe(
+      "contractor_gear",
+    );
+  });
+
+  it("prefers location_raw over bad description evidence", () => {
+    const picked = selectBestEligibilityEvidence({
+      title: "Engineer",
+      locationRaw: "World Wide - Remote",
+      descriptionText:
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits are not included.",
+      candidates: [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits are not included.",
+      ],
+    });
+    expect(picked.source).toBe("location_raw");
+    expect(picked.evidence).toBe("World Wide - Remote");
   });
 
   it("accepts real India hire eligibility quote", () => {
@@ -45,11 +71,10 @@ describe("evidence guard (learning)", () => {
 });
 
 describe("pattern extraction", () => {
-  it("extracts Sequoia India as a phrase (for rejection patterns)", () => {
+  it("does not learn funding Sequoia India phrases", () => {
     const phrase = extractPatternPhrase(
       "We are not affiliated with Sequoia India investors",
     );
-    // Funding evidence → null (should not learn from investor text)
     expect(phrase).toBeNull();
   });
 
@@ -65,5 +90,32 @@ describe("pattern extraction", () => {
       "We are open to candidates from India for this remote role.",
     );
     expect(phrase?.toLowerCase()).toMatch(/open to candidates.*india/);
+  });
+
+  it("drops NY city-only llm_crosscheck noise", () => {
+    expect(evidenceNamesCountryOrRegionRestriction("Location: New York, NY")).toBe(
+      false,
+    );
+    const r = acceptLlmCrosscheckCorrection({
+      evidence: "Location: New York, NY",
+      title: "Eng",
+      locationRaw: "New York, NY",
+      descriptionText: "Location: New York, NY\nBuild things.",
+      confidence: 0.95,
+      newLabel: "india_onsite",
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("accepts high-confidence country restriction", () => {
+    const r = acceptLlmCrosscheckCorrection({
+      evidence: "Must be based in Argentina",
+      title: "Eng",
+      locationRaw: "Argentina (Remote)",
+      descriptionText: "Must be based in Argentina. Remote ok.",
+      confidence: 0.9,
+      newLabel: "region_locked",
+    });
+    expect(r.ok).toBe(true);
   });
 });

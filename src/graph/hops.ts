@@ -10,13 +10,33 @@ export const EXPLORE_HOPS = [
   "USES_SKILL",
   "LABELED",
   "SAVED",
+  "INVESTED_IN",
+  "FOUNDED",
+  "HQ_IN",
+  "IN_BATCH",
 ] as const;
 
 export type ExploreHop = (typeof EXPLORE_HOPS)[number];
 
-export type NodeKind = "User" | "Company" | "Job" | "Skill" | "Label";
+export type NodeKind =
+  | "User"
+  | "Company"
+  | "Job"
+  | "Skill"
+  | "Label"
+  | "Investor"
+  | "Person"
+  | "Location"
+  | "Batch";
 
-export type StartType = "skill" | "company" | "job" | "me";
+export type StartType =
+  | "skill"
+  | "company"
+  | "job"
+  | "me"
+  | "investor"
+  | "person"
+  | "batch";
 
 export const VALID_HOP_TRANSITIONS: Record<
   NodeKind,
@@ -27,6 +47,10 @@ export const VALID_HOP_TRANSITIONS: Record<
     SIMILAR_TO: "Company",
     POSTS: "Job",
     USES_SKILL: "Skill",
+    HQ_IN: "Location",
+    IN_BATCH: "Batch",
+    INVESTED_IN: "Investor", // reverse: Company <-INVESTED_IN- Investor
+    FOUNDED: "Person", // reverse
   },
   Job: {
     POSTS: "Company", // reverse: Job <-POSTS- Company
@@ -39,6 +63,10 @@ export const VALID_HOP_TRANSITIONS: Record<
     USES_SKILL: "Company", // reverse
   },
   Label: {},
+  Investor: { INVESTED_IN: "Company" },
+  Person: { FOUNDED: "Company" },
+  Location: {},
+  Batch: { IN_BATCH: "Company" }, // reverse
 };
 
 export function isExploreHop(raw: string): raw is ExploreHop {
@@ -55,6 +83,12 @@ export function startKind(type: StartType): NodeKind {
       return "Job";
     case "skill":
       return "Skill";
+    case "investor":
+      return "Investor";
+    case "person":
+      return "Person";
+    case "batch":
+      return "Batch";
   }
 }
 
@@ -176,6 +210,24 @@ export function buildExploreCypher(input: {
       lines.push(`MATCH (${n0}:Skill) WHERE ${n0}.name = $start`);
       break;
     }
+    case "investor": {
+      if (!input.startValue) throw new Error("start.value required for investor");
+      params.start = input.startValue;
+      lines.push(`MATCH (${n0}:Investor) WHERE ${n0}.name = $start`);
+      break;
+    }
+    case "person": {
+      if (!input.startValue) throw new Error("start.value required for person");
+      params.start = input.startValue;
+      lines.push(`MATCH (${n0}:Person) WHERE ${n0}.name = $start`);
+      break;
+    }
+    case "batch": {
+      if (!input.startValue) throw new Error("start.value required for batch");
+      params.start = input.startValue;
+      lines.push(`MATCH (${n0}:Batch) WHERE ${n0}.name = $start`);
+      break;
+    }
   }
 
   for (let i = 0; i < hops.length; i += 1) {
@@ -227,6 +279,27 @@ export function buildExploreCypher(input: {
     } else if (hop === "SAVED" && fromKind === "Job") {
       relAliases.push(null);
       lines.push(`MATCH (${dst}:User)-[:SAVED]->(${src})`);
+    } else if (hop === "INVESTED_IN" && fromKind === "Investor") {
+      relAliases.push(null);
+      lines.push(`MATCH (${src})-[:INVESTED_IN]->(${dst}:Company)`);
+    } else if (hop === "INVESTED_IN" && fromKind === "Company") {
+      relAliases.push(null);
+      lines.push(`MATCH (${dst}:Investor)-[:INVESTED_IN]->(${src})`);
+    } else if (hop === "FOUNDED" && fromKind === "Person") {
+      relAliases.push(null);
+      lines.push(`MATCH (${src})-[:FOUNDED]->(${dst}:Company)`);
+    } else if (hop === "FOUNDED" && fromKind === "Company") {
+      relAliases.push(null);
+      lines.push(`MATCH (${dst}:Person)-[:FOUNDED]->(${src})`);
+    } else if (hop === "HQ_IN" && fromKind === "Company") {
+      relAliases.push(null);
+      lines.push(`MATCH (${src})-[:HQ_IN]->(${dst}:Location)`);
+    } else if (hop === "IN_BATCH" && fromKind === "Company") {
+      relAliases.push(null);
+      lines.push(`MATCH (${src})-[:IN_BATCH]->(${dst}:Batch)`);
+    } else if (hop === "IN_BATCH" && fromKind === "Batch") {
+      relAliases.push(null);
+      lines.push(`MATCH (${dst}:Company)-[:IN_BATCH]->(${src})`);
     } else {
       throw new Error(`cannot emit hop ${hop} from ${fromKind} to ${toKind}`);
     }
@@ -283,6 +356,13 @@ export function buildExploreCypher(input: {
       returnParts.push(`${a}.name AS ${a}_name`);
     } else if (k === "User") {
       returnParts.push(`${a}.id AS ${a}_id`);
+    } else if (k === "Investor" || k === "Person" || k === "Batch") {
+      returnParts.push(`${a}.name AS ${a}_name`);
+    } else if (k === "Location") {
+      returnParts.push(
+        `${a}.city AS ${a}_city`,
+        `${a}.country AS ${a}_country`,
+      );
     }
   }
   for (let i = 0; i < relAliases.length; i += 1) {

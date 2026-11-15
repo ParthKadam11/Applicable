@@ -1,5 +1,21 @@
+import { createHash } from "node:crypto";
 import neo4j, { type Driver, type Session } from "neo4j-driver";
 import { config } from "../config.js";
+
+/**
+ * HydraDB durable mutation identity (HTTP Idempotency-Key /
+ * mutation_idempotency_key). Must be unique per distinct mutation:
+ * hash(operation + cypher + params). Same payload → same key (safe retry);
+ * different payload → different key (avoids mutation_conflict 409).
+ * Never reuse a key across different batches.
+ */
+export function hydraMutationIdempotencyKey(
+  cypher: string,
+  params: Record<string, unknown>,
+): string {
+  const payload = JSON.stringify({ op: "query", cypher, params });
+  return createHash("sha256").update(payload).digest("hex");
+}
 
 export type GraphRunResult = {
   keys: string[];
@@ -53,17 +69,22 @@ async function runHttp(
   cypher: string,
   params: Record<string, unknown>,
 ): Promise<GraphRunResult> {
+  // Content-hash key: unique per distinct request; stable for exact retries.
+  // cell_id must stay the configured shard id ("cell-0"), never a random UUID.
+  const idempotencyKey = hydraMutationIdempotencyKey(cypher, params);
   const res = await fetch(`${httpBaseUrl()}/v1/graphs/${graphId}/query`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "X-Graph-Namespace": "default",
       "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify({
       cell_id: "cell-0",
       query: cypher,
       parameters: params,
+      mutation_idempotency_key: idempotencyKey,
     }),
   });
   const text = await res.text();

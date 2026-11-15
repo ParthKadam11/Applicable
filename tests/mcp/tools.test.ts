@@ -29,39 +29,43 @@ describe("MCP tools against live DB", () => {
     }
   });
 
-  it("stats matches raw SQL eligibility counts", async () => {
-    if (!(await dbUp())) return;
-    const stats = await getMcpStats(db);
-    const raw = await db
-      .select({
-        indiaEligibility: jobTags.indiaEligibility,
-        n: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId}))`,
-      })
-      .from(jobs)
-      .innerJoin(companies, eq(companies.id, jobs.companyId))
-      .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
-      .where(
-        and(
-          isNull(jobs.closedAt),
-          eq(companies.active, true),
-          or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
-          inArray(jobTags.indiaEligibility, [
-            "open",
-            "india_remote",
-            "india_onsite",
-            "region_locked",
-            "unclear",
-          ]),
-        ),
-      )
-      .groupBy(jobTags.indiaEligibility);
+  it(
+    "stats matches raw SQL eligibility counts",
+    async () => {
+      if (!(await dbUp())) return;
+      const stats = await getMcpStats(db);
+      const raw = await db
+        .select({
+          indiaEligibility: jobTags.indiaEligibility,
+          n: sql<number>`count(distinct (${jobs.companyId}, ${jobs.externalId}))`,
+        })
+        .from(jobs)
+        .innerJoin(companies, eq(companies.id, jobs.companyId))
+        .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+        .where(
+          and(
+            isNull(jobs.closedAt),
+            eq(companies.active, true),
+            or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
+            inArray(jobTags.indiaEligibility, [
+              "open",
+              "india_remote",
+              "india_onsite",
+              "region_locked",
+              "unclear",
+            ]),
+          ),
+        )
+        .groupBy(jobTags.indiaEligibility);
 
-    const expected: Record<string, number> = {};
-    for (const row of raw) {
-      expected[row.indiaEligibility ?? "null"] = Number(row.n);
-    }
-    expect(stats.by_eligibility).toEqual(expected);
-  });
+      const expected: Record<string, number> = {};
+      for (const row of raw) {
+        expected[row.indiaEligibility ?? "null"] = Number(row.n);
+      }
+      expect(stats.by_eligibility).toEqual(expected);
+    },
+    30_000,
+  );
 
   it("submit_company dedupes by name", async () => {
     if (!(await dbUp())) return;

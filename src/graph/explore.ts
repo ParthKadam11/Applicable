@@ -137,6 +137,14 @@ function formatPathLine(
       parts.push(String(record[`${a}_name`] ?? "label"));
     } else if (k === "User") {
       parts.push("me");
+    } else if (k === "Investor" || k === "Person" || k === "Batch") {
+      parts.push(String(record[`${a}_name`] ?? k));
+    } else if (k === "Location") {
+      const city = record[`${a}_city`];
+      const country = record[`${a}_country`];
+      parts.push(
+        [city, country].filter(Boolean).join(", ") || "Location",
+      );
     }
   }
 

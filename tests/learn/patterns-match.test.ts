@@ -11,12 +11,16 @@ describe("matchPatterns", () => {
           label: "india_remote",
           weight: 2,
           hit_count: 2,
+          company_count: 2,
+          status: "active",
         },
         {
           phrase: "hire from India",
           label: "india_remote",
           weight: 5,
           hit_count: 5,
+          company_count: 3,
+          status: "active",
         },
       ],
     );
@@ -32,6 +36,23 @@ describe("matchPatterns", () => {
           label: "region_locked",
           weight: 3,
           hit_count: 3,
+          company_count: 2,
+          status: "active",
+        },
+      ]),
+    ).toBeNull();
+  });
+
+  it("ignores candidate patterns (<2 companies)", () => {
+    expect(
+      matchPatterns("Hiring in Colombia for this role.", [
+        {
+          phrase: "Colombia",
+          label: "region_locked",
+          weight: 1,
+          hit_count: 1,
+          company_count: 1,
+          status: "candidate",
         },
       ]),
     ).toBeNull();

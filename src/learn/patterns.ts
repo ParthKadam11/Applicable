@@ -5,6 +5,9 @@ import { learnedPatterns } from "../db/schema.js";
 import { normalizeWhitespace } from "../classify/text.js";
 import { isFundingOrInvestorEvidence } from "./evidence-guard.js";
 
+/** Patterns need ≥2 independent companies before they are applied. */
+export const PATTERN_MIN_COMPANIES = 2;
+
 const STOP = new Set([
   "the",
   "a",
@@ -85,13 +88,20 @@ export type PatternHit = {
   label: IndiaEligibility;
   weight: number;
   hit_count: number;
+  company_count: number;
+  status: "candidate" | "active";
 };
+
+function patternStatus(companyIds: string[]): "candidate" | "active" {
+  return companyIds.length >= PATTERN_MIN_COMPANIES ? "active" : "candidate";
+}
 
 export async function upsertPatternFromEvidence(
   db: Db,
   evidence: string,
   label: IndiaEligibility,
   weightDelta = 1,
+  companyId?: string | null,
 ): Promise<PatternHit | null> {
   const phrase = extractPatternPhrase(evidence);
   if (!phrase) return null;
@@ -103,7 +113,13 @@ export async function upsertPatternFromEvidence(
     .limit(1);
 
   if (existing) {
+    const prevCompanies = [...(existing.companyIds ?? [])];
+    const companies =
+      companyId && !prevCompanies.includes(companyId)
+        ? [...prevCompanies, companyId]
+        : prevCompanies;
     const sameLabel = existing.label === label;
+    const status = patternStatus(companies);
     const [row] = await db
       .update(learnedPatterns)
       .set({
@@ -112,6 +128,8 @@ export async function upsertPatternFromEvidence(
           ? Number(existing.weight) + weightDelta
           : Math.max(1, Number(existing.weight) * 0.5 + weightDelta),
         hitCount: Number(existing.hitCount) + 1,
+        companyIds: companies,
+        status,
         updatedAt: new Date(),
       })
       .where(eq(learnedPatterns.id, existing.id))
@@ -122,10 +140,14 @@ export async function upsertPatternFromEvidence(
           label: row.label as IndiaEligibility,
           weight: Number(row.weight),
           hit_count: Number(row.hitCount),
+          company_count: (row.companyIds ?? []).length,
+          status: (row.status as "candidate" | "active") ?? status,
         }
       : null;
   }
 
+  const companies = companyId ? [companyId] : [];
+  const status = patternStatus(companies);
   const [row] = await db
     .insert(learnedPatterns)
     .values({
@@ -133,6 +155,8 @@ export async function upsertPatternFromEvidence(
       label,
       weight: weightDelta,
       hitCount: 1,
+      companyIds: companies,
+      status,
     })
     .returning();
   return row
@@ -141,26 +165,32 @@ export async function upsertPatternFromEvidence(
         label: row.label as IndiaEligibility,
         weight: Number(row.weight),
         hit_count: Number(row.hitCount),
+        company_count: (row.companyIds ?? []).length,
+        status: (row.status as "candidate" | "active") ?? status,
       }
     : null;
 }
 
 export async function loadPatterns(
   db: Db,
-  opts?: { excludeJobIds?: Set<string> },
+  opts?: { excludeJobIds?: Set<string>; includeCandidates?: boolean },
 ): Promise<PatternHit[]> {
   // Patterns table itself has no job_id — leakage is prevented at correction write time.
-  void opts;
+  void opts?.excludeJobIds;
   const rows = await db
     .select()
     .from(learnedPatterns)
     .orderBy(sql`${learnedPatterns.weight} DESC`);
-  return rows.map((r) => ({
-    phrase: r.phrase,
-    label: r.label as IndiaEligibility,
-    weight: Number(r.weight),
-    hit_count: Number(r.hitCount),
-  }));
+  return rows
+    .map((r) => ({
+      phrase: r.phrase,
+      label: r.label as IndiaEligibility,
+      weight: Number(r.weight),
+      hit_count: Number(r.hitCount),
+      company_count: (r.companyIds ?? []).length,
+      status: (r.status as "candidate" | "active") ?? "candidate",
+    }))
+    .filter((p) => opts?.includeCandidates || p.status === "active");
 }
 
 /** Match posting text against learned phrases (longest / highest weight wins). */
@@ -173,6 +203,8 @@ export function matchPatterns(
   if (!hay) return null;
   let best: PatternHit | null = null;
   for (const p of patterns) {
+    if (p.status === "candidate") continue;
+    if (p.company_count < PATTERN_MIN_COMPANIES) continue;
     if (p.weight < minWeight) continue;
     const needle = normalizeWhitespace(p.phrase).toLowerCase();
     if (!needle || needle.length < 4) continue;

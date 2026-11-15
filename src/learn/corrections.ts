@@ -2,8 +2,11 @@ import { and, asc, count, eq, ne, notInArray, sql } from "drizzle-orm";
 import type { IndiaEligibility } from "../classify/types.js";
 import type { Db } from "../db/client.js";
 import { companies, corrections, jobs, jobTags } from "../db/schema.js";
-import { goldJobIdSet } from "./gold.js";
-import { validateEligibilityEvidence } from "./evidence-guard.js";
+import { protectedGoldJobIds } from "./gold.js";
+import {
+  acceptLlmCrosscheckCorrection,
+  validateEligibilityEvidence,
+} from "./evidence-guard.js";
 import { upsertPatternFromEvidence } from "./patterns.js";
 import type { CorrectionSource } from "./types.js";
 import { pushCorrectionToGraph } from "./graph-learn.js";
@@ -20,6 +23,8 @@ export type RecordCorrectionInput = {
   newLabel: IndiaEligibility;
   evidence: string;
   source: CorrectionSource;
+  /** LLM self-confidence 0–1; required for llm_crosscheck (≥0.8). */
+  confidence?: number | null;
   /** Skip gold leakage check only in tests. */
   allowGold?: boolean;
   /** Skip graph write (eval curve / tests). */
@@ -40,10 +45,10 @@ export async function recordCorrection(
   input: RecordCorrectionInput,
 ): Promise<RecordCorrectionResult> {
   if (!input.allowGold) {
-    const gold = goldJobIdSet();
+    const gold = protectedGoldJobIds();
     if (gold.has(input.jobId)) {
       throw new CorrectionError(
-        `Refusing correction for gold-eval job ${input.jobId} (no leakage)`,
+        `Refusing correction for gold/gold-test job ${input.jobId} (no leakage)`,
       );
     }
   }
@@ -76,6 +81,22 @@ export async function recordCorrection(
     throw new CorrectionError(
       `Invalid evidence (${check.reason}): must be a posting substring about eligibility`,
     );
+  }
+
+  if (input.source === "llm_crosscheck") {
+    const llmOk = acceptLlmCrosscheckCorrection({
+      evidence: input.evidence,
+      title: job.title,
+      locationRaw: job.locationRaw,
+      descriptionText: job.descriptionText,
+      confidence: input.confidence,
+      newLabel: input.newLabel,
+    });
+    if (!llmOk.ok) {
+      throw new CorrectionError(
+        `llm_crosscheck rejected (${llmOk.reason}): need guard + confidence≥0.8 + country/region restriction`,
+      );
+    }
   }
 
   const [tag] = await db
@@ -116,6 +137,8 @@ export async function recordCorrection(
     db,
     input.evidence,
     input.newLabel,
+    1,
+    job.companyId,
   );
 
   let graph: { ok: boolean; error?: string } = { ok: true };
@@ -158,7 +181,8 @@ export async function listCorrectionsChronological(
   db: Db,
   opts?: { excludeGold?: boolean; limit?: number },
 ) {
-  const gold = opts?.excludeGold === false ? new Set<string>() : goldJobIdSet();
+  const gold =
+    opts?.excludeGold === false ? new Set<string>() : protectedGoldJobIds();
   const goldIds = [...gold];
   const q =
     goldIds.length > 0

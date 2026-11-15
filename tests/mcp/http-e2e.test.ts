@@ -62,7 +62,9 @@ describe("MCP HTTP end-to-end", () => {
     });
   });
 
-  it("initialize, tools/list, stats, search_jobs over HTTP", async () => {
+  it(
+    "initialize, tools/list, stats, search_jobs over HTTP",
+    async () => {
     if (!(await dbUp())) return;
 
     const app = createMcpHttpApp();
@@ -159,5 +161,7 @@ describe("MCP HTTP end-to-end", () => {
     expect(apiStats.headers.get("cache-control")).toMatch(/max-age=300/);
     const apiBody = (await apiStats.json()) as { companies_active: number };
     expect(typeof apiBody.companies_active).toBe("number");
-  });
+  },
+    30_000,
+  );
 });

@@ -37,6 +37,13 @@ export const companies = pgTable(
      */
     slug: text("slug"),
     active: boolean("active").notNull().default(true),
+    foundedYear: integer("founded_year"),
+    teamSize: integer("team_size"),
+    oneLiner: text("one_liner"),
+    hqCity: text("hq_city"),
+    hqCountry: text("hq_country"),
+    ycBatch: text("yc_batch"),
+    enrichedAt: timestamp("enriched_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -382,6 +389,10 @@ export const learnedPatterns = pgTable(
     label: text("label").notNull(),
     weight: real("weight").notNull().default(1),
     hitCount: integer("hit_count").notNull().default(1),
+    /** Distinct company ids that contributed this phrase (≥2 → status active). */
+    companyIds: text("company_ids").array().notNull().default([]),
+    /** candidate until ≥2 independent companies; then active. */
+    status: text("status").notNull().default("candidate"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -392,6 +403,120 @@ export const learnedPatterns = pgTable(
   (table) => [
     uniqueIndex("learned_patterns_phrase_uidx").on(table.phrase),
     index("learned_patterns_label_idx").on(table.label),
+    index("learned_patterns_status_idx").on(table.status),
+  ],
+);
+
+/** People (founders / employees) linked via company_people. */
+export const people = pgTable(
+  "people",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    nameNormalized: text("name_normalized").notNull(),
+    linkedin: text("linkedin"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [uniqueIndex("people_name_norm_uidx").on(table.nameNormalized)],
+);
+
+export const investors = pgTable(
+  "investors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    nameNormalized: text("name_normalized").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [uniqueIndex("investors_name_norm_uidx").on(table.nameNormalized)],
+);
+
+export const investorAliases = pgTable("investor_aliases", {
+  aliasNormalized: text("alias_normalized").primaryKey(),
+  investorId: uuid("investor_id")
+    .notNull()
+    .references(() => investors.id, { onDelete: "cascade" }),
+});
+
+export const companyFacts = pgTable(
+  "company_facts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    factType: text("fact_type").notNull(),
+    value: text("value").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    quote: text("quote").notNull(),
+    sourceKind: text("source_kind").notNull(),
+    confidence: real("confidence").notNull().default(1),
+    extractedAt: timestamp("extracted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("company_facts_company_idx").on(table.companyId),
+    index("company_facts_type_idx").on(table.factType),
+    uniqueIndex("company_facts_dedupe_uidx").on(
+      table.companyId,
+      table.factType,
+      table.value,
+      table.sourceUrl,
+    ),
+  ],
+);
+
+export const companyPeople = pgTable(
+  "company_people",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    title: text("title"),
+    sourceUrl: text("source_url").notNull(),
+    quote: text("quote").notNull(),
+    extractedAt: timestamp("extracted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("company_people_uidx").on(
+      table.companyId,
+      table.personId,
+      table.role,
+    ),
+  ],
+);
+
+export const companyInvestors = pgTable(
+  "company_investors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    investorId: uuid("investor_id")
+      .notNull()
+      .references(() => investors.id, { onDelete: "cascade" }),
+    round: text("round"),
+    sourceUrl: text("source_url").notNull(),
+    quote: text("quote").notNull(),
+    extractedAt: timestamp("extracted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("company_investors_uidx").on(table.companyId, table.investorId),
   ],
 );
 
@@ -408,3 +533,6 @@ export type User = typeof users.$inferSelect;
 export type SavedJob = typeof savedJobs.$inferSelect;
 export type McpToken = typeof mcpTokens.$inferSelect;
 export type HydraSyncRun = typeof hydraSyncRuns.$inferSelect;
+export type CompanyFact = typeof companyFacts.$inferSelect;
+export type Person = typeof people.$inferSelect;
+export type Investor = typeof investors.$inferSelect;

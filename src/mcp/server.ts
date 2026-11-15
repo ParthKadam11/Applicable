@@ -15,6 +15,8 @@ import {
   AskJobsInputSchema,
   EligibilityFilterSchema,
   ExploreInputSchema,
+  FindCompaniesInputSchema,
+  GetCompanyInputSchema,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   MySavedJobsInputSchema,
@@ -28,6 +30,8 @@ import {
   UnsaveJobInputSchema,
 } from "./schemas.js";
 import {
+  findCompanies,
+  getCompany,
   getJob,
   getMcpStats,
   listCompanies,
@@ -118,7 +122,7 @@ export function createApplicableMcpServer(
     {
       title: "Explore graph paths",
       description:
-        "Walk allowlisted hops (SIMILAR_TO, POSTS, REQUIRES, USES_SKILL, LABELED, SAVED; max 3) from skill|company|job|me. Returns compact path lines + thin job cards. Rehydrated from Postgres. start.type=me and SAVED require a personal MCP token.",
+        "Walk allowlisted hops (SIMILAR_TO, POSTS, REQUIRES, USES_SKILL, LABELED, SAVED, INVESTED_IN, FOUNDED, HQ_IN, IN_BATCH; max 3) from skill|company|job|me|investor|person|batch. Returns compact path lines + thin job cards. Rehydrated from Postgres. start.type=me and SAVED require a personal MCP token.",
       inputSchema: ExploreInputSchema.shape,
     },
     async (args) => {
@@ -236,6 +240,52 @@ export function createApplicableMcpServer(
         const result = await timed(
           "list_companies",
           () => listCompanies(db, parsed),
+          (r) => r.count,
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "get_company",
+    {
+      title: "Get company enrichment",
+      description:
+        "Company profile with founders, investors, HQ, founded year, team size, YC batch, and sourced facts (source_url + quote). Lookup by slug, name, or id.",
+      inputSchema: GetCompanyInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = GetCompanyInputSchema.parse(args);
+        const result = await timed(
+          "get_company",
+          () => getCompany(db, parsed),
+          (r) => (r.found ? 1 : 0),
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "find_companies",
+    {
+      title: "Find companies by enrichment filters",
+      description:
+        "Filter companies by investor, founder, YC batch, industry/tag, HQ country, team size, or presence of open/india_remote jobs.",
+      inputSchema: FindCompaniesInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = FindCompaniesInputSchema.parse(args);
+        const result = await timed(
+          "find_companies",
+          () => findCompanies(db, parsed),
           (r) => r.count,
         );
         return jsonResult(result);

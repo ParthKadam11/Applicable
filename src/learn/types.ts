@@ -10,6 +10,18 @@ export const CorrectionSourceSchema = z.enum([
 ]);
 export type CorrectionSource = z.infer<typeof CorrectionSourceSchema>;
 
+export const GoldProvenanceSchema = z.enum([
+  /** verified_label == prod tag; not independently reviewed. */
+  "copied_from_prod",
+  /** Evidence validated (location/eligibility); still not human-reviewed. */
+  "evidence_validated",
+  /** Human overrode prod / challenge label. */
+  "hand_verified",
+  /** Challenge override (rules miss); not from matching seeded twin. */
+  "challenge_override",
+]);
+export type GoldProvenance = z.infer<typeof GoldProvenanceSchema>;
+
 export const GoldRowSchema = z.object({
   job_id: z.string().uuid(),
   title: z.string(),
@@ -23,6 +35,7 @@ export const GoldRowSchema = z.object({
   verified: z.boolean().default(true),
   /** Prod tag at freeze time (not used as truth). */
   prod_label: IndiaEligibilitySchema.optional(),
+  provenance: GoldProvenanceSchema.default("copied_from_prod"),
 });
 export type GoldRow = z.infer<typeof GoldRowSchema>;
 

@@ -94,11 +94,23 @@ export const ExploreHopSchema = z.enum([
   "USES_SKILL",
   "LABELED",
   "SAVED",
+  "INVESTED_IN",
+  "FOUNDED",
+  "HQ_IN",
+  "IN_BATCH",
 ]);
 
 export const ExploreInputSchema = z.object({
   start: z.object({
-    type: z.enum(["skill", "company", "job", "me"]),
+    type: z.enum([
+      "skill",
+      "company",
+      "job",
+      "me",
+      "investor",
+      "person",
+      "batch",
+    ]),
     value: z.string().min(1).max(200).optional(),
   }),
   path: z.array(ExploreHopSchema).max(3).default([]),
@@ -144,6 +156,47 @@ export const ListCompaniesInputSchema = z.object({
     .max(100)
     .default(25)
     .describe("Max companies to return (default 25)"),
+});
+
+export const GetCompanyInputSchema = z.object({
+  slug: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Company public slug"),
+  name: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Company name substring (used if slug omitted)"),
+  id: z.string().uuid().optional().describe("Company UUID"),
+});
+
+export const FindCompaniesInputSchema = z.object({
+  investor: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Investor name substring (e.. Peak XV, Accel)"),
+  founder: z.string().min(1).optional().describe("Founder name substring"),
+  batch: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("YC batch e.g. Winter 2024 / W24"),
+  industry: z.string().min(1).optional().describe("Industry / tag substring"),
+  hq_country: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("HQ country substring"),
+  team_size_min: z.number().int().min(0).optional(),
+  team_size_max: z.number().int().min(0).optional(),
+  has_india_jobs: z
+    .boolean()
+    .optional()
+    .describe("Only companies with open or india_remote jobs"),
+  limit: z.number().int().min(1).max(50).default(20).optional(),
 });
 
 export const StatsInputObjectSchema = z.object({

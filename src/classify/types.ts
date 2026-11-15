@@ -97,6 +97,8 @@ export const LlmClassificationSchema = z.object({
   india_eligibility: IndiaEligibilitySchema,
   eligibility_evidence: z.array(z.string()).max(4),
   remote_scope: RemoteScopeSchema.optional(),
+  /** 0–1 model self-reported confidence; required for llm_crosscheck gating. */
+  confidence: z.number().min(0).max(1).optional(),
 });
 
 export type LlmClassification = z.infer<typeof LlmClassificationSchema>;

@@ -2,6 +2,10 @@ import {
   registerDiscoverWorkers,
   scheduleDiscoverCron,
 } from "./discover/boss.js";
+import {
+  registerEnrichWorkers,
+  scheduleEnrichCron,
+} from "./enrich/boss.js";
 import { createBoss, registerIngestWorkers, scheduleIngestCron } from "./ingestion/boss.js";
 import { pool } from "./db/client.js";
 
@@ -13,8 +17,12 @@ async function main() {
   await scheduleIngestCron(boss);
   await registerDiscoverWorkers(boss);
   await scheduleDiscoverCron(boss);
+  await registerEnrichWorkers(boss);
+  await scheduleEnrichCron(boss);
 
-  console.log("Ingestion + classify + discover workers registered. Waiting for jobs.");
+  console.log(
+    "Ingestion + classify + discover + enrich workers registered. Waiting for jobs.",
+  );
 
   const shutdown = async (signal: string) => {
     console.log(`Received ${signal}, shutting down…`);

@@ -6,14 +6,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { db, pool } from "../db/client.js";
-import { learnedPatterns } from "../db/schema.js";
+import { jobs, learnedPatterns } from "../db/schema.js";
 import {
-  loadGold,
   runBaselineOnGold,
   runLearnedOnGold,
   saveEvalReport,
 } from "../learn/eval-runner.js";
 import { listCorrectionsChronological } from "../learn/corrections.js";
+import { loadGoldTest } from "../learn/gold.js";
 import { upsertPatternFromEvidence } from "../learn/patterns.js";
 import type { IndiaEligibility } from "../classify/types.js";
 
@@ -28,19 +28,27 @@ async function applyFirstN(n: number) {
   const all = await listCorrectionsChronological(db, { excludeGold: true });
   const slice = Number.isFinite(n) ? all.slice(0, n) : all;
   for (const c of slice) {
+    const [job] = await db
+      .select({ companyId: jobs.companyId })
+      .from(jobs)
+      .where(eq(jobs.id, c.jobId))
+      .limit(1);
     await upsertPatternFromEvidence(
       db,
       c.evidence,
       c.newLabel as IndiaEligibility,
+      1,
+      job?.companyId ?? null,
     );
   }
   return { applied: slice.length, total: all.length };
 }
 
 async function main() {
-  const gold = loadGold();
+  // Curve is measured on held-out gold-test only (never seeded against).
+  const gold = loadGoldTest();
   const baseline = runBaselineOnGold(gold);
-  saveEvalReport(baseline);
+  saveEvalReport(baseline, process.cwd(), "-test");
 
   const rows: Array<{
     n_corrections: number;
@@ -56,7 +64,7 @@ async function main() {
       applied === 0
         ? baseline
         : await runLearnedOnGold(db, gold, { useLlm: false });
-    if (applied > 0) saveEvalReport(report);
+    if (applied > 0) saveEvalReport(report, process.cwd(), "-test");
     rows.push({
       n_corrections: Number.isFinite(n) ? applied : total,
       accuracy: report.accuracy,
@@ -66,7 +74,6 @@ async function main() {
     console.log(
       `batch corrections=${label} applied=${applied} accuracy=${(report.accuracy * 100).toFixed(1)}%`,
     );
-    void eq;
   }
 
   // Restore all patterns from full correction set

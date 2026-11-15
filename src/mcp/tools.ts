@@ -17,12 +17,17 @@ import { config } from "../config.js";
 import {
   companies,
   companyCandidates,
+  companyFacts,
+  companyInvestors,
+  companyPeople,
   corrections,
   fetchRuns,
   hydraSyncRuns,
+  investors,
   jobTags,
   jobs,
   learnedPatterns,
+  people,
 } from "../db/schema.js";
 import { countGraphTotals } from "../graph/cypher.js";
 import { createGraphClient } from "../graph/driver.js";
@@ -38,6 +43,8 @@ import {
 } from "../stats/daily.js";
 import type {
   EligibilityFilter,
+  FindCompaniesInputSchema,
+  GetCompanyInputSchema,
   GetJobInputSchema,
   ListCompaniesInputSchema,
   ReportLabelInputSchema,
@@ -48,6 +55,8 @@ import type {
 import { z } from "zod";
 
 type SearchInput = z.infer<typeof SearchJobsInputSchema>;
+type GetCompanyInput = z.infer<typeof GetCompanyInputSchema>;
+type FindCompaniesInput = z.infer<typeof FindCompaniesInputSchema>;
 type GetJobInput = z.infer<typeof GetJobInputSchema>;
 type ListCompaniesInput = z.infer<typeof ListCompaniesInputSchema>;
 type StatsInput = z.infer<typeof StatsInputSchema>;
@@ -248,6 +257,190 @@ export async function getJob(db: Db, raw: GetJobInput) {
           : null,
       description_excerpt: excerpt(row.descriptionText),
     },
+  };
+}
+
+export async function getCompany(db: Db, raw: GetCompanyInput) {
+  const conditions = [eq(companies.active, true)];
+  if (raw.id) conditions.push(eq(companies.id, raw.id));
+  else if (raw.slug) conditions.push(eq(companies.slug, raw.slug));
+  else if (raw.name) conditions.push(ilike(companies.name, `%${raw.name}%`));
+  else {
+    return { found: false as const, error: "Provide slug, name, or id" };
+  }
+
+  const [co] = await db
+    .select()
+    .from(companies)
+    .where(and(...conditions))
+    .limit(1);
+  if (!co) return { found: false as const };
+
+  const facts = await db
+    .select({
+      factType: companyFacts.factType,
+      value: companyFacts.value,
+      sourceUrl: companyFacts.sourceUrl,
+      quote: companyFacts.quote,
+      sourceKind: companyFacts.sourceKind,
+      confidence: companyFacts.confidence,
+    })
+    .from(companyFacts)
+    .where(eq(companyFacts.companyId, co.id))
+    .limit(80);
+
+  const founders = await db
+    .select({
+      name: people.name,
+      title: companyPeople.title,
+      role: companyPeople.role,
+      source_url: companyPeople.sourceUrl,
+      quote: companyPeople.quote,
+    })
+    .from(companyPeople)
+    .innerJoin(people, eq(people.id, companyPeople.personId))
+    .where(eq(companyPeople.companyId, co.id));
+
+  const inv = await db
+    .select({
+      name: investors.name,
+      round: companyInvestors.round,
+      source_url: companyInvestors.sourceUrl,
+      quote: companyInvestors.quote,
+    })
+    .from(companyInvestors)
+    .innerJoin(investors, eq(investors.id, companyInvestors.investorId))
+    .where(eq(companyInvestors.companyId, co.id));
+
+  return {
+    found: true as const,
+    company: {
+      id: co.id,
+      name: co.name,
+      slug: co.slug,
+      website: co.website,
+      ats: co.ats,
+      founded_year: co.foundedYear,
+      team_size: co.teamSize,
+      one_liner: co.oneLiner,
+      hq: {
+        city: co.hqCity,
+        country: co.hqCountry,
+      },
+      batch: co.ycBatch,
+      enriched_at: co.enrichedAt?.toISOString() ?? null,
+      founders,
+      investors: inv,
+      facts: facts.map((f) => ({
+        type: f.factType,
+        value: f.value,
+        source_url: f.sourceUrl,
+        quote: f.quote,
+        source: f.sourceKind,
+        confidence: f.confidence,
+      })),
+    },
+  };
+}
+
+export async function findCompanies(db: Db, raw: FindCompaniesInput) {
+  const limit = raw.limit ?? 20;
+  const conditions = [eq(companies.active, true)];
+  if (raw.batch) {
+    conditions.push(ilike(companies.ycBatch, `%${raw.batch}%`));
+  }
+  if (raw.hq_country) {
+    conditions.push(ilike(companies.hqCountry, `%${raw.hq_country}%`));
+  }
+  if (raw.team_size_min != null) {
+    conditions.push(gte(companies.teamSize, raw.team_size_min));
+  }
+  if (raw.team_size_max != null) {
+    conditions.push(
+      sql`${companies.teamSize} is not null and ${companies.teamSize} <= ${raw.team_size_max}`,
+    );
+  }
+
+  let rows = await db
+    .select({
+      id: companies.id,
+      name: companies.name,
+      slug: companies.slug,
+      website: companies.website,
+      teamSize: companies.teamSize,
+      hqCountry: companies.hqCountry,
+      ycBatch: companies.ycBatch,
+      oneLiner: companies.oneLiner,
+      foundedYear: companies.foundedYear,
+    })
+    .from(companies)
+    .where(and(...conditions))
+    .orderBy(companies.name)
+    .limit(200);
+
+  if (raw.investor) {
+    const needle = `%${raw.investor}%`;
+    const matched = await db
+      .select({ companyId: companyInvestors.companyId })
+      .from(companyInvestors)
+      .innerJoin(investors, eq(investors.id, companyInvestors.investorId))
+      .where(ilike(investors.name, needle));
+    const ids = new Set(matched.map((m) => m.companyId));
+    rows = rows.filter((r) => ids.has(r.id));
+  }
+  if (raw.founder) {
+    const needle = `%${raw.founder}%`;
+    const matched = await db
+      .select({ companyId: companyPeople.companyId })
+      .from(companyPeople)
+      .innerJoin(people, eq(people.id, companyPeople.personId))
+      .where(ilike(people.name, needle));
+    const ids = new Set(matched.map((m) => m.companyId));
+    rows = rows.filter((r) => ids.has(r.id));
+  }
+  if (raw.industry) {
+    const needle = `%${raw.industry}%`;
+    const matched = await db
+      .select({ companyId: companyFacts.companyId })
+      .from(companyFacts)
+      .where(
+        and(
+          inArray(companyFacts.factType, ["industry", "tag"]),
+          ilike(companyFacts.value, needle),
+        ),
+      );
+    const ids = new Set(matched.map((m) => m.companyId));
+    rows = rows.filter((r) => ids.has(r.id));
+  }
+  if (raw.has_india_jobs) {
+    const matched = await db
+      .select({ companyId: jobs.companyId })
+      .from(jobs)
+      .innerJoin(jobTags, eq(jobTags.jobId, jobs.id))
+      .where(
+        and(
+          isNull(jobs.closedAt),
+          inArray(jobTags.indiaEligibility, ["open", "india_remote"]),
+        ),
+      );
+    const ids = new Set(matched.map((m) => m.companyId));
+    rows = rows.filter((r) => ids.has(r.id));
+  }
+
+  rows = rows.slice(0, limit);
+  return {
+    companies: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      website: r.website,
+      team_size: r.teamSize,
+      hq_country: r.hqCountry,
+      batch: r.ycBatch,
+      founded_year: r.foundedYear,
+      one_liner: r.oneLiner,
+    })),
+    count: rows.length,
   };
 }
 

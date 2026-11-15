@@ -7,8 +7,11 @@ import { sql } from "drizzle-orm";
 import { classifyIndiaEligibility } from "../classify/eligibility.js";
 import type { IndiaEligibility } from "../classify/types.js";
 import { db, pool } from "../db/client.js";
-import { goldJobIdSet } from "../learn/gold.js";
-import { validateEligibilityEvidence } from "../learn/evidence-guard.js";
+import { protectedGoldJobIds } from "../learn/gold.js";
+import {
+  acceptLlmCrosscheckCorrection,
+  validateEligibilityEvidence,
+} from "../learn/evidence-guard.js";
 import { recordCorrection } from "../learn/corrections.js";
 
 function argNum(name: string, fallback: number): number {
@@ -19,7 +22,7 @@ function argNum(name: string, fallback: number): number {
 async function main() {
   const limit = argNum("limit", 60);
   const useLlm = process.argv.includes("--llm");
-  const gold = goldJobIdSet();
+  const gold = protectedGoldJobIds();
 
   const res = await db.execute(sql`
     SELECT j.id::text AS job_id,
@@ -139,22 +142,34 @@ async function main() {
             r.evidence ||
             rules.eligibility_evidence[0];
           if (!evidence) continue;
-          const check = validateEligibilityEvidence({
+          const confidence =
+            typeof (raw as { confidence?: number }).confidence === "number"
+              ? (raw as { confidence: number }).confidence
+              : null;
+          const llmOk = acceptLlmCrosscheckCorrection({
             evidence,
             title: r.title,
             locationRaw: r.location_raw,
             descriptionText: r.description_text,
+            confidence,
+            newLabel: raw.india_eligibility,
           });
-          if (!check.ok) continue;
+          if (!llmOk.ok) {
+            console.log(
+              `llm drop ${r.job_id.slice(0, 8)} ${rules.india_eligibility} → ${raw.india_eligibility} (${llmOk.reason})`,
+            );
+            continue;
+          }
           await recordCorrection(db, {
             jobId: r.job_id,
             newLabel: raw.india_eligibility,
             evidence,
             source: "llm_crosscheck",
+            confidence,
           });
           seeded += 1;
           console.log(
-            `llm ${r.job_id.slice(0, 8)} ${rules.india_eligibility} → ${raw.india_eligibility}`,
+            `llm ${r.job_id.slice(0, 8)} ${rules.india_eligibility} → ${raw.india_eligibility} conf=${confidence}`,
           );
         } catch (err) {
           console.warn("llm cross-check skip:", err instanceof Error ? err.message : err);

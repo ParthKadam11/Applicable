@@ -1,0 +1,95 @@
+{
+  "n_jobs": 77,
+  "before": {
+    "repair": false,
+    "decisive": 59,
+    "bad": 17,
+    "bad_evidence_rate": 0.288135593220339,
+    "causes": {
+      "contractor_gear": 17,
+      "ok": 42
+    },
+    "samples": {
+      "contractor_gear": [
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        },
+        {
+          "company": "Meridial",
+          "ev": "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insur"
+        }
+      ]
+    }
+  },
+  "after": {
+    "repair": true,
+    "decisive": 59,
+    "bad": 0,
+    "bad_evidence_rate": 0,
+    "causes": {
+      "ok": 59
+    },
+    "samples": {}
+  }
+}

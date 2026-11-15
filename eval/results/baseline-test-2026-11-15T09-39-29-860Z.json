@@ -1,0 +1,399 @@
+{
+  "kind": "baseline",
+  "timestamp": "2026-11-15T09:39:29.860Z",
+  "n": 29,
+  "accuracy": 1,
+  "unclear_rate": 0.20689655172413793,
+  "evidence_validity_rate": 1,
+  "bad_evidence_rate": 0,
+  "per_label": {
+    "open": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 6
+    },
+    "india_remote": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 5
+    },
+    "india_onsite": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 6
+    },
+    "region_locked": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 6
+    },
+    "unclear": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 6
+    }
+  },
+  "confusion": {
+    "open": {
+      "open": 6,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "india_remote": {
+      "open": 0,
+      "india_remote": 5,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "india_onsite": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 6,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "region_locked": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 6,
+      "unclear": 0
+    },
+    "unclear": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 6
+    }
+  },
+  "predictions": [
+    {
+      "job_id": "6187d0c4-c5d5-4476-8624-8067b4202101",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "Based in Colombia, you'll work directly with our group CISO and a global security team, owning programmes that support our growth across multiple markets."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "ea66029f-b8be-4784-8ef4-efaf0ea83171",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "World Wide - Remote"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "6ab3f4a5-d7bf-4953-a94e-e13c2075d2b5",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "World Wide - Remote"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "61ed9320-12fe-4f38-8226-1072636abb86",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "World Wide - Remote"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "cae4c7ba-be0a-4827-a532-d1bf7a37de5a",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "World Wide - Remote"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "6a53741b-3ec9-44d4-80b3-082525424b10",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "World Wide - Remote"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "30e1aeb7-a47b-4392-a37c-774d26b78391",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "e717989a-d156-477d-b725-4ebe0932cd55",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "389be369-9b5e-4992-88f3-a2706d10cf5b",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "9a8b3fc7-2c5d-4121-aee2-cb74251f573e",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "04108b14-dc7c-4f78-9ebe-7cb34c217cb3",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "99d18c3d-955e-45bf-93f2-9539578507e8",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "eede4315-25df-4bae-b280-bdeb0e5fdd06",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "f9473550-31de-4285-a295-8997ebc632e3",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Hybrid in Bangalore, India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "fccadfe0-5bbc-48a7-acb7-b59da409abfc",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Hybrid in Bangalore, India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "23d9d3f6-9678-4c03-8284-60707cf6356e",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Onsite in Bangalore"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "23c5741c-b71e-4cfd-814d-fd3729119f47",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Bengaluru"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "54dd902a-9e87-422d-acd9-5120f126d801",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York City"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "c3f61252-1097-4ae8-96be-e997d71107d1",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Bellevue, WA/ San Francisco, CA/  Sunnyvale, CA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "bb8943d0-136f-4d93-813f-63a31652756d",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "cfb4176c-f33f-4a7c-9f67-26c1bcbe230f",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "San Diego, California, United States"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "0d9460ab-4272-4f93-bbec-de816f82ddd6",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "San Francisco"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "9eb2b69a-0281-41a6-91e9-6191923c5b78",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Sunnyvale, CA / Bellevue, WA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "409a6049-0e99-43af-9195-6ef3cfe89699",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "<p>Based in San Diego, California, Tempo develops thermochemical energy storage (TCES) systems designed for energy-intensive industries."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "c23c68a8-4ea7-4b64-b98b-511c4dbf3a6a",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "You will primarily be responsible for developing backend software capabilities, but the ideal candidate can contribute across backend software development, generative AI integrations, DevSecOps and CI/CD tooling, and software architecture design and maintenance."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "f5870436-9339-45e3-a7cf-ca7c03444cd9",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "<p>We’re looking for smart, resourceful and passionate people to join us as we power the shop local movement."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "10bbd00f-9985-48bf-9046-865e05dec17e",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "Trusted by leading AI labs, startups, and global enterprises, CoreWeave combines superior infrastructure performance with deep technical expertise to accelerate breakthroughs and turn compute into capability."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "2a0448f2-8813-4570-9817-6df5ffe5130a",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "In the event a recruiter or agency submits a resume or candidate without an agreement Onebrief explicitly reserves the right to pursue and hire those candidate(s) without any financial obligation to the recruiter or agency."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "2078e462-a9c6-4df0-9f00-25c83dcf8442",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [
+        "In the event a recruiter or agency submits a resume or candidate without an agreement Onebrief explicitly reserves the right to pursue and hire those candidate(s) without any financial obligation to the recruiter or agency."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    }
+  ]
+}

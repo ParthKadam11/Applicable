@@ -1,0 +1,25 @@
+{
+  "gold_n": 48,
+  "gold_test_n": 29,
+  "gold_provenance": {
+    "evidence_validated": 48
+  },
+  "gold_test_provenance": {
+    "evidence_validated": 29
+  },
+  "gold_labels": {
+    "open": 12,
+    "india_onsite": 12,
+    "region_locked": 12,
+    "unclear": 12
+  },
+  "gold_test_labels": {
+    "open": 6,
+    "india_remote": 5,
+    "india_onsite": 6,
+    "region_locked": 6,
+    "unclear": 6
+  },
+  "audit_csv": "eval/audit.csv",
+  "note": "No hand_verified rows yet — evidence_validated means location/eligibility guard passed; copied_from_prod means prod tag kept without strong evidence. gold-test never used for seeding."
+}
