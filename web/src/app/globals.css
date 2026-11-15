@@ -483,29 +483,29 @@ button:focus-visible {
   position: absolute;
   left: 50%;
   top: 46%;
-  width: 140%;
-  height: 165%;
+  width: 168%;
+  height: 195%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
     radial-gradient(
-      ellipse 48% 42% at 50% 48%,
-      rgba(255, 255, 255, 0.78) 0%,
-      rgba(255, 255, 255, 0.42) 38%,
-      rgba(246, 250, 252, 0.12) 62%,
-      transparent 76%
+      ellipse 54% 48% at 50% 48%,
+      rgba(255, 255, 255, 0.86) 0%,
+      rgba(255, 255, 255, 0.52) 36%,
+      rgba(246, 250, 252, 0.18) 60%,
+      transparent 78%
     );
-  backdrop-filter: blur(22px) saturate(1.05);
-  -webkit-backdrop-filter: blur(22px) saturate(1.05);
+  backdrop-filter: blur(30px) saturate(1.06);
+  -webkit-backdrop-filter: blur(30px) saturate(1.06);
   mask-image: radial-gradient(
-    ellipse 52% 48% at 50% 48%,
-    #000 18%,
-    transparent 72%
+    ellipse 60% 54% at 50% 48%,
+    #000 22%,
+    transparent 76%
   );
   -webkit-mask-image: radial-gradient(
-    ellipse 52% 48% at 50% 48%,
-    #000 18%,
-    transparent 72%
+    ellipse 60% 54% at 50% 48%,
+    #000 22%,
+    transparent 76%
   );
 }
 

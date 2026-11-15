@@ -70,7 +70,7 @@ export function Hero() {
       </div>
       {/* Soft center hush so type sits in a calm pocket over the field */}
       <div
-        className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_58%_48%_at_50%_28%,rgba(255,255,255,0.55)_0%,rgba(246,250,252,0.2)_45%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_68%_56%_at_50%_26%,rgba(255,255,255,0.64)_0%,rgba(246,250,252,0.28)_48%,transparent_74%)]"
         aria-hidden
       />
       <div className="relative z-[2]">
