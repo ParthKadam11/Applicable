@@ -54,9 +54,9 @@ const envSchema = z.object({
   MCP_PUBLIC_URL: z
     .string()
     .optional()
-    .default("https://mcp.example.com/mcp"),
-  /** Public hostname for Caddy (prod). */
-  MCP_HOST: z.string().optional().default("mcp.example.com"),
+    .default("https://mcp.applicable.click"),
+  /** Public hostname for Caddy / nginx (prod). */
+  MCP_HOST: z.string().optional().default("mcp.applicable.click"),
 
   // Company discovery
   DISCOVER_CRON: z.string().min(1).default("0 6 * * 1"),

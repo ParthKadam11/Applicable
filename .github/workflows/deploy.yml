@@ -2,11 +2,11 @@ name: Deploy
 
 # Deploys to the Contabo VPS over SSH after CI on master/main.
 # Required repo secrets (Settings → Secrets and variables → Actions):
-#   VPS_HOST          — e.g. 123.45.67.89 or mcp.yourdomain.com
+#   VPS_HOST          — e.g. 123.45.67.89 or mcp.applicable.click
 #   VPS_USER          — SSH user (e.g. root or deploy)
 #   VPS_SSH_KEY       — full private key INCLUDING BEGIN/END lines + real newlines
 #   VPS_DEPLOY_PATH   — app dir on VPS (default /opt/applicable)
-#   MCP_SMOKE_URL     — e.g. https://mcp.yourdomain.com (optional; skips smoke if unset)
+#   MCP_SMOKE_URL     — e.g. https://mcp.applicable.click (optional; skips smoke if unset)
 
 on:
   push:
@@ -109,7 +109,7 @@ jobs:
             [ -n "${POSTGRES_PASSWORD:-}" ] || missing="$missing POSTGRES_PASSWORD"
             if [ -n "$missing" ]; then
               echo "ERROR: .env is missing required vars:$missing"
-              echo "On the VPS: nano $DEPLOY_PATH/.env  # set MCP_HOST=mcp.yourdomain.com and POSTGRES_PASSWORD=..."
+              echo "On the VPS: nano $DEPLOY_PATH/.env  # set MCP_HOST=mcp.applicable.click and POSTGRES_PASSWORD=..."
               exit 1
             fi
             echo "MCP_HOST=$MCP_HOST (ok)"
@@ -164,14 +164,14 @@ jobs:
           curl -fsSL --max-time 30 "$URL/health" | grep -q '"ok":true'
           echo "PASS /health"
 
-          INIT=$(curl -fsSL --max-time 30 -X POST "$URL/mcp" \
+          INIT=$(curl -fsSL --max-time 30 -X POST "$URL/" \
             -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"gha-smoke","version":"0.0.1"}}}')
           echo "$INIT" | grep -q applicable
           echo "PASS initialize"
 
-          STATS=$(curl -fsSL --max-time 30 -X POST "$URL/mcp" \
+          STATS=$(curl -fsSL --max-time 30 -X POST "$URL/" \
             -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
             -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"stats","arguments":{}}}')

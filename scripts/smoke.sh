@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Smoke-test a deployed Applicable MCP endpoint.
-# Usage: scripts/smoke.sh https://mcp.example.com
+# Usage: scripts/smoke.sh https://mcp.applicable.click
 #        scripts/smoke.sh http://localhost
 set -euo pipefail
 
 BASE="${1:-}"
 if [[ -z "${BASE}" ]]; then
   echo "Usage: $0 <base-url>" >&2
-  echo "  e.g. $0 https://mcp.example.com" >&2
+  echo "  e.g. $0 https://mcp.applicable.click" >&2
   echo "       $0 http://localhost" >&2
   exit 2
 fi
@@ -49,9 +49,9 @@ else
   bad "/health → ${HEALTH:-empty}"
 fi
 
-# 2) initialize
+# 2) initialize (MCP at host root)
 INIT_BODY='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"0.0.1"}}}'
-INIT_RAW="$("${CURL[@]}" -X POST "${BASE}/mcp" \
+INIT_RAW="$("${CURL[@]}" -X POST "${BASE}/" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d "${INIT_BODY}" || true)"
@@ -64,7 +64,7 @@ fi
 
 # Capture session id if present (stateful servers)
 SESSION=""
-SESSION="$("${CURL[@]}" -D - -o /dev/null -X POST "${BASE}/mcp" \
+SESSION="$("${CURL[@]}" -D - -o /dev/null -X POST "${BASE}/" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d "${INIT_BODY}" 2>/dev/null | tr -d '\r' | awk -F': ' 'tolower($1)=="mcp-session-id"{print $2; exit}' || true)"
@@ -76,7 +76,7 @@ fi
 
 # 3) tools/list
 LIST_BODY='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
-LIST_RAW="$("${CURL[@]}" -X POST "${BASE}/mcp" \
+LIST_RAW="$("${CURL[@]}" -X POST "${BASE}/" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   "${SESSION_HDR[@]}" \
@@ -90,7 +90,7 @@ fi
 
 # 4) tools/call stats
 STATS_BODY='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"stats","arguments":{}}}'
-STATS_RAW="$("${CURL[@]}" -X POST "${BASE}/mcp" \
+STATS_RAW="$("${CURL[@]}" -X POST "${BASE}/" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   "${SESSION_HDR[@]}" \

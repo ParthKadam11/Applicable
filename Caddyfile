@@ -1,7 +1,6 @@
 {$MCP_HOST} {
 	encode gzip
 
-	# MCP Streamable HTTP + health + public REST for the site
 	handle /health {
 		reverse_proxy mcp:3100
 	}
@@ -10,12 +9,9 @@
 		reverse_proxy mcp:3100
 	}
 
-	handle /mcp* {
-		reverse_proxy mcp:3100
-	}
-
+	# MCP Streamable HTTP at host root (and legacy /mcp)
 	handle {
-		respond "Applicable MCP - POST /mcp  GET /health  GET /api/*" 200
+		reverse_proxy mcp:3100
 	}
 
 	header {

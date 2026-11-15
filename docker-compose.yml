@@ -37,7 +37,7 @@ services:
       USER_AGENT: Applicable/0.1 (+https://github.com/ParthKadam11/Applicable; MCP)
     expose:
       - "3100"
-    # Host 3100 is taken; nginx proxies mcp.parthkadam.tech → 3110.
+    # Host 3100 is taken; nginx proxies mcp.applicable.click → 3110.
     ports:
       - "127.0.0.1:3110:3100"
     restart: unless-stopped

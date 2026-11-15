@@ -306,9 +306,9 @@ Guard after merge; negative eligibility sentences stripped from LLM evidence (`i
 
 | Item | Detail |
 |---|---|
-| Transports | **Streamable HTTP** (`src/mcp/http.ts` + `app.ts`): `POST/GET /mcp`, `GET /health`. **stdio** (`src/mcp/stdio.ts`). |
+| Transports | **Streamable HTTP** (`src/mcp/http.ts` + `app.ts`): `POST/GET /` (alias `/mcp`), `GET /health`. Public URL `https://mcp.applicable.click`. **stdio** (`src/mcp/stdio.ts`). |
 | Server factory | `createApplicableMcpServer` in `server.ts` |
-| Rate limit | `IpRateLimiter` - `MCP_RATE_LIMIT_RPM` (default 60) per IP sliding 60s window on `/mcp` |
+| Rate limit | `IpRateLimiter` - `MCP_RATE_LIMIT_RPM` (default 60) per IP sliding 60s window on MCP routes |
 | Logging | `logToolCall` - tool name, latency, result count, ok |
 
 ### Tools
@@ -347,7 +347,7 @@ Services: `postgres` → `migrate` → `app` + `mcp`; optional `caddy` (`profile
 
 ### Caddy
 
-`Caddyfile`: host `$MCP_HOST`; `/health` and `/mcp*` → `mcp:3100`.
+`Caddyfile`: host `$MCP_HOST` (`mcp.applicable.click`); `/health`, `/`, and `/mcp` → `mcp:3100`.
 
 ### Env var **names** (from `.env.example` / `config.ts`)
 

@@ -2,7 +2,7 @@ export const SITE_URL = "https://applicable.click";
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ||
   "https://mcp.applicable.click";
-/** MCP Streamable HTTP endpoint (host root; `/mcp` still works as an alias). */
+/** MCP Streamable HTTP endpoint (https://mcp.applicable.click). */
 export const MCP_URL = API_BASE;
 
 export const REVALIDATE_SECONDS = 300;

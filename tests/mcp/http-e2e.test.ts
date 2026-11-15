@@ -32,7 +32,7 @@ async function mcpJsonRpc(
   params?: Record<string, unknown>,
   id = 1,
 ) {
-  const res = await fetch(`${base}/mcp`, {
+  const res = await fetch(`${base}/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -138,10 +138,12 @@ localhost, cached ~5 minutes): `GET /api/stats`, `GET /api/stats/history`,
 
 Landing + dashboard live in `web/` (Next.js) → deploy to
 `applicable.click` (see `web/README.md`). Host nginx must proxy `/api/`
-to the MCP container (see `infra/nginx/mcp.parthkadam.tech.conf`).
+to the MCP container (see `infra/nginx/mcp.applicable.click.conf`).
+
+Public MCP URL: **`https://mcp.applicable.click`** (host root).
 
 ```bash
-npm run mcp:http          # http://localhost:3100/mcp
+npm run mcp:http          # http://localhost:3100/  (MCP at /)
 npm run mcp:stdio         # local stdio for Cursor/Claude Desktop
 npm run mcp:smoke         # call each tool once against the DB
 docker compose up -d --build mcp
@@ -151,13 +153,11 @@ curl -s http://localhost:3100/health
 For HTTPS on a Contabo VPS (Let's Encrypt via Caddy):
 
 ```bash
-export MCP_DOMAIN=mcp.yourdomain.com
+export MCP_HOST=mcp.applicable.click
 docker compose --profile tls up -d --build
 ```
 
 ### Connect in 30 seconds
-
-Replace the URL with your deployed endpoint (local example shown).
 
 **Claude Desktop** (`claude_desktop_config.json`):
 
@@ -165,7 +165,7 @@ Replace the URL with your deployed endpoint (local example shown).
 {
   "mcpServers": {
     "applicable": {
-      "url": "https://mcp.yourdomain.com/mcp"
+      "url": "https://mcp.applicable.click"
     }
   }
 }
@@ -178,7 +178,7 @@ If your Claude build only supports stdio locally:
   "mcpServers": {
     "applicable": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.yourdomain.com/mcp"]
+      "args": ["-y", "mcp-remote", "https://mcp.applicable.click"]
     }
   }
 }
@@ -190,7 +190,7 @@ If your Claude build only supports stdio locally:
 {
   "mcpServers": {
     "applicable": {
-      "url": "https://mcp.yourdomain.com/mcp"
+      "url": "https://mcp.applicable.click"
     }
   }
 }
@@ -200,7 +200,7 @@ If your Claude build only supports stdio locally:
 
 ```bash
 curl -s http://localhost:3100/health
-curl -s -X POST http://localhost:3100/mcp \
+curl -s -X POST http://localhost:3100/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"0.0.1"}}}'

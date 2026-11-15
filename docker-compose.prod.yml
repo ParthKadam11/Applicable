@@ -147,7 +147,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      MCP_HOST: ${MCP_HOST:?MCP_HOST is required (e.g. mcp.example.com)}
+      MCP_HOST: ${MCP_HOST:?MCP_HOST is required (e.g. mcp.applicable.click)}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - applicable_caddy_data:/data

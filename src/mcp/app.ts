@@ -289,7 +289,7 @@ export function createMcpHttpApp() {
     });
   };
 
-  // Preferred: host root (https://mcp.applicable.click/). /mcp kept as alias.
+  // Host root is canonical (https://mcp.applicable.click). /mcp kept as alias.
   for (const path of ["/", "/mcp"] as const) {
     app.post(path, mcpRateLimit, (req, res) => void handleMcp(req, res));
     app.get(path, mcpRateLimit, (req, res) => void handleMcp(req, res));

@@ -11,7 +11,7 @@ Public ports: **80 / 443** only. Postgres and MCP stay on the Docker network.
 Create an **A** (and optional **AAAA**) record:
 
 ```
-mcp.yourdomain.com  →  <VPS public IP>
+mcp.applicable.click  →  <VPS public IP>
 ```
 
 Wait until it resolves before `compose up` so Caddy can obtain a Let's Encrypt cert.
@@ -59,8 +59,8 @@ Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` - com
 | Variable | Example |
 |---|---|
 | `POSTGRES_PASSWORD` | long random string |
-| `MCP_HOST` | `mcp.yourdomain.com` |
-| `MCP_PUBLIC_URL` | `https://mcp.yourdomain.com/mcp` |
+| `MCP_HOST` | `mcp.applicable.click` |
+| `MCP_PUBLIC_URL` | `https://mcp.applicable.click` |
 | `POSTGRES_USER` / `POSTGRES_DB` | `applicable` / `applicable` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` / … | optional (rules-only if empty) |
 | `AUTH_SECRET` | long random string (Next.js / Vercel) |
@@ -90,7 +90,7 @@ If deploy fails with `MCP_HOST is missing`, SSH once and fix:
 ssh USER@VPS
 cd /opt/applicable
 grep -E '^(MCP_HOST|POSTGRES_PASSWORD)=' .env || nano .env
-# MCP_HOST=mcp.yourdomain.com
+# MCP_HOST=mcp.applicable.click
 # POSTGRES_PASSWORD=...
 ```
 
@@ -143,7 +143,7 @@ Expect caddy: certificate obtained for `MCP_HOST`.
 
 ```bash
 chmod +x scripts/smoke.sh scripts/backup-postgres.sh
-./scripts/smoke.sh https://mcp.yourdomain.com
+./scripts/smoke.sh https://mcp.applicable.click
 ```
 
 Should print **PASS** for `/health`, `initialize`, `tools/list`, `tools/call stats`.
@@ -154,7 +154,7 @@ Connect Cursor / Claude with:
 {
   "mcpServers": {
     "applicable": {
-      "url": "https://mcp.yourdomain.com/mcp"
+      "url": "https://mcp.applicable.click"
     }
   }
 }
@@ -224,11 +224,11 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 
 | Secret | Example |
 |---|---|
-| `VPS_HOST` | `123.45.67.89` or `mcp.yourdomain.com` |
+| `VPS_HOST` | `123.45.67.89` or `mcp.applicable.click` |
 | `VPS_USER` | `root` or your deploy user |
 | `VPS_SSH_KEY` | full **private** key contents of `applicable_gha_deploy` (see format below) |
 | `VPS_DEPLOY_PATH` | `/opt/applicable` (optional; this is the default) |
-| `MCP_SMOKE_URL` | `https://mcp.yourdomain.com` (optional; enables post-deploy smoke) |
+| `MCP_SMOKE_URL` | `https://mcp.applicable.click` (optional; enables post-deploy smoke) |
 
 **`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines - not the `.pub` file, not one long line, no quotes.
 
@@ -263,7 +263,7 @@ cd /opt/applicable
 git pull
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml logs -f --tail=50 migrate mcp app
-./scripts/smoke.sh https://mcp.yourdomain.com
+./scripts/smoke.sh https://mcp.applicable.click
 ```
 
 Migrations re-run via the **migrate** one-shot service on each recreate.

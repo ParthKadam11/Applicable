@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Enable applicable.click (Next.js) and remove old applicable.parthkadam.tech vhost.
-# Keeps joinwaitlist.parthkadam.tech and mcp.parthkadam.tech. Needs sudo.
+# Enable applicable.click (Next.js). MCP is mcp.applicable.click (separate vhost).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -24,5 +23,5 @@ fi
 
 echo "${DOMAIN} enabled → 127.0.0.1:3010"
 echo "  site: https://${DOMAIN}"
+echo "MCP: https://mcp.applicable.click (see enable-mcp-applicable.sh)"
 echo "joinwaitlist.parthkadam.tech left unchanged"
-echo "Also serving mcp.parthkadam.tech (for /api/* → :3110)"
