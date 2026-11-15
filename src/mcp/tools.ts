@@ -163,6 +163,22 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     );
     conditions.push(gte(jobs.postedAt, since));
   }
+  if (raw.early_career) {
+    conditions.push(
+      or(
+        inArray(jobTags.seniority, ["intern", "entry", "junior"]),
+        and(
+          eq(jobTags.seniority, "mid"),
+          sql`${jobTags.yearsExperienceMax} is not null and ${jobTags.yearsExperienceMax} <= 2`,
+        ),
+      )!,
+    );
+  } else if (raw.seniority?.length) {
+    const levels = raw.seniority.flatMap((s) =>
+      s === "entry" ? ["entry", "junior"] : [s],
+    );
+    conditions.push(inArray(jobTags.seniority, levels));
+  }
 
   const where = and(...conditions);
 
@@ -279,6 +295,9 @@ export async function getJob(db: Db, raw: GetJobInput) {
       contractorOrEor: jobTags.contractorOrEor,
       contractorOrEorEvidence: jobTags.contractorOrEorEvidence,
       seniority: jobTags.seniority,
+      seniorityEvidence: jobTags.seniorityEvidence,
+      yearsExperienceMin: jobTags.yearsExperienceMin,
+      yearsExperienceMax: jobTags.yearsExperienceMax,
       roleFamily: jobTags.roleFamily,
       classifier: jobTags.classifier,
       model: jobTags.model,
@@ -321,7 +340,11 @@ export async function getJob(db: Db, raw: GetJobInput) {
       interview_style_evidence: row.interviewStyleEvidence ?? {},
       contractor_or_eor: row.contractorOrEor ?? null,
       contractor_or_eor_evidence: row.contractorOrEorEvidence ?? null,
-      seniority: row.seniority ?? null,
+      seniority:
+        row.seniority === "junior" ? "entry" : (row.seniority ?? null),
+      seniority_evidence: row.seniorityEvidence ?? null,
+      years_experience_min: row.yearsExperienceMin ?? null,
+      years_experience_max: row.yearsExperienceMax ?? null,
       role_family: row.roleFamily ?? null,
       classifier: row.classifier ?? null,
       classification_source:

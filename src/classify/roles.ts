@@ -51,6 +51,9 @@ const TECH_SIGNAL: RegExp[] = [
   /\bengineer(?:ing)?\b/i,
   /\bdeveloper\b/i,
   /\bprogrammer\b/i,
+  /\b\bSDE\b|\bSDET\b/i,
+  /\bmember of technical staff\b|\b\bMTS\b/i,
+  /\bsoftware development(?:\s+engineer)?\b/i,
   /\bsre\b/i,
   /\bdevops\b/i,
   /\bbackend\b|\bfrontend\b|\bfull[- ]?stack\b/i,
@@ -95,6 +98,9 @@ const ROLE_PATTERNS: Array<{ family: RoleFamily; re: RegExp }> = [
   { family: "backend", re: /\bback[- ]?end\b/i },
   { family: "backend", re: /\bapi engineer\b/i },
   { family: "backend", re: /\bserver[- ]side\b/i },
+  { family: "other", re: /\b\bSDE\b|\bSDET\b/i },
+  { family: "other", re: /\bmember of technical staff\b|\b\bMTS\b/i },
+  { family: "other", re: /\bsoftware development(?:\s+engineer)?\b/i },
 ];
 
 function hasTechSignal(title: string): boolean {

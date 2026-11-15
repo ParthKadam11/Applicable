@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { companies, jobTags, jobs } from "../db/schema.js";
 import type { EligibilityFilter } from "../mcp/schemas.js";
@@ -16,7 +16,12 @@ import { syncUserSavedEdges } from "./saved.js";
 export type ExploreInput = {
   start: { type: StartType; value?: string };
   path: string[];
-  filter?: { labels?: EligibilityFilter[]; skills?: string[] };
+  filter?: {
+    labels?: EligibilityFilter[];
+    skills?: string[];
+    seniority?: string[];
+    early_career?: boolean;
+  };
   max_results?: number;
   max_tokens?: number;
 };
@@ -176,13 +181,36 @@ type Rehydrated = {
   evidenceByJobId: Map<string, string | null>;
 };
 
+type ExploreSeniorityFilter = {
+  seniority?: string[];
+  early_career?: boolean;
+};
+
 async function rehydrateExploreJobs(
   db: Db,
   ids: string[],
   labels: string[],
+  seniorityFilter: ExploreSeniorityFilter = {},
 ): Promise<Rehydrated> {
   if (ids.length === 0) {
     return { cards: [], evidenceByJobId: new Map() };
+  }
+  const seniorityConds = [];
+  if (seniorityFilter.early_career) {
+    seniorityConds.push(
+      or(
+        inArray(jobTags.seniority, ["intern", "entry", "junior"]),
+        and(
+          eq(jobTags.seniority, "mid"),
+          sql`${jobTags.yearsExperienceMax} is not null and ${jobTags.yearsExperienceMax} <= 2`,
+        ),
+      )!,
+    );
+  } else if (seniorityFilter.seniority?.length) {
+    const levels = seniorityFilter.seniority.flatMap((s) =>
+      s === "entry" ? ["entry", "junior"] : [s],
+    );
+    seniorityConds.push(inArray(jobTags.seniority, levels));
   }
   const rows = await db
     .select({
@@ -203,6 +231,7 @@ async function rehydrateExploreJobs(
         eq(companies.active, true),
         or(isNull(jobTags.roleFamily), ne(jobTags.roleFamily, "non_tech")),
         inArray(jobTags.indiaEligibility, labels),
+        ...seniorityConds,
       ),
     );
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -326,6 +355,10 @@ export async function explore(
       db,
       jobOrder,
       labels,
+      {
+        seniority: input.filter?.seniority,
+        early_career: input.filter?.early_career,
+      },
     );
     const activeIds = new Set(jobsOut.map((j) => j.id));
     // Drop lines whose job was filtered out (inactive), keep company-only lines

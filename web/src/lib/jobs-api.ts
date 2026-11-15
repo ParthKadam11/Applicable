@@ -209,6 +209,23 @@ async function baseConditions(q: JobsListQuery): Promise<SQL[]> {
     );
   }
 
+  if (q.early_career) {
+    conditions.push(
+      or(
+        inArray(jobTags.seniority, ["intern", "entry", "junior"]),
+        and(
+          eq(jobTags.seniority, "mid"),
+          sql`${jobTags.yearsExperienceMax} is not null and ${jobTags.yearsExperienceMax} <= 2`,
+        ),
+      )!,
+    );
+  } else if (q.seniority?.length) {
+    const levels = q.seniority.flatMap((s) =>
+      s === "entry" ? (["entry", "junior"] as const) : [s],
+    );
+    conditions.push(inArray(jobTags.seniority, [...levels]));
+  }
+
   return conditions;
 }
 

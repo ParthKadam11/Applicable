@@ -3,6 +3,10 @@ import type { Db } from "../db/client.js";
 import { verifyAndPromote, type PromoteStats } from "./promote.js";
 import { discoverHimalayas } from "./sources/himalayas.js";
 import { discoverHnHiring } from "./sources/hn.js";
+import {
+  discoverIndiaStartups,
+  discoverYcIndia,
+} from "./sources/india-startups.js";
 import { discoverRemoteOk } from "./sources/remoteok.js";
 import { discoverYc } from "./sources/yc.js";
 import type { DiscoverSource, DiscoveredCompany } from "./types.js";
@@ -25,11 +29,20 @@ export async function runDiscovery(
 ): Promise<DiscoverRunResult> {
   const wanted = new Set(
     options?.sources ??
-      (["yc", "hn_hiring", "himalayas", "remoteok"] as DiscoverSource[]),
+      ([
+        "yc",
+        "yc_india",
+        "india_startups",
+        "hn_hiring",
+        "himalayas",
+        "remoteok",
+      ] as DiscoverSource[]),
   );
 
   const foundBySource: Record<DiscoverSource, number> = {
     yc: 0,
+    yc_india: 0,
+    india_startups: 0,
     hn_hiring: 0,
     himalayas: 0,
     remoteok: 0,
@@ -42,6 +55,16 @@ export async function runDiscovery(
     const yc = await discoverYc();
     foundBySource.yc = yc.length;
     all.push(...yc);
+  }
+  if (wanted.has("yc_india")) {
+    const ycIn = await discoverYcIndia();
+    foundBySource.yc_india = ycIn.length;
+    all.push(...ycIn);
+  }
+  if (wanted.has("india_startups")) {
+    const india = await discoverIndiaStartups();
+    foundBySource.india_startups = india.length;
+    all.push(...india);
   }
   if (wanted.has("hn_hiring")) {
     const hn = await discoverHnHiring();

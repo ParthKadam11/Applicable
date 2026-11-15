@@ -36,15 +36,24 @@ export const InterviewStyleSchema = z.enum([
 ]);
 export type InterviewStyle = z.infer<typeof InterviewStyleSchema>;
 
+/** staff = staff+ / principal. "junior" accepted on read for legacy rows. */
 export const SenioritySchema = z.enum([
   "intern",
-  "junior",
+  "entry",
   "mid",
   "senior",
   "staff",
   "unknown",
 ]);
 export type Seniority = z.infer<typeof SenioritySchema>;
+
+/** Normalize legacy "junior" → "entry" without breaking stored reads. */
+export function normalizeSeniority(raw: string | null | undefined): Seniority {
+  if (!raw) return "unknown";
+  if (raw === "junior") return "entry";
+  if (SenioritySchema.safeParse(raw).success) return raw as Seniority;
+  return "unknown";
+}
 
 export const RoleFamilySchema = z.enum([
   "backend",
@@ -87,6 +96,9 @@ export const ClassificationResultSchema = z.object({
     })
     .nullable(),
   seniority: SenioritySchema,
+  seniority_evidence: z.string().nullable().optional(),
+  years_experience_min: z.number().int().nullable().optional(),
+  years_experience_max: z.number().int().nullable().optional(),
   role_family: RoleFamilySchema,
 });
 

@@ -23,7 +23,12 @@ export const RoleSchema = z.enum([
   "other",
 ]);
 
-export const AtsSchema = z.enum(["ashby", "greenhouse", "lever"]);
+export const AtsSchema = z.enum([
+  "ashby",
+  "greenhouse",
+  "lever",
+  "smartrecruiters",
+]);
 export const PostedSchema = z.enum(["24h", "7d", "30d", "all"]);
 export const SortSchema = z.enum(["newest", "last_seen", "company"]);
 
@@ -54,6 +59,12 @@ export const JobsFilterFieldsSchema = z.object({
     .optional(),
   posted: PostedSchema.default("all"),
   has_salary: z.boolean().optional(),
+  /** Early career = intern + entry + mid with ≤2 years. */
+  early_career: z.boolean().optional(),
+  seniority: z
+    .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+    .min(1)
+    .optional(),
   sort: SortSchema.default("newest"),
 });
 
@@ -70,6 +81,7 @@ export type JobsUrlPresence = {
   labels: boolean;
   role: boolean;
   has_salary: boolean;
+  early_career: boolean;
 };
 
 export function jobsUrlPresence(sp: URLSearchParams): JobsUrlPresence {
@@ -77,6 +89,8 @@ export function jobsUrlPresence(sp: URLSearchParams): JobsUrlPresence {
     labels: Boolean(sp.get("labels")),
     role: Boolean(sp.get("role")),
     has_salary: sp.get("has_salary") != null && sp.get("has_salary") !== "",
+    early_career:
+      sp.get("early_career") != null && sp.get("early_career") !== "",
   };
 }
 
@@ -141,6 +155,16 @@ export function parseJobsListSearchParams(
     has_salary = true;
   }
 
+  let early_career: boolean | undefined;
+  if (present.early_career) {
+    const raw = sp.get("early_career");
+    if (raw === "true" || raw === "1") early_career = true;
+    else if (raw === "false" || raw === "0") early_career = false;
+    else {
+      return { ok: false, message: "early_career must be true or false" };
+    }
+  }
+
   let role: string | undefined = present.role
     ? (sp.get("role") || undefined)
     : undefined;
@@ -152,6 +176,14 @@ export function parseJobsListSearchParams(
       roles = preferences.defaultRoles;
     }
   }
+
+  const seniorityRaw = sp.get("seniority");
+  const seniority = seniorityRaw
+    ? seniorityRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : undefined;
 
   const limitRaw = sp.get("limit");
   let limit: number | undefined;
@@ -172,6 +204,8 @@ export function parseJobsListSearchParams(
     company: sp.get("company") || undefined,
     posted: sp.get("posted") || undefined,
     has_salary,
+    early_career,
+    seniority,
     sort: sp.get("sort") || undefined,
     cursor: sp.get("cursor") || undefined,
     limit,

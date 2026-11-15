@@ -176,7 +176,12 @@ function tagFromRow(
             >["period"],
           }
         : null,
-    seniority: (row.seniority ?? "unknown") as ClassifiedTag["seniority"],
+    seniority: (row.seniority === "junior"
+      ? "entry"
+      : (row.seniority ?? "unknown")) as ClassifiedTag["seniority"],
+    seniority_evidence: row.seniorityEvidence ?? null,
+    years_experience_min: row.yearsExperienceMin ?? null,
+    years_experience_max: row.yearsExperienceMax ?? null,
     role_family: (row.roleFamily ?? "other") as ClassifiedTag["role_family"],
     classifier: "cache",
     model: row.model,
@@ -359,6 +364,9 @@ export async function persistClassification(
     compensationCurrency: tag.compensation?.currency ?? null,
     compensationPeriod: tag.compensation?.period ?? null,
     seniority: tag.seniority,
+    seniorityEvidence: tag.seniority_evidence ?? null,
+    yearsExperienceMin: tag.years_experience_min ?? null,
+    yearsExperienceMax: tag.years_experience_max ?? null,
     roleFamily: tag.role_family,
     classifier: tag.classifier === "cache" ? "rules" : tag.classifier,
     model: tag.model,
@@ -384,6 +392,9 @@ export async function persistClassification(
         compensationCurrency: row.compensationCurrency,
         compensationPeriod: row.compensationPeriod,
         seniority: row.seniority,
+        seniorityEvidence: row.seniorityEvidence,
+        yearsExperienceMin: row.yearsExperienceMin,
+        yearsExperienceMax: row.yearsExperienceMax,
         roleFamily: row.roleFamily,
         classifier: row.classifier,
         model: row.model,

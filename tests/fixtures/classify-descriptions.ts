@@ -123,7 +123,7 @@ export const CLASSIFY_FIXTURES: ClassifyFixture[] = [
       "Candidates must be based in New York City. Hybrid schedule three days a week.",
     expect: {
       india_eligibility: "region_locked",
-      seniority: "junior",
+      seniority: "entry",
       role_family: "frontend",
     },
   },

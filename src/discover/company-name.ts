@@ -61,6 +61,15 @@ export async function fetchAtsCompanyName(
       const n = data?.companyName ?? data?.name;
       return typeof n === "string" && n.trim() ? n.trim() : null;
     }
+    if (ats === "smartrecruiters") {
+      const data = await fetchJson<{
+        content?: Array<{ company?: { name?: string } }>;
+      }>(
+        `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(slug)}/postings?limit=1`,
+      );
+      const n = data?.content?.[0]?.company?.name;
+      return typeof n === "string" && n.trim() ? n.trim() : null;
+    }
     // Lever public JSON is postings-only - no reliable company name field.
     return null;
   } catch (err) {

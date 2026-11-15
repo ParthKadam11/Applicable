@@ -2,6 +2,8 @@ import type { Ats } from "../ats/types.js";
 
 export type DiscoverSource =
   | "yc"
+  | "yc_india"
+  | "india_startups"
   | "hn_hiring"
   | "himalayas"
   | "remoteok"

@@ -22,9 +22,14 @@ const PATTERNS: Array<{
     regex: /https?:\/\/jobs\.lever\.co\/([a-zA-Z0-9_-]+)/gi,
     slugGroup: 1,
   },
+  {
+    ats: "smartrecruiters",
+    regex: /https?:\/\/jobs\.smartrecruiters\.com\/([a-zA-Z0-9_-]+)/gi,
+    slugGroup: 1,
+  },
 ];
 
-/** Extract Ashby / Greenhouse / Lever board hits from arbitrary text. */
+/** Extract Ashby / Greenhouse / Lever / SmartRecruiters board hits from text. */
 export function extractAtsUrls(text: string): AtsHit[] {
   const found = new Map<string, AtsHit>();
   for (const pattern of PATTERNS) {

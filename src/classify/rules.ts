@@ -1,10 +1,7 @@
 import { classifyIndiaEligibility } from "./eligibility.js";
 import { classifyRoleFamily, isTechRole } from "./roles.js";
-import type {
-  ClassificationResult,
-  InterviewStyle,
-  Seniority,
-} from "./types.js";
+import { classifySeniority } from "./seniority.js";
+import type { ClassificationResult, InterviewStyle } from "./types.js";
 import { sentenceMatching } from "./text.js";
 import {
   parseCompensation,
@@ -13,6 +10,7 @@ import {
 } from "./compensation.js";
 
 export { classifyRoleFamily, isTechRole } from "./roles.js";
+export { classifySeniority, isEarlyCareer } from "./seniority.js";
 export {
   parseCompensation,
   compensationFromAtsRaw,
@@ -42,18 +40,6 @@ const INTERVIEW_PATTERNS: Array<{ style: InterviewStyle; re: RegExp }> = [
   { style: "dsa", re: /\bleetcode[- ]style\b/i },
   { style: "system_design", re: /\bsystem design\b/i },
   { style: "pair_programming", re: /\bpair[- ]programm(?:ing|ed)\b/i },
-];
-
-const SENIORITY_PATTERNS: Array<{ level: Seniority; re: RegExp }> = [
-  { level: "intern", re: /\bintern(?:ship)?\b/i },
-  { level: "staff", re: /\bstaff\b/i },
-  { level: "staff", re: /\bprincipal\b/i },
-  { level: "senior", re: /\bsenior\b/i },
-  { level: "senior", re: /\bSr\.?\b/ },
-  { level: "junior", re: /\bjunior\b/i },
-  { level: "junior", re: /\bentry[- ]level\b/i },
-  { level: "mid", re: /\bmid[- ]level\b/i },
-  { level: "mid", re: /\bmid[- ]career\b/i },
 ];
 
 function classifyInterview(text: string): {
@@ -88,18 +74,6 @@ function classifyContractor(text: string): {
   return { contractor_or_eor: false, contractor_or_eor_evidence: null };
 }
 
-function classifySeniority(title: string, text: string): {
-  seniority: Seniority;
-  evidence: string | null;
-} {
-  const combined = `${title}\n${text}`;
-  for (const { level, re } of SENIORITY_PATTERNS) {
-    const sentence = sentenceMatching(combined, re);
-    if (sentence) return { seniority: level, evidence: sentence };
-  }
-  return { seniority: "unknown", evidence: null };
-}
-
 /**
  * Pure rules classification. No network I/O.
  * Bare "Remote" never yields india_eligibility = "open".
@@ -126,7 +100,7 @@ export function classifyWithRules(input: {
   });
   const interview = classifyInterview(text);
   const contractor = classifyContractor(text);
-  const seniority = classifySeniority(input.title, text);
+  const seniority = classifySeniority(input.title, input.descriptionText);
   const role = classifyRoleFamily(input.title, input.descriptionText);
   const compensation = parseCompensation(text);
 
@@ -140,6 +114,9 @@ export function classifyWithRules(input: {
     contractor_or_eor_evidence: contractor.contractor_or_eor_evidence,
     compensation,
     seniority: seniority.seniority,
+    seniority_evidence: seniority.evidence,
+    years_experience_min: seniority.yearsMin,
+    years_experience_max: seniority.yearsMax,
     role_family: role.role_family,
   };
 }

@@ -15,7 +15,12 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-export const atsEnum = pgEnum("ats", ["ashby", "greenhouse", "lever"]);
+export const atsEnum = pgEnum("ats", [
+  "ashby",
+  "greenhouse",
+  "lever",
+  "smartrecruiters",
+]);
 
 export const candidateStatusEnum = pgEnum("candidate_status", [
   "pending",
@@ -187,6 +192,9 @@ export const jobTags = pgTable(
     compensationCurrency: text("compensation_currency"),
     compensationPeriod: text("compensation_period"),
     seniority: text("seniority"),
+    seniorityEvidence: text("seniority_evidence"),
+    yearsExperienceMin: integer("years_experience_min"),
+    yearsExperienceMax: integer("years_experience_max"),
     roleFamily: text("role_family"),
     classifier: text("classifier"),
     model: text("model"),
@@ -196,6 +204,7 @@ export const jobTags = pgTable(
   (table) => [
     index("job_tags_india_eligibility_idx").on(table.indiaEligibility),
     index("job_tags_role_family_idx").on(table.roleFamily),
+    index("job_tags_seniority_idx").on(table.seniority),
     index("job_tags_content_hash_idx").on(table.contentHash),
   ],
 );

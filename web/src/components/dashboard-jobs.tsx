@@ -83,6 +83,7 @@ const ATS_OPTIONS = [
   { value: "ashby", label: "Ashby" },
   { value: "greenhouse", label: "Greenhouse" },
   { value: "lever", label: "Lever" },
+  { value: "smartrecruiters", label: "SmartRecruiters" },
 ] as const;
 
 const POSTED_OPTIONS = [
@@ -96,6 +97,15 @@ const SALARY_OPTIONS = [
   { value: "", label: "Any" },
   { value: "true", label: "Listed", hint: "Has salary in the posting" },
   { value: "false", label: "Not listed" },
+] as const;
+
+const EARLY_CAREER_OPTIONS = [
+  { value: "", label: "Any seniority" },
+  {
+    value: "true",
+    label: "Early career",
+    hint: "Intern, entry, or mid with ≤2 years",
+  },
 ] as const;
 
 const SORT_OPTIONS = [
@@ -160,7 +170,17 @@ function buildQuery(
   const next = new URLSearchParams();
   const keys = opts?.companyOnly
     ? ["labels", "sort", "job"]
-    : ["q", "labels", "role", "ats", "posted", "has_salary", "sort", "job"];
+    : [
+        "q",
+        "labels",
+        "role",
+        "ats",
+        "posted",
+        "has_salary",
+        "early_career",
+        "sort",
+        "job",
+      ];
   for (const key of keys) {
     const v = sp.get(key) || opts?.defaults?.[key] || "";
     if (v) next.set(key, v);
@@ -227,6 +247,7 @@ export function DashboardJobs({
   const ats = searchParams.get("ats") ?? "";
   const posted = searchParams.get("posted") ?? "all";
   const hasSalary = searchParams.get("has_salary") ?? hasSalaryDefault;
+  const earlyCareer = searchParams.get("early_career") ?? "";
   const sort = searchParams.get("sort") ?? "newest";
   const jobId = searchParams.get("job");
 
@@ -485,6 +506,13 @@ export function DashboardJobs({
                 defaultValue={hasSalaryDefault}
                 options={[...SALARY_OPTIONS]}
                 onChange={(v) => patchParams({ has_salary: v || null })}
+              />
+              <SoftSelect
+                label="Seniority"
+                value={earlyCareer}
+                defaultValue=""
+                options={[...EARLY_CAREER_OPTIONS]}
+                onChange={(v) => patchParams({ early_career: v || null })}
               />
               <SoftSelect
                 label="Sort"

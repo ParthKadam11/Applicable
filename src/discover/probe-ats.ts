@@ -1,3 +1,4 @@
+import { countSmartRecruitersJobs } from "../ats/smartrecruiters.js";
 import { HttpError, fetchJson } from "../utils/http.js";
 import type { Ats } from "../ats/types.js";
 import { slugGuesses } from "./slug-guess.js";
@@ -45,10 +46,11 @@ export async function countOpenJobs(
   if (ats === "ashby") return countAshby(slug);
   if (ats === "greenhouse") return countGreenhouse(slug);
   if (ats === "lever") return countLever(slug);
+  if (ats === "smartrecruiters") return countSmartRecruitersJobs(slug);
   return null;
 }
 
-const PROBE_ORDER: Ats[] = ["ashby", "greenhouse", "lever"];
+const PROBE_ORDER: Ats[] = ["ashby", "greenhouse", "lever", "smartrecruiters"];
 
 /**
  * Try slug guesses from name/domain against Ashby/GH/Lever public boards.
@@ -69,7 +71,9 @@ export async function detectAtsByGuess(
             ? `https://jobs.ashbyhq.com/${slug}`
             : ats === "greenhouse"
               ? `https://boards.greenhouse.io/${slug}`
-              : `https://jobs.lever.co/${slug}`;
+              : ats === "lever"
+                ? `https://jobs.lever.co/${slug}`
+                : `https://jobs.smartrecruiters.com/${slug}`;
         return { ats, atsSlug: slug, url, jobCount: n };
       } catch (err) {
         // Transient errors - skip this pair, keep going.

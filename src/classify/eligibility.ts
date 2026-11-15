@@ -380,6 +380,9 @@ const OPEN_INDIA: RegExp[] = [
   /\bIndia\b.{0,40}\b(?:remote|based|location|timezone|candidates?|applicants?|hire)\b/i,
   /\bRemote\s*[-–—:/]\s*India\b/i,
   /\bIndia\s*[-–—:/]\s*Remote\b/i,
+  /\bRemote\s*[-–—:/]\s*IN\b/i,
+  /\bIN\s*[-–—:/]\s*Remote\b/i,
+  /\bRemote[\s-]*IN\b/i,
   /\bIST\b/,
   /\bIndian Standard Time\b/i,
   /\bBengaluru\b/i,
@@ -413,7 +416,7 @@ export function isNonLocationIndiaMention(sentence: string): boolean {
 export function hasIndiaLocationContext(sentence: string): boolean {
   if (isNonLocationIndiaMention(sentence)) return false;
   if (
-    /\b(?:Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata)\b/i.test(
+    /\b(?:Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|New Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata|Ahmedabad|Jaipur|Kochi|Chandigarh|Remote[\s-]*IN)\b/i.test(
       sentence,
     )
   ) {
@@ -450,7 +453,7 @@ const REMOTE_HINT =
 const IST_EXCEPTION = /\b(?:IST|India|Indian Standard Time)\b/i;
 
 const INDIA_CITY =
-  /\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata)\b/i;
+  /\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Pune|Delhi|New Delhi|Noida|Gurugram|Gurgaon|Chennai|Kolkata|Ahmedabad|Jaipur|Kochi|Chandigarh|Remote[\s-]*IN)\b/i;
 
 const LOCATION_OPEN =
   /\banywhere\b|\bworld[\s-]?wide\b|\bwork from anywhere\b|\bglobal(?:\s+remote)?\b/i;

@@ -46,6 +46,19 @@ export const SearchJobsInputSchema = z.object({
     .describe(
       "Filter by location_raw substring (e.g. Bangalore, India, Remote)",
     ),
+  seniority: z
+    .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+    .min(1)
+    .optional()
+    .describe(
+      "Filter by seniority (intern/entry/mid/senior/staff/unknown). staff = staff+.",
+    ),
+  early_career: z
+    .boolean()
+    .optional()
+    .describe(
+      "If true, only intern + entry + mid with ≤2 years experience. Overrides seniority when set.",
+    ),
   posted_within_days: z
     .number()
     .int()
@@ -149,6 +162,11 @@ export const ExploreInputSchema = z.object({
         .default(["open", "india_remote"])
         .optional(),
       skills: z.array(z.string().min(1).max(64)).max(20).optional(),
+      seniority: z
+        .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+        .min(1)
+        .optional(),
+      early_career: z.boolean().optional(),
     })
     .optional(),
   max_results: z.number().int().min(1).max(25).default(10),
@@ -173,7 +191,7 @@ export const ListCompaniesInputSchema = z.object({
     .optional()
     .describe("Filter by company name (case-insensitive substring)"),
   ats: z
-    .enum(["ashby", "greenhouse", "lever"])
+    .enum(["ashby", "greenhouse", "lever", "smartrecruiters"])
     .optional()
     .describe("Filter by ATS provider"),
   limit: z
@@ -287,6 +305,11 @@ export const AiSearchFilterSchema = z.object({
     .default(["open", "india_remote"]),
   role_keywords: z.string().min(1).optional(),
   company: z.string().min(1).optional(),
+  seniority: z
+    .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+    .min(1)
+    .optional(),
+  early_career: z.boolean().optional(),
   posted_within_days: z.number().int().positive().max(365).optional(),
   limit: z.number().int().min(1).max(50).default(25),
 });
