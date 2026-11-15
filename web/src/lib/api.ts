@@ -51,14 +51,18 @@ export type TopCompany = {
   total: number;
 };
 
-async function getJson<T>(path: string, init?: RequestInit): Promise<T | null> {
+async function getJson<T>(
+  path: string,
+  init?: RequestInit & { revalidate?: number },
+): Promise<T | null> {
+  const { revalidate = REVALIDATE_SECONDS, ...rest } = init ?? {};
   try {
     const res = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      next: { revalidate: REVALIDATE_SECONDS },
+      ...rest,
+      next: { revalidate },
       headers: {
         Accept: "application/json",
-        ...(init?.headers ?? {}),
+        ...(rest.headers ?? {}),
       },
     });
     if (!res.ok) return null;
@@ -70,6 +74,65 @@ async function getJson<T>(path: string, init?: RequestInit): Promise<T | null> {
 
 export async function fetchStats(): Promise<Stats | null> {
   return getJson<Stats>("/api/stats");
+}
+
+/** Landing stats — refreshed about once a minute. */
+export async function fetchLandingStats(): Promise<Stats | null> {
+  return getJson<Stats>("/api/stats", { revalidate: 60 });
+}
+
+let lastLandingFeed: JobRow[] | null = null;
+
+function hasGoodEvidence(job: JobRow): boolean {
+  const q = evidenceQuoteFromJob(job.evidence);
+  return Boolean(q && q.length >= 4);
+}
+
+function evidenceQuoteFromJob(evidence: unknown): string | null {
+  if (!Array.isArray(evidence) || evidence.length === 0) return null;
+  const first = evidence[0];
+  if (typeof first === "string" && first.trim()) return first.trim();
+  if (first && typeof first === "object" && "quote" in first) {
+    const q = (first as { quote?: unknown }).quote;
+    if (typeof q === "string" && q.trim()) return q.trim();
+  }
+  return null;
+}
+
+/**
+ * ~30 recent India-relevant jobs with evidence, ≤2 per company.
+ * Cached 10 minutes; falls back to last good in-process snapshot.
+ */
+export async function fetchLandingFeedJobs(): Promise<JobRow[]> {
+  const body = await getJson<JobsResponse>(
+    "/api/jobs?eligibility=open,india_remote,india_onsite&limit=80",
+    { revalidate: 600 },
+  );
+  const rows = body?.results ?? [];
+  if (rows.length === 0) return lastLandingFeed ?? [];
+
+  const perCompany = new Map<string, number>();
+  const picked: JobRow[] = [];
+  for (const job of rows) {
+    if (!hasGoodEvidence(job)) continue;
+    if (
+      job.eligibility !== "open" &&
+      job.eligibility !== "india_remote" &&
+      job.eligibility !== "india_onsite"
+    ) {
+      continue;
+    }
+    const key = job.company.trim().toLowerCase();
+    const n = perCompany.get(key) ?? 0;
+    if (n >= 2) continue;
+    perCompany.set(key, n + 1);
+    picked.push(job);
+    if (picked.length >= 30) break;
+  }
+
+  if (picked.length === 0) return lastLandingFeed ?? [];
+  lastLandingFeed = picked;
+  return picked;
 }
 
 export async function fetchStatsHistory(
