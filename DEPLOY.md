@@ -227,7 +227,7 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 | `VPS_HOST` | `123.45.67.89` or `mcp.applicable.click` |
 | `VPS_USER` | `root` or your deploy user |
 | `VPS_SSH_KEY` | full **private** key contents of `applicable_gha_deploy` (see format below) |
-| `VPS_DEPLOY_PATH` | `/opt/applicable` (optional; this is the default) |
+| `VPS_DEPLOY_PATH` | `/home/deployer/apps/CaniApply` (optional; this is the default on this VPS) |
 | `MCP_SMOKE_URL` | `https://mcp.applicable.click` (optional; enables post-deploy smoke) |
 
 **`VPS_SSH_KEY` format (common failure):** paste the **private** key file whole, with real newlines - not the `.pub` file, not one long line, no quotes.
