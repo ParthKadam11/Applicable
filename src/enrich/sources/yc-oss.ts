@@ -19,6 +19,7 @@ export type YcOssCompany = {
   api?: string | null;
   long_description?: string | null;
   launched_at?: number | null;
+  partners?: string | null;
 };
 
 const YC_ALL = "https://yc-oss.github.io/api/companies/all.json";
@@ -131,12 +132,14 @@ export function factsFromYcOss(yc: YcOssCompany): ExtractedFact[] {
       country: parts[parts.length - 1],
     });
   }
-  for (const ind of yc.industries?.length ? yc.industries : yc.industry ? [yc.industry] : []) {
+  // Use singular `industry` only. The `industries` array mixes the real
+  // industry with YC directory groups like "Engineering, Product and Design".
+  if (yc.industry?.trim()) {
     push({
       factType: "industry",
-      value: ind,
+      value: yc.industry.trim(),
       sourceUrl,
-      quote: ind,
+      quote: yc.industry.trim(),
       sourceKind: "yc_oss",
       confidence: 1,
     });

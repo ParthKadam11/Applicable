@@ -1,5 +1,6 @@
 import { normalizeWhitespace } from "../classify/text.js";
 import { assertFactEvidence, quoteAround } from "./evidence.js";
+import { matchKnownInvestor } from "./known-investors.js";
 import type { ExtractedFact, SourceKind } from "./types.js";
 
 function pushIfValid(
@@ -105,78 +106,66 @@ export function extractFactsFromText(input: {
     );
   }
 
-  // Investors / funding — split lists; keep short firm-like names only
-  const backedRe =
-    /\b(?:backed by|investors?(?:\s+include)?|funded by)\s+([A-Z][^.\n]{2,120})/gi;
-  while ((m = backedRe.exec(text)) !== null) {
-    const chunk = m[1]!;
-    const parts = chunk
-      .split(/,| and | & |;/i)
-      .map((s) => s.replace(/[.,;:]+$/g, "").trim())
-      .filter((s) => s.length >= 2 && s.length <= 48)
-      .filter((s) => /^[A-Z]/.test(s))
-      .filter((s) => !/^(we|our|the|a|an|angels?|leading)\b/i.test(s));
-    for (const raw of parts.slice(0, 6)) {
+  // Investors: only near explicit cues, then gate with known-investor list /
+  // proper-noun firm heuristic (drops "world-class investors", "top VCs", …).
+  const cueRe =
+    /\b(?:backed by|funded by|investors?\s+include|investors?\s+including|(?:Series\s+[A-F]|Seed|Pre-?Seed)\s+(?:round\s+)?(?:led by|from)|formerly\s+Sequoia\s+India|Peak\s+XV(?:\s+Partners)?)\b[^.\n]{0,160}/gi;
+  while ((m = cueRe.exec(text)) !== null) {
+    const window = m[0]!;
+    const quote = quoteAround(text, m.index, window.length);
+    const roundM = window.match(/\b(Series\s+[A-F]|Seed|Pre-?Seed)\b/i);
+    const parts = window
+      .replace(
+        /^(?:backed by|funded by|investors?\s+include(?:ing)?|(?:Series\s+[A-F]|Seed|Pre-?Seed)\s+(?:round\s+)?(?:led by|from))\s*/i,
+        "",
+      )
+      .replace(
+        /^(?:world-class|top(?:-tier)?|leading|trusted)\s+(?:investors?|vcs?)\s*(?:including|like|:|\()?/i,
+        "",
+      )
+      .replace(/^investors?\s+including\s+/i, "")
+      .split(/,| and | & |;|\(|\)|\//i)
+      .map((s) =>
+        s
+          .replace(
+            /^(?:from|including|like|led by|investors?\s+from|world-class|top(?:-tier)?)\s+/i,
+            "",
+          )
+          .trim(),
+      )
+      .map((s) => s.replace(/[.,;:]+$/g, "").trim());
+    for (const part of parts) {
+      const matched = matchKnownInvestor(part);
+      if (!matched) continue;
       pushIfValid(
         out,
         {
           factType: "investor",
-          value: raw,
+          value: matched,
           sourceUrl,
-          quote: quoteAround(text, m!.index, m![0].length),
+          quote,
           sourceKind,
-          confidence: 0.8,
+          confidence: 0.9,
+          round: roundM?.[1],
         },
         text,
       );
     }
-  }
-  const seriesRe =
-    /\b(Series\s+[A-F]|Seed|Pre-?Seed)\s+(?:round\s+)?(?:led by|from)\s+([A-Z][A-Za-z0-9 &./'-]{2,60})/gi;
-  while ((m = seriesRe.exec(text)) !== null) {
-    pushIfValid(
-      out,
-      {
-        factType: "investor",
-        value: m[2]!.replace(/[.,;]+$/, "").trim(),
-        sourceUrl,
-        quote: quoteAround(text, m.index, m[0].length),
-        sourceKind,
-        confidence: 0.85,
-        round: m[1]!,
-      },
-      text,
-    );
-  }
-  const formerlyRe = /\bformerly\s+Sequoia\s+India\b/gi;
-  while ((m = formerlyRe.exec(text)) !== null) {
-    pushIfValid(
-      out,
-      {
-        factType: "investor",
-        value: "Peak XV Partners",
-        sourceUrl,
-        quote: quoteAround(text, m.index, m[0].length),
-        sourceKind,
-        confidence: 0.95,
-      },
-      text,
-    );
-  }
-  const peakRe = /\bPeak\s+XV(?:\s+Partners)?\b/gi;
-  while ((m = peakRe.exec(text)) !== null) {
-    pushIfValid(
-      out,
-      {
-        factType: "investor",
-        value: "Peak XV Partners",
-        sourceUrl,
-        quote: quoteAround(text, m.index, m[0].length),
-        sourceKind,
-        confidence: 0.9,
-      },
-      text,
-    );
+    // formerly Sequoia India / Peak XV in the cue itself
+    if (/formerly\s+Sequoia\s+India|Peak\s+XV/i.test(window)) {
+      pushIfValid(
+        out,
+        {
+          factType: "investor",
+          value: "Peak XV Partners",
+          sourceUrl,
+          quote,
+          sourceKind,
+          confidence: 0.95,
+        },
+        text,
+      );
+    }
   }
 
   // Founders

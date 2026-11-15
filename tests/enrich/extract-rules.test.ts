@@ -24,6 +24,48 @@ describe("enrich extract-rules", () => {
     }
   });
 
+  it("drops list-prose investor captures", () => {
+    const text =
+      "We are backed by world-class investors and top VCs including industry leaders.";
+    const facts = extractFactsFromText({
+      text,
+      sourceUrl: "https://example.com/about",
+      sourceKind: "website",
+    });
+    const inv = facts.filter((f) => f.factType === "investor");
+    expect(inv).toHaveLength(0);
+  });
+
+  it("keeps known VC from backed-by cue", () => {
+    const text = "Acme is backed by Accel and Sequoia Capital.";
+    const facts = extractFactsFromText({
+      text,
+      sourceUrl: "https://example.com/about",
+      sourceKind: "website",
+    });
+    const vals = facts
+      .filter((f) => f.factType === "investor")
+      .map((f) => f.value);
+    expect(vals.some((v) => /Accel/i.test(v))).toBe(true);
+    expect(vals.some((v) => /Sequoia/i.test(v))).toBe(true);
+  });
+
+  it("extracts known VCs nested in parenthetical after top VCs prose", () => {
+    const text =
+      "We're backed by top VCs (Khosla Ventures, Bain Capital Ventures).";
+    const facts = extractFactsFromText({
+      text,
+      sourceUrl: "https://example.com/jobs/1",
+      sourceKind: "ats_jd",
+    });
+    const vals = facts
+      .filter((f) => f.factType === "investor")
+      .map((f) => f.value);
+    expect(vals).not.toContain("top VCs");
+    expect(vals.some((v) => /Khosla/i.test(v))).toBe(true);
+    expect(vals.some((v) => /Bain Capital/i.test(v))).toBe(true);
+  });
+
   it("extracts founded year and HQ", () => {
     const text =
       "We are headquartered in San Francisco, CA. Founded in 2018 by Alice Example.";

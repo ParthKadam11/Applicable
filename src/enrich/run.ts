@@ -11,6 +11,7 @@ import {
   loadYcOssIndex,
   matchYcOss,
 } from "./sources/yc-oss.js";
+import { enrichFoundersFromYcPage } from "./sources/yc-page.js";
 import { syncCompanyEnrichmentToGraph } from "./sync-graph.js";
 import type { EnrichCompanyResult, ExtractedFact, SourceKind } from "./types.js";
 
@@ -81,7 +82,13 @@ export async function enrichCompanies(
     failed: 0,
     factsWritten: 0,
     failureReasons: {},
-    bySource: { ats_jd: 0, website: 0, yc_oss: 0, job_board: 0 },
+    bySource: {
+      ats_jd: 0,
+      website: 0,
+      yc_oss: 0,
+      yc_page: 0,
+      job_board: 0,
+    },
     byType: {},
     results: [],
   };
@@ -138,11 +145,13 @@ export async function enrichCompanies(
         }
       }
 
-      // 3. yc-oss
+      // 3. yc-oss + public YC company page founders
+      let ycSlug: string | null = null;
       if (ycIndex) {
         try {
           const yc = matchYcOss(ycIndex, co);
           if (yc) {
+            ycSlug = yc.slug;
             const yf = factsFromYcOss(yc);
             facts.push(...yf);
             if (yf.length) sources.add("yc_oss");
@@ -151,6 +160,19 @@ export async function enrichCompanies(
           bump(
             summary.failureReasons,
             `yc:${err instanceof Error ? err.message.slice(0, 60) : "err"}`,
+          );
+        }
+      }
+      if (ycSlug) {
+        try {
+          const founders = await enrichFoundersFromYcPage(ycSlug);
+          facts.push(...founders.facts);
+          if (founders.facts.length) sources.add("yc_page");
+          if (founders.error) bump(summary.failureReasons, `yc_page:${founders.error}`);
+        } catch (err) {
+          bump(
+            summary.failureReasons,
+            `yc_page:${err instanceof Error ? err.message.slice(0, 60) : "err"}`,
           );
         }
       }

@@ -177,6 +177,7 @@ export async function syncCompanyEnrichmentToGraph(
       );
     }
 
+    // Also write Person linkedin when present on people row
     return { ok: true, steps };
   } catch (err) {
     return {

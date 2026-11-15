@@ -13,7 +13,12 @@ export const FACT_TYPES = [
 
 export type FactType = (typeof FACT_TYPES)[number];
 
-export type SourceKind = "ats_jd" | "website" | "yc_oss" | "job_board";
+export type SourceKind =
+  | "ats_jd"
+  | "website"
+  | "yc_oss"
+  | "yc_page"
+  | "job_board";
 
 export type ExtractedFact = {
   factType: FactType;
@@ -28,6 +33,7 @@ export type ExtractedFact = {
   role?: "founded" | "works_at";
   city?: string;
   country?: string;
+  linkedin?: string;
 };
 
 export type EnrichCompanyResult = {

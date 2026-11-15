@@ -12,17 +12,33 @@ import {
 import { canonicalInvestorName, normalizeName } from "./normalize.js";
 import type { ExtractedFact } from "./types.js";
 
-async function upsertPerson(db: Db, name: string): Promise<string> {
+async function upsertPerson(
+  db: Db,
+  name: string,
+  linkedin?: string,
+): Promise<string> {
   const normalized = normalizeName(name);
   const [existing] = await db
     .select()
     .from(people)
     .where(eq(people.nameNormalized, normalized))
     .limit(1);
-  if (existing) return existing.id;
+  if (existing) {
+    if (linkedin && !existing.linkedin) {
+      await db
+        .update(people)
+        .set({ linkedin })
+        .where(eq(people.id, existing.id));
+    }
+    return existing.id;
+  }
   const [row] = await db
     .insert(people)
-    .values({ name: name.trim(), nameNormalized: normalized })
+    .values({
+      name: name.trim(),
+      nameNormalized: normalized,
+      linkedin: linkedin ?? null,
+    })
     .onConflictDoNothing()
     .returning();
   if (row) return row.id;
@@ -145,7 +161,7 @@ export async function persistFacts(
     if (f.factType === "batch") ycBatch = f.value;
 
     if (f.factType === "founder") {
-      const personId = await upsertPerson(db, f.value);
+      const personId = await upsertPerson(db, f.value, f.linkedin);
       await db
         .insert(companyPeople)
         .values({
@@ -190,13 +206,21 @@ export async function persistFacts(
   return written;
 }
 
-/** Seed Peak XV ↔ Sequoia India alias once. */
+/**
+ * Ensure Peak XV aliases exist only when the investor row already exists
+ * (created by a real company_investors write). Avoids orphan Investor rows.
+ */
 export async function seedInvestorAliases(db: Db): Promise<void> {
-  const peak = await upsertInvestor(db, "Peak XV Partners");
+  const [peak] = await db
+    .select()
+    .from(investors)
+    .where(eq(investors.nameNormalized, normalizeName("Peak XV Partners")))
+    .limit(1);
+  if (!peak) return;
   for (const a of ["Sequoia India", "formerly Sequoia India", "Peak XV"]) {
     await db
       .insert(investorAliases)
-      .values({ aliasNormalized: normalizeName(a), investorId: peak })
+      .values({ aliasNormalized: normalizeName(a), investorId: peak.id })
       .onConflictDoNothing();
   }
   void sql;
