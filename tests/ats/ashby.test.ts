@@ -38,10 +38,10 @@ describe("AshbyAdapter", () => {
 
     expect(jobs[1]).toMatchObject({
       externalId: "ashby-job-2",
-      title: "Product Designer",
+      title: "Frontend Engineer",
       locationRaw: "San Francisco, CA",
       isRemoteFlag: false,
-      descriptionText: "Design delightful products.",
+      descriptionText: "Build delightful product UIs.",
       applyUrl: "https://jobs.ashbyhq.com/notion/ashby-job-2/application",
     });
   });

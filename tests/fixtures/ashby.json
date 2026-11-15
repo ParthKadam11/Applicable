@@ -18,12 +18,12 @@
     },
     {
       "id": "ashby-job-2",
-      "title": "Product Designer",
-      "department": "Design",
+      "title": "Frontend Engineer",
+      "department": "Engineering",
       "location": "San Francisco, CA",
       "isRemote": false,
       "employmentType": "FullTime",
-      "descriptionHtml": "<div>Design delightful products.</div>",
+      "descriptionHtml": "<div>Build delightful product UIs.</div>",
       "applyUrl": "https://jobs.ashbyhq.com/notion/ashby-job-2/application"
     }
   ]
