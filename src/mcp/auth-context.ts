@@ -20,4 +20,4 @@ export async function resolveMcpAuth(
 }
 
 export const SIGN_IN_TO_SAVE =
-  "Sign in at https://applicable.parthkadam.tech to save jobs.";
+  "Sign in at https://applicable.click to save jobs.";

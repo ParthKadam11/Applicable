@@ -1,4 +1,4 @@
-export const SITE_URL = "https://applicable.parthkadam.tech";
+export const SITE_URL = "https://applicable.click";
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ||
   "https://mcp.parthkadam.tech";

@@ -168,6 +168,18 @@ export const SubmitCompanyInputSchema = z.object({
     .describe("Public careers or ATS board URL (http/https)"),
 });
 
+export const ReportLabelInputSchema = z.object({
+  job_id: z.string().uuid().describe("Job UUID whose label is wrong"),
+  label: EligibilityFilterSchema.describe("Correct India eligibility label"),
+  evidence: z
+    .string()
+    .min(3)
+    .max(500)
+    .describe(
+      "Exact substring from the posting that proves the corrected label",
+    ),
+});
+
 export const SaveJobInputSchema = z.object({
   job_id: z.string().uuid().describe("Job UUID to save"),
 });

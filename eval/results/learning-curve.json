@@ -1,0 +1,56 @@
+{
+  "points": [
+    {
+      "n_corrections": 0,
+      "accuracy": 0.935064935064935,
+      "unclear_rate": 0.23376623376623376,
+      "bad_evidence_rate": 0.2711864406779661
+    },
+    {
+      "n_corrections": 5,
+      "accuracy": 1,
+      "unclear_rate": 0.16883116883116883,
+      "bad_evidence_rate": 0.25
+    },
+    {
+      "n_corrections": 5,
+      "accuracy": 1,
+      "unclear_rate": 0.16883116883116883,
+      "bad_evidence_rate": 0.25
+    },
+    {
+      "n_corrections": 5,
+      "accuracy": 1,
+      "unclear_rate": 0.16883116883116883,
+      "bad_evidence_rate": 0.25
+    },
+    {
+      "n_corrections": 5,
+      "accuracy": 1,
+      "unclear_rate": 0.16883116883116883,
+      "bad_evidence_rate": 0.25
+    }
+  ],
+  "chart": [
+    [
+      0,
+      0.935064935064935
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      1
+    ]
+  ]
+}

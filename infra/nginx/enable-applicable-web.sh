@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
-# Enable applicable.parthkadam.tech (Next.js) + reload mcp vhost (/api). Needs sudo.
+# Enable applicable.click (Next.js) and remove old applicable.parthkadam.tech vhost.
+# Keeps joinwaitlist.parthkadam.tech and mcp.parthkadam.tech. Needs sudo.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 ENABLED=/etc/nginx/sites-enabled
+DOMAIN=applicable.click
 
-sudo ln -sfn "$ROOT/applicable.parthkadam.tech.conf" "$ENABLED/applicable.parthkadam.tech.conf"
-# mcp.conf is already symlinked; reload picks up /api/ block if it was added later
+sudo ln -sfn "$ROOT/${DOMAIN}.conf" "$ENABLED/${DOMAIN}.conf"
+
+# Remove legacy main-site vhost (waitlist stays)
+sudo rm -f "$ENABLED/applicable.parthkadam.tech.conf"
+
 sudo nginx -t
 sudo systemctl reload nginx
 
-if ! sudo test -f /etc/letsencrypt/live/applicable.parthkadam.tech/fullchain.pem; then
-  sudo certbot --nginx -d applicable.parthkadam.tech --non-interactive --agree-tos \
+if ! sudo test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"; then
+  sudo certbot --nginx -d "$DOMAIN" -d "www.${DOMAIN}" --non-interactive --agree-tos \
     --register-unsafely-without-email --redirect
 else
   sudo nginx -t && sudo systemctl reload nginx
 fi
 
-echo "applicable.parthkadam.tech enabled → 127.0.0.1:3010"
-echo "  site: https://applicable.parthkadam.tech"
-echo "Also reloaded mcp.parthkadam.tech (for /api/* → :3110)"
+echo "${DOMAIN} enabled → 127.0.0.1:3010"
+echo "  site: https://${DOMAIN}"
+echo "joinwaitlist.parthkadam.tech left unchanged"
+echo "Also serving mcp.parthkadam.tech (for /api/* → :3110)"

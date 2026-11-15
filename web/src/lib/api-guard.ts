@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { ipApiLimiter, userSaveLimiter } from "@/lib/rate-limit";
 
 const SITE_ORIGINS = new Set([
-  "https://applicable.parthkadam.tech",
-  "https://caniapply.parthkadam.tech",
+  "https://applicable.click",
+  "https://www.applicable.click",
   "http://localhost:3010",
   "http://127.0.0.1:3010",
   "http://localhost:3000",

@@ -18,6 +18,7 @@ import {
   GetJobInputSchema,
   ListCompaniesInputSchema,
   MySavedJobsInputSchema,
+  ReportLabelInputSchema,
   SaveJobInputSchema,
   SearchJobsInputSchema,
   SkillGapInputSchema,
@@ -30,6 +31,7 @@ import {
   getJob,
   getMcpStats,
   listCompanies,
+  reportLabel,
   searchJobs,
   submitCompany,
 } from "./tools.js";
@@ -280,6 +282,29 @@ export function createApplicableMcpServer(
         const result = await timed(
           "submit_company",
           () => submitCompany(db, parsed),
+          () => 1,
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return errResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "report_label",
+    {
+      title: "Report wrong eligibility label",
+      description:
+        "Flag a job whose India-eligibility label is wrong. Stores a correction + learned pattern (Postgres + HydraDB). Evidence must be an exact posting substring about location/eligibility. Gold-eval jobs are rejected.",
+      inputSchema: ReportLabelInputSchema.shape,
+    },
+    async (args) => {
+      try {
+        const parsed = ReportLabelInputSchema.parse(args);
+        const result = await timed(
+          "report_label",
+          () => reportLabel(db, parsed),
           () => 1,
         );
         return jsonResult(result);

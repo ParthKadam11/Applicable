@@ -64,7 +64,7 @@ Minimum `.env` values (**must exist on the VPS** at `/opt/applicable/.env` - com
 | `POSTGRES_USER` / `POSTGRES_DB` | `applicable` / `applicable` |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` / … | optional (rules-only if empty) |
 | `AUTH_SECRET` | long random string (Next.js / Vercel) |
-| `AUTH_URL` | `https://applicable.parthkadam.tech` (prod) or `http://localhost:3010` |
+| `AUTH_URL` | `https://applicable.click` (prod) or `http://localhost:3010` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth web client (Next.js / Vercel) |
 
 ### Web (Vercel) Auth.js env
@@ -75,14 +75,14 @@ Set on the Vercel project (root = `web`), in addition to `NEXT_PUBLIC_API_BASE` 
 |---|---|
 | `DATABASE_URL` | Required for `/api/me/*`, saved jobs, MCP tokens, account delete |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
-| `AUTH_URL` | Site origin, e.g. `https://applicable.parthkadam.tech` |
+| `AUTH_URL` | Site origin, e.g. `https://applicable.click` |
 | `GOOGLE_CLIENT_ID` | Google Cloud OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client secret |
 
 Google authorized redirect URIs:
 
 - `http://localhost:3010/api/auth/callback/google`
-- `https://applicable.parthkadam.tech/api/auth/callback/google`
+- `https://applicable.click/api/auth/callback/google`
 
 If deploy fails with `MCP_HOST is missing`, SSH once and fix:
 
@@ -106,7 +106,7 @@ If the stack was previously under `/opt/caniapply` with `caniapply_*` volumes/co
 
 1. Stop the old stack, then move the checkout: `sudo mv /opt/caniapply /opt/applicable`
 2. Rename Docker volumes (or dump/restore into new names), e.g. `docker volume create applicable_pgdata` then copy data, **or** temporarily keep the old volume keys in compose until you migrate.
-3. Update GitHub Actions `VPS_DEPLOY_PATH` to `/opt/applicable` and point DNS / Vercel at `applicable.parthkadam.tech` when ready.
+3. Update GitHub Actions `VPS_DEPLOY_PATH` to `/opt/applicable` and point DNS at `applicable.click` when ready.
 4. Re-add MCP clients with server name `applicable` (old `caniapply` configs will stop matching after deploy).
 
 ---

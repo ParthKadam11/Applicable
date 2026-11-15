@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -343,6 +344,54 @@ export const labelReports = pgTable(
   (table) => [
     index("label_reports_job_id_idx").on(table.jobId),
     index("label_reports_created_at_idx").on(table.createdAt),
+  ],
+);
+
+/**
+ * Verified eligibility corrections used by the continual-learning loop.
+ * Gold-eval job_ids must never appear here (enforced in application code).
+ */
+export const corrections = pgTable(
+  "corrections",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    jobId: uuid("job_id")
+      .notNull()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    oldLabel: text("old_label"),
+    newLabel: text("new_label").notNull(),
+    evidence: text("evidence").notNull(),
+    source: text("source").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("corrections_job_id_idx").on(table.jobId),
+    index("corrections_created_at_idx").on(table.createdAt),
+    index("corrections_source_idx").on(table.source),
+  ],
+);
+
+/** Phrase → label patterns extracted/aggregated from corrections. */
+export const learnedPatterns = pgTable(
+  "learned_patterns",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    phrase: text("phrase").notNull(),
+    label: text("label").notNull(),
+    weight: real("weight").notNull().default(1),
+    hitCount: integer("hit_count").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("learned_patterns_phrase_uidx").on(table.phrase),
+    index("learned_patterns_label_idx").on(table.label),
   ],
 );
 

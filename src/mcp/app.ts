@@ -23,9 +23,8 @@ const STATS_CACHE_TTL_MS = 5 * 60_000;
 const JOBS_CACHE_TTL_MS = 60_000;
 
 const ALLOWED_ORIGINS = new Set([
-  "https://applicable.parthkadam.tech",
-  // legacy domain during rename
-  "https://caniapply.parthkadam.tech",
+  "https://applicable.click",
+  "https://www.applicable.click",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:3001",

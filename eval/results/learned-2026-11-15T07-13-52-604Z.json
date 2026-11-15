@@ -1,0 +1,901 @@
+{
+  "kind": "learned",
+  "timestamp": "2026-11-15T07:13:52.604Z",
+  "n": 77,
+  "accuracy": 1,
+  "unclear_rate": 0.16883116883116883,
+  "evidence_validity_rate": 0.75,
+  "bad_evidence_rate": 0.25,
+  "per_label": {
+    "open": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 18
+    },
+    "india_remote": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 5
+    },
+    "india_onsite": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 18
+    },
+    "region_locked": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 23
+    },
+    "unclear": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "support": 13
+    }
+  },
+  "confusion": {
+    "open": {
+      "open": 18,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "india_remote": {
+      "open": 0,
+      "india_remote": 5,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "india_onsite": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 18,
+      "region_locked": 0,
+      "unclear": 0
+    },
+    "region_locked": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 23,
+      "unclear": 0
+    },
+    "unclear": {
+      "open": 0,
+      "india_remote": 0,
+      "india_onsite": 0,
+      "region_locked": 0,
+      "unclear": 13
+    }
+  },
+  "predictions": [
+    {
+      "job_id": "6187d0c4-c5d5-4476-8624-8067b4202101",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "Based in Colombia, you'll work directly with our group CISO and a global security team, owning programmes that support our growth across multiple markets."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "ea66029f-b8be-4784-8ef4-efaf0ea83171",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "81de6d02-c188-46d3-85bb-f63672d70cc8",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "61ed9320-12fe-4f38-8226-1072636abb86",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "55e1a919-e324-44fc-8d07-783ca23cbe72",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "7dfd19e3-01c1-4368-bfa4-abf2de0dbf24",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "4e06ec5d-0276-4975-a4c3-2eb2820cc59c",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "cae4c7ba-be0a-4827-a532-d1bf7a37de5a",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "431f3e61-4a83-47e2-838f-f1d2c60c288d",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "0934cf6b-bbd9-4fae-bbe8-39c858a204e4",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor, you'll supply your own secure computer and high-speed internet."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "39595bac-77e1-48d2-8706-bd17dc353ae6",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "6ab3f4a5-d7bf-4953-a94e-e13c2075d2b5",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "3a880db9-dff0-4118-88b8-016b08ae4f6f",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "6a53741b-3ec9-44d4-80b3-082525424b10",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "e93c8805-1c77-4fdd-92bf-d321d5eba282",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "ca059aa9-f26c-4169-8111-3bf4353cffc5",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "0cac8c20-e491-4c84-a06e-d6f4131c3b59",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "777e1869-459f-4f7c-a688-2c22428d7b30",
+      "gold_label": "open",
+      "pred_label": "open",
+      "evidence": [
+        "As a contractor you’ll supply a secure computer and high‑speed internet; company‑sponsored benefits such as health insurance and PTO do not apply."
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "30e1aeb7-a47b-4392-a37c-774d26b78391",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "e717989a-d156-477d-b725-4ebe0932cd55",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "389be369-9b5e-4992-88f3-a2706d10cf5b",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "9a8b3fc7-2c5d-4121-aee2-cb74251f573e",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "04108b14-dc7c-4f78-9ebe-7cb34c217cb3",
+      "gold_label": "india_remote",
+      "pred_label": "india_remote",
+      "evidence": [
+        "Remote - India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "99d18c3d-955e-45bf-93f2-9539578507e8",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "eede4315-25df-4bae-b280-bdeb0e5fdd06",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "f9473550-31de-4285-a295-8997ebc632e3",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Hybrid in Bangalore, India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "fccadfe0-5bbc-48a7-acb7-b59da409abfc",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Hybrid in Bangalore, India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "23d9d3f6-9678-4c03-8284-60707cf6356e",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Onsite in Bangalore"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "23c5741c-b71e-4cfd-814d-fd3729119f47",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Bengaluru"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "23383516-73e2-4e30-8e69-a51d254d728c",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "Bengaluru"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "35745e64-6bd6-4126-8995-5a406c43b276",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "24e4a6b8-b96f-40b3-a164-6ae168cac10b",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "4708b5a4-0cbd-41b6-b0c3-27b9d7a86892",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "f461adb8-2104-43ba-b99c-c58064c0da3d",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "ce88272c-b47d-434c-9443-4a6506eb6ad4",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "1a91de7f-0629-45de-bfe3-077ef72a72e8",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "97ead549-458c-431c-9739-6cfe5f4a59d4",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "c0c7f0da-1ac3-4b56-9630-188deaf438ea",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "950d0549-80e6-45f8-aa3b-2bf31b5b17a6",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "e643f829-8650-4552-82dc-dc0655a02cc1",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "5a7b771c-91e5-45a1-b202-f537ecf4dfad",
+      "gold_label": "india_onsite",
+      "pred_label": "india_onsite",
+      "evidence": [
+        "India"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "54dd902a-9e87-422d-acd9-5120f126d801",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York City"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "c3f61252-1097-4ae8-96be-e997d71107d1",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Bellevue, WA/ San Francisco, CA/  Sunnyvale, CA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "bb8943d0-136f-4d93-813f-63a31652756d",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "cfb4176c-f33f-4a7c-9f67-26c1bcbe230f",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "San Diego, California, United States"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "0d9460ab-4272-4f93-bbec-de816f82ddd6",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "San Francisco"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "9eb2b69a-0281-41a6-91e9-6191923c5b78",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Sunnyvale, CA / Bellevue, WA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "3c849d27-dae7-4c18-bd37-08289efb16c6",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "San Francisco"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "61433f97-bb8a-49f3-b940-3a00b774d25a",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "77252c15-8a2a-47e4-9634-803f4efee146",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote; Seattle, WA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "853e5cd4-e775-4047-b079-cdef225507e3",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote - United States"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "bc2f4b09-7dcb-4ba3-a5e2-3def023ef690",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "3717a7ac-1c11-4ebb-894c-e04b7ead7098",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York, NY"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "62684731-cc96-4e8b-9eb6-8ae29fe321de",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "New York, NY"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "bd9c5147-1e2e-4e36-99a8-92ab1471cc08",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote - European Union"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "c1863134-52f9-4395-8913-7d3d64fa5c99",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote - US"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "9e91c76b-d5de-4541-ad57-79e79a6ebeae",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote - European Union"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "76491a12-bfe5-41b8-a4a0-4c683810ce0c",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Remote - US"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "6b1a4032-4976-46d4-bd5b-c20f1ea13490",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Sunnyvale, CA"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "rules"
+    },
+    {
+      "job_id": "2078e462-a9c6-4df0-9f00-25c83dcf8442",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "bc2837b7-6f12-41ca-a277-99921b1400a1",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "58e95f57-a477-4372-bb74-69fa651b7508",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "90a3fe07-818e-4285-853b-d3b3278e8fbd",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "1671584b-b716-45bf-8fc0-f1e34b7b41a6",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "27abd292-a408-496d-b2e2-450714073ba1",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "a3159326-432d-4410-a779-2f506fb5056c",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "1b731944-fccd-4fb3-b429-142cfe658267",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "9496d041-fdc2-48d0-b4d5-a20ff81458b2",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "dc9aecfe-3c40-4e08-ba82-4344d84231ce",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "74c3c812-f716-4a81-8a64-ae74e63bca5d",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "71d90d06-fc08-44f0-a157-cb26967ebc54",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "b15aba24-8086-4e0c-8d86-22bfcb29d838",
+      "gold_label": "unclear",
+      "pred_label": "unclear",
+      "evidence": [],
+      "evidence_valid": false,
+      "evidence_about_eligibility": false,
+      "source": "rules"
+    },
+    {
+      "job_id": "0f306ef9-25a9-48ed-ade1-9e46f5da36e8",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Argentina"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "pattern"
+    },
+    {
+      "job_id": "cb217ad2-0c72-4215-aa22-8b7dfae8a704",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Argentina"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "pattern"
+    },
+    {
+      "job_id": "77667142-95d8-4efb-8e53-d0af8dd28e42",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Colombia"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "pattern"
+    },
+    {
+      "job_id": "b85b7426-b50b-4ea0-b5c7-8c549ff253a9",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Argentina"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "pattern"
+    },
+    {
+      "job_id": "f8435be7-4f70-49c9-8fda-845e3c7c7312",
+      "gold_label": "region_locked",
+      "pred_label": "region_locked",
+      "evidence": [
+        "Argentina"
+      ],
+      "evidence_valid": true,
+      "evidence_about_eligibility": true,
+      "source": "pattern"
+    }
+  ]
+}

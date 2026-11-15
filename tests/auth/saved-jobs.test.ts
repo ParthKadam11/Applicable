@@ -18,7 +18,7 @@ import { createApplicableMcpServer } from "../../src/mcp/server.js";
 describe("save_job auth messaging", () => {
   it("tells agents to sign in when no personal token", () => {
     expect(SIGN_IN_TO_SAVE).toBe(
-      "Sign in at https://applicable.parthkadam.tech to save jobs.",
+      "Sign in at https://applicable.click to save jobs.",
     );
   });
 

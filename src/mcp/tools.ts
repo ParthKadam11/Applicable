@@ -17,14 +17,21 @@ import { config } from "../config.js";
 import {
   companies,
   companyCandidates,
+  corrections,
   fetchRuns,
   hydraSyncRuns,
   jobTags,
   jobs,
+  learnedPatterns,
 } from "../db/schema.js";
 import { countGraphTotals } from "../graph/cypher.js";
 import { createGraphClient } from "../graph/driver.js";
 import { domainFromUrl } from "../discover/ats-urls.js";
+import {
+  CorrectionError,
+  recordCorrection,
+} from "../learn/corrections.js";
+import { loadLatestReport } from "../learn/eval-runner.js";
 import {
   getDailyStatsHistory,
   type DailyStatsRow,
@@ -33,6 +40,7 @@ import type {
   EligibilityFilter,
   GetJobInputSchema,
   ListCompaniesInputSchema,
+  ReportLabelInputSchema,
   SearchJobsInputSchema,
   StatsInputSchema,
   SubmitCompanyInputSchema,
@@ -44,6 +52,7 @@ type GetJobInput = z.infer<typeof GetJobInputSchema>;
 type ListCompaniesInput = z.infer<typeof ListCompaniesInputSchema>;
 type StatsInput = z.infer<typeof StatsInputSchema>;
 type SubmitCompanyInput = z.infer<typeof SubmitCompanyInputSchema>;
+type ReportLabelInput = z.infer<typeof ReportLabelInputSchema>;
 
 const DEFAULT_ELIGIBILITY: EligibilityFilter[] = ["open", "india_remote"];
 
@@ -306,6 +315,13 @@ export type McpStatsResult = {
       relabels: number;
     } | null;
   };
+  learning?: {
+    corrections: number;
+    patterns_learned: number;
+    baseline_accuracy: number | null;
+    learned_accuracy: number | null;
+    accuracy_delta: number | null;
+  };
   history?: DailyStatsRow[];
 };
 
@@ -418,7 +434,53 @@ export async function getMcpStats(
     result.history = await getDailyStatsHistory(db, raw.history);
   }
 
+  try {
+    const [{ correctionsCount } = { correctionsCount: 0 }] = await db
+      .select({ correctionsCount: count() })
+      .from(corrections);
+    const [{ patternsCount } = { patternsCount: 0 }] = await db
+      .select({ patternsCount: count() })
+      .from(learnedPatterns);
+    const baseline = loadLatestReport("baseline");
+    const learned = loadLatestReport("learned");
+    const bAcc = baseline?.accuracy ?? null;
+    const lAcc = learned?.accuracy ?? null;
+    result.learning = {
+      corrections: Number(correctionsCount),
+      patterns_learned: Number(patternsCount),
+      baseline_accuracy: bAcc,
+      learned_accuracy: lAcc,
+      accuracy_delta:
+        bAcc != null && lAcc != null ? lAcc - bAcc : null,
+    };
+  } catch (err) {
+    console.error(
+      "[api/stats] learning stats failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   return result;
+}
+
+export async function reportLabel(db: Db, raw: ReportLabelInput) {
+  try {
+    const result = await recordCorrection(db, {
+      jobId: raw.job_id,
+      newLabel: raw.label,
+      evidence: raw.evidence,
+      source: "mcp",
+    });
+    return result;
+  } catch (err) {
+    if (err instanceof CorrectionError) {
+      return { ok: false as const, error: err.message };
+    }
+    return {
+      ok: false as const,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export async function submitCompany(db: Db, raw: SubmitCompanyInput) {

@@ -132,12 +132,12 @@ npm run stats:daily
 
 Read-only Streamable HTTP MCP server against Postgres. Tools:
 `search_jobs`, `get_job`, `list_companies`, `stats` (optional `history` days),
-`submit_company`. Public REST (CORS for `https://applicable.parthkadam.tech` +
+`submit_company`. Public REST (CORS for `https://applicable.click` +
 localhost, cached ~5 minutes): `GET /api/stats`, `GET /api/stats/history`,
 `GET /api/jobs`, `GET /api/companies/top`.
 
 Landing + dashboard live in `web/` (Next.js) → deploy to
-`applicable.parthkadam.tech` (see `web/README.md`). Host nginx must proxy `/api/`
+`applicable.click` (see `web/README.md`). Host nginx must proxy `/api/`
 to the MCP container (see `infra/nginx/mcp.parthkadam.tech.conf`).
 
 ```bash
