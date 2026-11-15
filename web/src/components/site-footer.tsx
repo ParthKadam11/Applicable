@@ -4,7 +4,6 @@ import { fetchStats } from "@/lib/api";
 import { LINKS } from "@/lib/constants";
 import {
   FOOTER_AGENTS,
-  FOOTER_ATS_LINE,
   FOOTER_PRODUCT,
   FOOTER_TAGLINE,
   footerConnect,
@@ -111,10 +110,6 @@ export async function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-[11px] leading-relaxed text-mute sm:mt-14 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1">
-            <span>{FOOTER_ATS_LINE}</span>
-            <span className="hidden text-line sm:inline" aria-hidden>
-              ·
-            </span>
             <span>
               Graph powered by{" "}
               <a

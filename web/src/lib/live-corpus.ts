@@ -5,7 +5,6 @@ import { evidenceQuote } from "@/lib/format";
 export const CORPUS_FEED_LABELS: Record<string, string> = {
   open: "Open worldwide",
   india_remote: "Remote from India",
-  india_onsite: "India onsite",
 };
 
 export type CorpusStat = {

@@ -208,10 +208,10 @@ export function McpSetup() {
         <div className="mt-10 grid items-center gap-10 border-t border-line pt-10 sm:mt-12 sm:pt-12 lg:grid-cols-2 lg:gap-14">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5">
-                <AgentLogo id={c.id} label={c.label} size="md" />
+              <span className="inline-flex size-11 shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 ring-black/5 sm:size-12">
+                <AgentLogo id={c.id} label={c.label} fill />
               </span>
-              <span className="rounded-full bg-mark-soft px-2.5 py-0.5 text-[10px] uppercase text-mark-deep">
+              <span className="rounded-full bg-mark-soft px-2.5 py-1 text-[10px] uppercase leading-none text-mark-deep">
                 {c.tag}
               </span>
             </div>

@@ -20,12 +20,12 @@ export function HowItWorks() {
       id="how"
       className="cv-auto scroll-mt-24 border-b border-line bg-soft"
     >
-      <div className="mx-auto max-w-6xl px-4 pb-14 pt-4 sm:px-8 sm:pb-20 sm:pt-6">
+      <div className="mx-auto max-w-6xl px-4 pb-14 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
         <h2 className="max-w-2xl text-balance font-display text-[1.75rem] leading-[1.15] text-ink sm:text-4xl">
           What Applicable actually does
         </h2>
 
-        <ol className="mt-10 grid gap-8 border-t border-line/80 pt-10 sm:mt-12 sm:grid-cols-3 sm:gap-8 sm:pt-12 lg:gap-12">
+        <ol className="mt-12 grid gap-8 border-t border-line/80 pt-12 sm:mt-14 sm:grid-cols-3 sm:gap-8 sm:pt-14 lg:gap-12">
           {STEPS.map((step, i) => (
             <li key={step.title} className="min-w-0">
               <span className="text-[11px] uppercase tracking-wide text-mute">
