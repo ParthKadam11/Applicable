@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { FontLoader } from "@/components/font-loader";
 import { AppSessionProvider } from "@/components/session-provider";
+import { SiteChrome } from "@/components/site-chrome";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SITE_URL } from "@/lib/constants";
@@ -88,9 +89,13 @@ export default async function RootLayout({
           children
         ) : (
           <AppSessionProvider session={session}>
-            <SiteHeader session={session} />
+            <SiteChrome>
+              <SiteHeader session={session} />
+            </SiteChrome>
             {children}
-            <SiteFooter />
+            <SiteChrome>
+              <SiteFooter />
+            </SiteChrome>
           </AppSessionProvider>
         )}
       </body>

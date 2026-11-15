@@ -357,6 +357,11 @@ async function loadPendingBatch(
     .from(companyCandidates)
     .where(and(...conditions))
     .orderBy(
+      sql`case
+        when ${companyCandidates.source} = 'early_career_seed' then 0
+        when ${companyCandidates.source} in ('remotive','jobicy','arbeitnow','himalayas','remoteok') then 1
+        else 2
+      end`,
       sql`case when ${companyCandidates.ats} is not null then 0 else 1 end`,
       companyCandidates.discoveredAt,
     )

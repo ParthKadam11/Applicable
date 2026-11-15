@@ -221,7 +221,9 @@ async function baseConditions(q: JobsListQuery): Promise<SQL[]> {
     );
   } else if (q.seniority?.length) {
     const levels = q.seniority.flatMap((s) =>
-      s === "entry" ? (["entry", "junior"] as const) : [s],
+      s === "entry" || s === "junior"
+        ? (["entry", "junior"] as const)
+        : [s],
     );
     conditions.push(inArray(jobTags.seniority, [...levels]));
   }

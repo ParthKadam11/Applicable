@@ -47,17 +47,27 @@ export const SearchJobsInputSchema = z.object({
       "Filter by location_raw substring (e.g. Bangalore, India, Remote)",
     ),
   seniority: z
-    .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+    .array(
+      z.enum([
+        "intern",
+        "entry",
+        "junior",
+        "mid",
+        "senior",
+        "staff",
+        "unknown",
+      ]),
+    )
     .min(1)
     .optional()
     .describe(
-      "Filter by seniority (intern/entry/mid/senior/staff/unknown). staff = staff+.",
+      "Filter by seniority. junior is an alias of entry. staff = staff+/principal.",
     ),
   early_career: z
     .boolean()
     .optional()
     .describe(
-      "If true, only intern + entry + mid with ≤2 years experience. Overrides seniority when set.",
+      "If true, only intern + entry (+ junior alias) + mid with ≤2 years experience. Overrides seniority when set.",
     ),
   posted_within_days: z
     .number()

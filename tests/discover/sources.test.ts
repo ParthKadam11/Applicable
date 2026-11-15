@@ -3,8 +3,11 @@ import {
   companyNameFromHnComment,
   parseHnComments,
 } from "../../src/discover/sources/hn.js";
+import { parseArbeitnowJobs } from "../../src/discover/sources/arbeitnow.js";
 import { parseHimalayasJobs } from "../../src/discover/sources/himalayas.js";
+import { parseJobicyJobs } from "../../src/discover/sources/jobicy.js";
 import { parseRemoteOkJobs } from "../../src/discover/sources/remoteok.js";
+import { parseRemotiveJobs } from "../../src/discover/sources/remotive.js";
 import { parseYcHits } from "../../src/discover/sources/yc.js";
 import { isBlocked, loadBlocklist } from "../../src/discover/blocklist.js";
 import { writeFileSync, unlinkSync } from "node:fs";
@@ -85,6 +88,69 @@ describe("remote feed parsers", () => {
       ats: "greenhouse",
       atsSlug: "basecamp",
       source: "himalayas",
+    });
+  });
+
+  it("parses Remotive / Jobicy / Arbeitnow and prioritizes early-career", () => {
+    const remotive = parseRemotiveJobs([
+      {
+        company_name: "LateCo",
+        title: "Staff Engineer",
+        description: "Apply https://jobs.lever.co/lateco/1",
+        candidate_required_location: "USA only",
+      },
+      {
+        company_name: "EarlyCo",
+        title: "Junior Backend Engineer",
+        description: "Worldwide. Apply https://jobs.ashbyhq.com/earlyco",
+        candidate_required_location: "Worldwide",
+      },
+    ]);
+    expect(remotive[0]).toMatchObject({
+      name: "EarlyCo",
+      ats: "ashby",
+      source: "remotive",
+      earlyCareer: true,
+      priorityGeo: true,
+    });
+
+    const jobicy = parseJobicyJobs([
+      {
+        companyName: "JobiCo",
+        jobTitle: "Internship - Software",
+        url: "https://boards.greenhouse.io/jobico/jobs/1",
+        jobGeo: "India",
+      },
+    ]);
+    expect(jobicy[0]).toMatchObject({
+      name: "JobiCo",
+      ats: "greenhouse",
+      source: "jobicy",
+      earlyCareer: true,
+      priorityGeo: true,
+    });
+
+    const arbeit = parseArbeitnowJobs([
+      {
+        company_name: "OnsiteCo",
+        title: "Dev",
+        remote: false,
+        url: "https://jobs.lever.co/onsiteco/1",
+      },
+      {
+        company_name: "RemoteCo",
+        title: "New Grad Engineer",
+        remote: true,
+        description: "Apply https://jobs.lever.co/remoteco/1",
+        location: "APAC",
+      },
+    ]);
+    expect(arbeit).toHaveLength(1);
+    expect(arbeit[0]).toMatchObject({
+      name: "RemoteCo",
+      ats: "lever",
+      source: "arbeitnow",
+      earlyCareer: true,
     });
   });
 });

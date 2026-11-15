@@ -1,5 +1,10 @@
 import { fetchJson } from "../../utils/http.js";
 import { extractAtsUrls } from "../ats-urls.js";
+import {
+  isEarlyCareerText,
+  isPriorityGeoText,
+  sortByDiscoveryPriority,
+} from "../early-career-signal.js";
 import type { DiscoveredCompany } from "../types.js";
 
 interface HimalayasJob {
@@ -18,25 +23,33 @@ interface HimalayasResponse {
 }
 
 export function parseHimalayasJobs(jobs: HimalayasJob[]): DiscoveredCompany[] {
-  const byKey = new Map<string, DiscoveredCompany>();
+  type Scored = DiscoveredCompany & {
+    earlyCareer?: boolean;
+    priorityGeo?: boolean;
+  };
+  const byKey = new Map<string, Scored>();
 
   for (const job of jobs) {
     const name = job.companyName?.trim();
     if (!name) continue;
 
-    const blob = [job.description, job.applicationLink, job.guid]
+    const blob = [job.description, job.applicationLink, job.guid, job.title]
       .filter(Boolean)
       .join("\n");
     const atsHits = extractAtsUrls(blob);
     const primary = atsHits[0];
-    const domain = job.companySlug
-      ? `${job.companySlug.replace(/[^a-z0-9-]/gi, "")}.example`
-      : null;
+    const earlyCareer = isEarlyCareerText(job.title, job.description);
+    const priorityGeo = isPriorityGeoText(job.description);
 
     const key = primary
       ? `${primary.ats}:${primary.atsSlug}`.toLowerCase()
       : name.toLowerCase();
-    if (byKey.has(key)) continue;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.earlyCareer = existing.earlyCareer || earlyCareer;
+      existing.priorityGeo = existing.priorityGeo || priorityGeo;
+      continue;
+    }
 
     byKey.set(key, {
       name,
@@ -50,12 +63,12 @@ export function parseHimalayasJobs(jobs: HimalayasJob[]): DiscoveredCompany[] {
           : null),
       ats: primary?.ats ?? null,
       atsSlug: primary?.atsSlug ?? null,
+      earlyCareer,
+      priorityGeo,
     });
-
-    void domain;
   }
 
-  return [...byKey.values()];
+  return sortByDiscoveryPriority([...byKey.values()]);
 }
 
 export async function discoverHimalayas(

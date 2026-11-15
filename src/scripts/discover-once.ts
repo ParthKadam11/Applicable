@@ -10,7 +10,7 @@ async function main() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean) as
-    | Array<"yc" | "hn_hiring" | "himalayas" | "remoteok">
+    | import("../discover/types.js").DiscoverSource[]
     | undefined;
 
   const promoteLimitArg = process.argv.find((a) =>

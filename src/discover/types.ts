@@ -7,7 +7,11 @@ export type DiscoverSource =
   | "hn_hiring"
   | "himalayas"
   | "remoteok"
-  | "common_crawl";
+  | "remotive"
+  | "jobicy"
+  | "arbeitnow"
+  | "common_crawl"
+  | "early_career_seed";
 
 export interface DiscoveredCompany {
   name: string;
@@ -22,6 +26,10 @@ export interface DiscoveredCompany {
   industries?: string[];
   tags?: string[];
   subindustry?: string | null;
+  /** Feed showed intern/junior/entry signal — promote sooner. */
+  earlyCareer?: boolean;
+  /** India / APAC / worldwide geo signal. */
+  priorityGeo?: boolean;
 }
 
 export interface AtsHit {

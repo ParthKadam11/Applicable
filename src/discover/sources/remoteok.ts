@@ -1,5 +1,10 @@
 import { fetchJson } from "../../utils/http.js";
 import { domainFromUrl, extractAtsUrls } from "../ats-urls.js";
+import {
+  isEarlyCareerText,
+  isPriorityGeoText,
+  sortByDiscoveryPriority,
+} from "../early-career-signal.js";
 import type { DiscoveredCompany } from "../types.js";
 
 interface RemoteOkJob {
@@ -8,25 +13,43 @@ interface RemoteOkJob {
   apply_url?: string;
   description?: string;
   company_logo?: string;
+  position?: string;
+  location?: string;
+  tags?: string[];
 }
 
 export function parseRemoteOkJobs(jobs: RemoteOkJob[]): DiscoveredCompany[] {
-  const byKey = new Map<string, DiscoveredCompany>();
+  type Scored = DiscoveredCompany & {
+    earlyCareer?: boolean;
+    priorityGeo?: boolean;
+  };
+  const byKey = new Map<string, Scored>();
 
   for (const job of jobs) {
     const name = job.company?.trim();
     if (!name || name.toLowerCase() === "undefined") continue;
 
-    const blob = [job.url, job.apply_url, job.description]
+    const blob = [job.url, job.apply_url, job.description, job.position]
       .filter(Boolean)
       .join("\n");
     const atsHits = extractAtsUrls(blob);
     const primary = atsHits[0];
+    const earlyCareer = isEarlyCareerText(
+      job.position,
+      job.description,
+      ...(job.tags ?? []),
+    );
+    const priorityGeo = isPriorityGeoText(job.location, job.description);
 
     const key = primary
       ? `${primary.ats}:${primary.atsSlug}`.toLowerCase()
       : name.toLowerCase();
-    if (byKey.has(key)) continue;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.earlyCareer = existing.earlyCareer || earlyCareer;
+      existing.priorityGeo = existing.priorityGeo || priorityGeo;
+      continue;
+    }
 
     byKey.set(key, {
       name,
@@ -37,10 +60,12 @@ export function parseRemoteOkJobs(jobs: RemoteOkJob[]): DiscoveredCompany[] {
       evidenceUrl: primary?.url ?? job.apply_url ?? job.url ?? null,
       ats: primary?.ats ?? null,
       atsSlug: primary?.atsSlug ?? null,
+      earlyCareer,
+      priorityGeo,
     });
   }
 
-  return [...byKey.values()];
+  return sortByDiscoveryPriority([...byKey.values()]);
 }
 
 export async function discoverRemoteOk(): Promise<DiscoveredCompany[]> {

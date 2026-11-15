@@ -175,7 +175,7 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     );
   } else if (raw.seniority?.length) {
     const levels = raw.seniority.flatMap((s) =>
-      s === "entry" ? ["entry", "junior"] : [s],
+      s === "entry" || s === "junior" ? ["entry", "junior"] : [s],
     );
     conditions.push(inArray(jobTags.seniority, levels));
   }
@@ -250,6 +250,20 @@ export async function searchJobs(db: Db, raw: SearchInput) {
 
   const hasMore = ranked.length > limit;
   const page = hasMore ? ranked.slice(0, limit) : ranked;
+  const totalN = Number(total);
+
+  const limitedInventory =
+    Boolean(raw.early_career) && totalN < 5
+      ? {
+          message:
+            "Limited early-career inventory right now. Try widening: drop early_career, include mid seniority, or add india_onsite eligibility.",
+          suggestions: [
+            "Set early_career=false and seniority=['intern','entry','mid']",
+            "Add eligibility india_onsite alongside open / india_remote",
+            "Broaden query / role_keywords, or raise posted_within_days",
+          ],
+        }
+      : null;
 
   return {
     results: page.map((r) => ({
@@ -266,7 +280,8 @@ export async function searchJobs(db: Db, raw: SearchInput) {
     })),
     next_cursor: hasMore ? encodeCursor(offset + limit) : null,
     count: page.length,
-    total: Number(total),
+    total: totalN,
+    ...(limitedInventory ? { limited_inventory: limitedInventory } : {}),
   };
 }
 

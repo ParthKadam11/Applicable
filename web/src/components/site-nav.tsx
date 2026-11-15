@@ -281,7 +281,9 @@ export function SiteNav({ initialUser }: Props) {
   const awaitingAvatar = status === "loading" && Boolean(initialUser);
 
   const hideChrome =
-    pathname.startsWith("/auth") || pathname.startsWith("/waitlist");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/waitlist");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);

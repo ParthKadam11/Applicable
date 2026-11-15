@@ -13,14 +13,58 @@ describe("classifySeniority", () => {
     expect(r.seniority).toBe("intern");
   });
 
-  it("maps junior / new grad / SDE I / associate to entry", () => {
+  it("maps junior / new grad / SDE I / associate / early career to entry", () => {
     expect(classifySeniority("Junior Backend Engineer").seniority).toBe("entry");
     expect(classifySeniority("New Grad Software Engineer").seniority).toBe(
       "entry",
     );
     expect(classifySeniority("SDE I").seniority).toBe("entry");
+    expect(classifySeniority("SE I").seniority).toBe("entry");
+    expect(classifySeniority("Engineer I").seniority).toBe("entry");
     expect(classifySeniority("Associate Engineer").seniority).toBe("entry");
     expect(classifySeniority("Fresher Developer").seniority).toBe("entry");
+    expect(classifySeniority("Early Career Software Engineer").seniority).toBe(
+      "entry",
+    );
+    expect(classifySeniority("Software Engineering Apprentice").seniority).toBe(
+      "intern",
+    );
+  });
+
+  it("title wins over conflicting YoE", () => {
+    expect(
+      classifySeniority(
+        "Junior Engineer",
+        "Requires 5+ years of experience.",
+      ).seniority,
+    ).toBe("entry");
+  });
+
+  it("maps 2-4 years YoE to mid when title is silent", () => {
+    expect(
+      classifySeniority(
+        "Software Engineer",
+        "We look for 2-4 years of experience.",
+      ).seniority,
+    ).toBe("mid");
+  });
+
+  it("picks up freshers welcome from description", () => {
+    expect(
+      classifySeniority(
+        "Backend Engineer",
+        "Freshers welcome. Training provided.",
+      ).seniority,
+    ).toBe("entry");
+  });
+
+  it("does not treat remote-first as early career", () => {
+    expect(
+      classifySeniority(
+        "AI Platform Engineer",
+        "This is a remote-first role based in the U.S.",
+      ).seniority,
+    ).toBe("unknown");
   });
 
   it("maps staff / principal to staff and senior/lead to senior", () => {

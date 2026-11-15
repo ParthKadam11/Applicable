@@ -62,7 +62,17 @@ export const JobsFilterFieldsSchema = z.object({
   /** Early career = intern + entry + mid with ≤2 years. */
   early_career: z.boolean().optional(),
   seniority: z
-    .array(z.enum(["intern", "entry", "mid", "senior", "staff", "unknown"]))
+    .array(
+      z.enum([
+        "intern",
+        "entry",
+        "junior",
+        "mid",
+        "senior",
+        "staff",
+        "unknown",
+      ]),
+    )
     .min(1)
     .optional(),
   sort: SortSchema.default("newest"),

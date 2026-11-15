@@ -16,21 +16,27 @@ const TITLE_PATTERNS: Array<{ level: Seniority; re: RegExp }> = [
     level: "senior",
     re: /\b(?:senior|sr\.?|lead|head|manager|director)\b/i,
   },
-  { level: "intern", re: /\b(?:intern(?:ship)?|trainee)\b/i },
   {
-    level: "entry",
-    re: /\b(?:junior|jr\.?|associate|fresher|apprentice)\b/i,
+    level: "intern",
+    re: /\b(?:intern(?:ship)?|trainee|apprentice)\b/i,
   },
   {
     level: "entry",
-    re: /\b(?:new[\s-]?grad(?:uate)?|graduate(?:\s+engineer)?|entry[\s-]?level|campus)\b/i,
+    re: /\b(?:junior|jr\.?|associate|fresher|early[\s-]?career)\b/i,
   },
-  // SDE I / Engineer I / Software Engineer 1 / L3-ish early bands
   {
     level: "entry",
-    re: /\b(?:SDE[\s-]?I\b|SDE[\s-]?1\b|Software\s+Development\s+Engineer\s+[I1]\b|Engineer\s+[I1]\b|(?:Software\s+)?Engineer\s+I\b)/i,
+    re: /\b(?:new[\s-]?grad(?:uate)?|graduate(?:\s+(?:engineer|developer|software|program))?|entry[\s-]?level|campus)\b/i,
   },
-  { level: "mid", re: /\b(?:mid[\s-]?level|mid[\s-]?career|SDE[\s-]?II\b|SDE[\s-]?2\b|Engineer\s+II\b)/i },
+  // SDE I / SE I / Engineer I / Software Engineer 1
+  {
+    level: "entry",
+    re: /\b(?:SDE[\s-]?I\b|SDE[\s-]?1\b|SE[\s-]?I\b|SE[\s-]?1\b|Software\s+Development\s+Engineer\s+[I1]\b|(?:Software\s+)?Engineer\s+[I1]\b)/i,
+  },
+  {
+    level: "mid",
+    re: /\b(?:mid[\s-]?level|mid[\s-]?career|SDE[\s-]?II\b|SDE[\s-]?2\b|SE[\s-]?II\b|Engineer\s+II\b)/i,
+  },
 ];
 
 /**
@@ -59,16 +65,28 @@ const YOE_PATTERNS: Array<{
   },
 ];
 
+/** Soft early-career phrases in the JD (when title has no signal). */
+const DESC_ENTRY_PATTERNS: RegExp[] = [
+  /\bfreshers?\s+welcome\b/i,
+  /\b(?:open\s+to\s+)?new\s+graduates?\b/i,
+  /\bcampus\s+(?:hire|hiring|recruit)\b/i,
+  /\bearly[\s-]?career\b/i,
+  /\bentry[\s-]?level\b/i,
+  /\b0[\s-–—to]+2\s*(?:years?|yrs?)\b/i,
+  // Avoid matching "remote-first role"
+  /(?<![\w-])first\s+(?:job|role)\b/i,
+];
+
 function yoeToSeniority(min: number, max: number | null): Seniority {
   if (max != null) {
     if (max <= 2) return "entry";
     if (min >= 8) return "staff";
     if (min >= 5 || max >= 6) return "senior";
-    return "mid"; // e.g. 3–5
+    // e.g. 2–4, 3–5
+    return "mid";
   }
   // Open-ended "N+ years"
   if (min <= 1) return "entry"; // "0+" / "1+"
-  if (min <= 2) return "mid";
   if (min <= 4) return "mid";
   if (min <= 7) return "senior";
   return "staff";
@@ -107,10 +125,24 @@ function fromTitle(title: string): SeniorityResult | null {
   return null;
 }
 
+function fromDescriptionPhrases(descriptionText: string): SeniorityResult | null {
+  for (const re of DESC_ENTRY_PATTERNS) {
+    const sentence = sentenceMatching(descriptionText, re);
+    if (!sentence) continue;
+    return {
+      seniority: "entry",
+      evidence: sentence,
+      yearsMin: null,
+      yearsMax: null,
+    };
+  }
+  return null;
+}
+
 /**
- * Title-first seniority, then JD years-of-experience.
+ * Title-first seniority, then JD years-of-experience / early-career phrases.
  * Levels: intern | entry | mid | senior | staff | unknown
- * ("staff" covers staff+ / principal).
+ * ("staff" covers staff+ / principal). Title wins on conflict with YoE.
  */
 export function classifySeniority(
   title: string,
@@ -118,15 +150,7 @@ export function classifySeniority(
 ): SeniorityResult {
   const titled = fromTitle(title);
   if (titled) {
-    // Still capture YoE for early-career mid<=2 filtering when title is mid.
     const yoe = parseYoe(descriptionText);
-    if (yoe && titled.seniority === "mid") {
-      return {
-        ...titled,
-        yearsMin: yoe.min,
-        yearsMax: yoe.max,
-      };
-    }
     if (yoe) {
       return {
         ...titled,
@@ -146,6 +170,9 @@ export function classifySeniority(
       yearsMax: yoe.max,
     };
   }
+
+  const soft = fromDescriptionPhrases(descriptionText);
+  if (soft) return soft;
 
   return {
     seniority: "unknown",
