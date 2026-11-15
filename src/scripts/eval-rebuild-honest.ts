@@ -200,11 +200,12 @@ async function main() {
     "job_id,company,title,location_raw,label,evidence,snippet,hand_ok",
   ];
   let auditN = 0;
-  for (const r of auditRes.rows as Array<Record<string, string>>) {
-    if (used.has(r.job_id)) continue;
+  for (const r of auditRes.rows as Array<Record<string, string | undefined>>) {
+    const jobId = r.job_id;
+    if (!jobId || used.has(jobId)) continue;
     auditLines.push(
       [
-        r.job_id,
+        jobId,
         csvEscape(r.company ?? ""),
         csvEscape(r.title ?? ""),
         csvEscape(r.location_raw ?? ""),

@@ -51,7 +51,8 @@ function audit(rows: GoldRow[], repair: boolean) {
       }).ok;
     if (!ok) {
       bad += 1;
-      const key = cause === "ok" ? "not_about_eligibility" : cause;
+      // Inside !ok, cause cannot be "ok" (narrowed); keep failure taxonomy.
+      const key = cause;
       causes[key] = (causes[key] ?? 0) + 1;
       (samples[key] ??= []).push({
         company: row.company,

@@ -111,6 +111,10 @@ async function main() {
         evidence: evidence || "",
         verified: label === "unclear" ? true : check.ok,
         prod_label: r.prod_label,
+        provenance:
+          label === "unclear" || check.ok
+            ? "evidence_validated"
+            : "copied_from_prod",
       };
       candidates.push(row);
       if (label === "unclear" || check.ok || accepted.length < Math.ceil(perLabel / 2)) {

@@ -7,7 +7,10 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { IndiaEligibilitySchema } from "../classify/types.js";
+import {
+  IndiaEligibilitySchema,
+  type IndiaEligibility,
+} from "../classify/types.js";
 import { goldTestPath, loadGoldTest } from "../learn/gold.js";
 import type { GoldRow } from "../learn/types.js";
 
@@ -79,7 +82,7 @@ function main() {
     throw new Error("CSV missing required columns");
   }
 
-  const handByKey = new Map<string, string>();
+  const handByKey = new Map<string, IndiaEligibility>();
   for (const r of table.slice(1)) {
     const hand = (r[idx.hand] ?? "").trim();
     if (!hand) continue;
@@ -97,7 +100,7 @@ function main() {
 
   const gold = loadGoldTest();
   let updated = 0;
-  const next: GoldRow[] = gold.map((row) => {
+  const next: GoldRow[] = gold.map((row): GoldRow => {
     const key = `${row.company}\t${row.title}\t${row.location_raw ?? ""}`;
     const hand = handByKey.get(key);
     if (!hand) return row;

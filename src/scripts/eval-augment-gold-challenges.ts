@@ -87,6 +87,7 @@ async function main() {
         evidence,
         verified: true,
         prod_label: r.prod_label,
+        provenance: "challenge_override",
       });
     }
   }
