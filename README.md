@@ -252,15 +252,32 @@ npm run test:integration  # needs local Postgres
 
 ---
 
-## Production
+## How it’s hosted
 
-See [DEPLOY.md](./DEPLOY.md). Short version:
+Single VPS. Public surface is HTTPS only.
+
+| Piece | How |
+|---|---|
+| **Web** | Next.js behind nginx → [applicable.click](https://applicable.click) |
+| **MCP + API** | Docker service behind nginx → [mcp.applicable.click](https://mcp.applicable.click) |
+| **Postgres** | Docker — source of truth (not public) |
+| **Ingest / classify** | Docker worker (pg-boss) |
+| **HydraDB** | Docker graph next to the app (not public) |
+| **TLS** | nginx terminates HTTPS; DB / graph stay on the private network |
+
+```
+Internet ──HTTPS──▶ nginx
+                      ├── applicable.click      → Next.js (PM2)
+                      └── mcp.applicable.click  → MCP (Docker)
+                                                    │
+                                    private: Postgres · worker · HydraDB
+```
+
+Local / self-host steps: [DEPLOY.md](./DEPLOY.md).
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
-# optional graph:
 docker compose -f docker-compose.hydra.yml up -d --build
-# web (PM2 on VPS):
 bash scripts/deploy-web.sh
 ```
 
