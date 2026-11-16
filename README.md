@@ -9,11 +9,11 @@
 
 | Metric | Value |
 |---|---|
-| Active companies | **489** |
-| Open tech roles | **4,097** |
-| Open worldwide | **60** |
-| India remote | **48** |
-| India onsite | **112** |
+| Active companies | **718** |
+| Open tech roles | **15,079** |
+| Open worldwide | **50** |
+| India remote | **101** |
+| India onsite | **339** |
 | Graph | HydraDB · ~7.2k nodes · ~24.7k edges |
 
 Numbers above are pulled from production `GET https://mcp.applicable.click/api/stats` at polish time; the landing page uses the same endpoint.
