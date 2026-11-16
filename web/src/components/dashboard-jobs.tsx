@@ -351,7 +351,8 @@ export function DashboardJobs({
             </ul>
           ) : items.length === 0 ? (
             <p className="py-16 text-center text-sm text-mute">
-              No jobs found.
+              No jobs match these filters. Try open + India remote, or clear
+              the search.
             </p>
           ) : (
             <ul>

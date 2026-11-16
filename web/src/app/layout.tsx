@@ -30,20 +30,27 @@ export const metadata: Metadata = {
     apple: [{ url: "/logo.svg" }],
   },
   openGraph: {
-    title: "Applicable",
+    title: "Applicable — Can I apply from India?",
     description:
       "Live remote tech jobs classified for India eligibility, with quoted proof.",
     url: SITE_URL,
     siteName: "Applicable",
     type: "website",
-    images: [{ url: "/logo.svg" }],
+    images: [
+      {
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Applicable — Can I apply from India?",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "Applicable",
+    card: "summary_large_image",
+    title: "Applicable — Can I apply from India?",
     description:
       "Live remote tech jobs classified for India eligibility, with quoted proof.",
-    images: ["/logo.svg"],
+    images: ["/og.jpg"],
   },
 };
 

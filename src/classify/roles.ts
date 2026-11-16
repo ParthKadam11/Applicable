@@ -41,6 +41,9 @@ const NON_TECH_TITLE: RegExp[] = [
   /\boperations manager\b|\bbusiness operations\b|\brevops\b/i,
   /\bproduct designer\b|\bux designer\b|\bui designer\b|\bgraphic designer\b/i,
   /\bbrand designer\b|\bvisual designer\b/i,
+  /\bproduct manager\b|\bprogram manager\b|(?<![A-Za-z])TPM(?![A-Za-z])/i,
+  /\bmedical (?:biller|billing|coder|assistant)\b/i,
+  /\boperations analyst\b/i,
   /\bcontent (?:writer|marketing|strategist)\b|\bcopywriter\b/i,
   /\bcommunity manager\b/i,
   // Staffing / AI-training / data-labeling gigs (not SWE roles)
@@ -198,7 +201,6 @@ export function classifyRoleFamily(
     return { role_family: "non_tech", evidence: title };
   }
 
-  const combined = `${title}\n${descriptionText}`;
   for (const { family, re } of ROLE_PATTERNS) {
     // Prefer title matches.
     if (re.test(title)) {
@@ -206,12 +208,20 @@ export function classifyRoleFamily(
       return { role_family: family, evidence: sentence };
     }
   }
-  for (const { family, re } of ROLE_PATTERNS) {
-    const sentence = sentenceMatching(combined, re);
-    if (sentence) return { role_family: family, evidence: sentence };
+
+  // Description family cues only when the title already looks engineering —
+  // otherwise "Product Manager" + "infrastructure" in the JD becomes infra.
+  const engTitle = hasTechSignal(title) || /\bsoftware\b/i.test(title);
+  if (engTitle && descriptionText) {
+    const combined = `${title}\n${descriptionText}`;
+    for (const { family, re } of ROLE_PATTERNS) {
+      const sentence = sentenceMatching(combined, re);
+      if (sentence) return { role_family: family, evidence: sentence };
+    }
+    return { role_family: "other", evidence: title };
   }
 
-  if (hasTechSignal(title) || /\bsoftware\b/i.test(title)) {
+  if (engTitle) {
     return { role_family: "other", evidence: title };
   }
 

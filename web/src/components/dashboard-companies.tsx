@@ -261,7 +261,9 @@ export function DashboardCompanies({
           ))}
         </ul>
       ) : items.length === 0 ? (
-        <p className="py-16 text-center text-sm text-mute">No companies found.</p>
+        <p className="py-16 text-center text-sm text-mute">
+          No companies match. Try a shorter name, or browse all jobs instead.
+        </p>
       ) : (
         <ul>
           {items.map((co, i) => {

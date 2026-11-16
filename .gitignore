@@ -10,3 +10,8 @@ coverage/
 backups/
 .hydra/
 vendor/hydradb/
+.cache/
+.enrich-cache/
+web/.next/
+web/node_modules/
+*.tsbuildinfo

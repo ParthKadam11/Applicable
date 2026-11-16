@@ -1,165 +1,32 @@
 # Applicable
 
-TypeScript (Node 20) backend that collects startup job postings from public ATS
-job-board APIs, stores them in Postgres, and exposes them through a hosted MCP
-server. No UI.
+**Can I apply from India?** Live remote tech jobs, classified for India eligibility, with the exact line from the posting that proves the label.
 
-**Current milestone:** hosted MCP (Streamable HTTP) on top of ingest + classify.
+- **Web:** [https://applicable.click](https://applicable.click)
+- **MCP:** [https://mcp.applicable.click](https://mcp.applicable.click)
 
-## Stack
+## Live corpus (from MCP `stats`)
 
-- TypeScript / Node 20
-- Postgres + Drizzle ORM
-- pg-boss for scheduling / retries
-- Zod for validation
-- Docker Compose for local Postgres
-- Vitest
-
-## Quick start
-
-```bash
-cp .env.example .env
-docker compose up -d
-npm install
-npm run db:generate   # if drizzle/ is empty
-npm run db:migrate
-npm run db:seed
-npm test
-npm run ingest:once   # one-shot ingest of active companies
-npm run classify:once # classify jobs needing tags; print stats
-npm run stats         # india_eligibility counts
-npm run dev           # long-running worker + 6h cron
-```
-
-## Environment
-
-See `.env.example`. Required for local ingest:
-
-| Variable | Purpose |
+| Metric | Value |
 |---|---|
-| `DATABASE_URL` | Postgres connection string |
-| `USER_AGENT` | Identifies Applicable on outbound HTTP |
-| `PER_HOST_DELAY_MS` | Polite per-host delay between requests |
-| `INGEST_CRON` | Cron expression (default every 6 hours UTC) |
-| `INGEST_CONCURRENCY` | Max concurrent company fetches (default 5) |
-| `INGEST_COMPANY_TIMEOUT_MS` | Per-company timeout (default 30000) |
-| `LLM_PROVIDERS` | Comma-separated rotation (`groq,gemini,openrouter`) |
-| `GROQ_API_KEY` / `GEMINI_API_KEY` | Optional; rules-only if unset |
-| `GROQ_MODEL` | Default `openai/gpt-oss-20b` (Llama 3.3 IDs are deprecated on Groq) |
-| `CLASSIFY_CONCURRENCY` | Max concurrent classify jobs (default 4) |
-| `LLM_RPM` | Token-bucket for LLM calls (default 30) |
-| `CLASSIFY_UNCLEAR_CRON` | Nightly unclear→LLM cron (default `30 2 * * *` Asia/Kolkata) |
+| Active companies | **489** |
+| Open tech roles | **4,097** |
+| Open worldwide | **60** |
+| India remote | **48** |
+| India onsite | **112** |
+| Graph | HydraDB · ~7.2k nodes · ~24.7k edges |
 
-| `MCP_HTTP_PORT` | Streamable HTTP listen port (default 3100) |
-| `MCP_RATE_LIMIT_RPM` | Per-IP rate limit (default 60) |
-| `MCP_PUBLIC_URL` | Public MCP URL for docs / clients |
-| `MCP_HOST` | Hostname for Caddy TLS (`docker compose --profile tls`) |
+Numbers above are pulled from production `GET https://mcp.applicable.click/api/stats` at polish time; the landing page uses the same endpoint.
 
-## Adding companies
+## What it is
 
-Edit `companies.yaml`:
+Applicable ingests public ATS job boards (Ashby, Greenhouse, Lever, SmartRecruiters), stores postings in **Postgres (source of truth)**, classifies India eligibility with rules (+ LLM when unclear), and syncs a skills/company **graph into HydraDB**.
 
-```yaml
-companies:
-  - name: Acme
-    website: https://acme.com
-    ats: ashby          # ashby | greenhouse | lever
-    ats_slug: acme
-```
+You can browse jobs on the site, or ask an AI agent via MCP tools: `search_jobs`, `get_job`, `get_company`, `stats`, `ask_jobs`, and more.
 
-Then:
+## Connect the MCP (30 seconds)
 
-```bash
-npm run db:seed
-```
-
-### Detect ATS from a careers page
-
-```bash
-npm run detect-ats -- https://acme.com/careers
-```
-
-Prints JSON with detected `ats` + `ats_slug` from known host patterns
-(`jobs.ashbyhq.com`, `boards.greenhouse.io`, `jobs.lever.co`).
-
-## Ingestion
-
-- One adapter per ATS behind `fetchJobs(slug, companyId) → NormalizedJob[]`
-- Implemented now: **Ashby**, **Greenhouse**, **Lever**
-- Upserts into `jobs` on `(company_id, external_id)`, stores `content_hash`
-- Jobs missing from the latest successful fetch get `closed_at = now()`
-- pg-boss cron every 6 hours enqueues one job per active company
-- Concurrency 5, retries with backoff, 30s per-company timeout
-- Each attempt logged in `fetch_runs` (`ok`, `job_count`, `error`)
-
-```bash
-npm run ingest:once   # enqueue all active companies once
-npm run dev           # worker + schedule
-```
-
-## Tests
-
-```bash
-npm test                         # unit tests (fixtures, no network)
-docker compose up -d
-npm run db:migrate
-DATABASE_URL=postgres://jobfit:jobfit@127.0.0.1:5435/jobfit npm run test:integration
-```
-
-## Classification
-
-- Rules first (`src/classify/rules.ts`): india eligibility, interview style,
-  contractor/EOR, compensation, seniority, role family - each with evidence quotes.
-- Bare `"Remote"` is never `india_eligibility=open`.
-- Non-tech titles are skipped at ingest (not stored); closed-job detection still
-  uses the full board ID set.
-- LLM only when rules leave eligibility unclear (tech roles). Nightly cron
-  `classify-unclear-nightly` (02:30 Asia/Kolkata) batches unclear jobs with no
-  prior LLM result and stops cleanly when free-tier quotas are exhausted.
-- Evidence guard rejects any quote that is not a whitespace-normalized substring
-  of the posting; rejected fields fall back to `unclear` / unknown.
-- After ingest, jobs with new/changed `content_hash` are enqueued on `classify-job`.
-- `daily_stats` is written after each ingest schedule (and 04:00 IST backup cron).
-
-```bash
-npm run classify:once
-npm run classify:unclear-nightly -- --limit 100
-npm run stats
-npm run stats:daily
-```
-
-## MCP (hosted)
-
-Read-only Streamable HTTP MCP server against Postgres. Tools:
-`search_jobs`, `get_job`, `list_companies`, `stats` (optional `history` days),
-`submit_company`. Public REST (CORS for `https://applicable.click` +
-localhost, cached ~5 minutes): `GET /api/stats`, `GET /api/stats/history`,
-`GET /api/jobs`, `GET /api/companies/top`.
-
-Landing + dashboard live in `web/` (Next.js) → deploy to
-`applicable.click` (see `web/README.md`). Host nginx must proxy `/api/`
-to the MCP container (see `infra/nginx/mcp.applicable.click.conf`).
-
-Public MCP URL: **`https://mcp.applicable.click`** (host root).
-
-```bash
-npm run mcp:http          # http://localhost:3100/  (MCP at /)
-npm run mcp:stdio         # local stdio for Cursor/Claude Desktop
-npm run mcp:smoke         # call each tool once against the DB
-docker compose up -d --build mcp
-curl -s http://localhost:3100/health
-```
-
-For HTTPS on a Contabo VPS (Let's Encrypt via Caddy):
-
-```bash
-export MCP_HOST=mcp.applicable.click
-docker compose --profile tls up -d --build
-```
-
-### Connect in 30 seconds
-
-**Claude Desktop** (`claude_desktop_config.json`):
+**Cursor** — Settings → MCP → Add server:
 
 ```json
 {
@@ -171,59 +38,60 @@ docker compose --profile tls up -d --build
 }
 ```
 
-If your Claude build only supports stdio locally:
+**Claude** — custom connector URL: `https://mcp.applicable.click`
 
-```json
-{
-  "mcpServers": {
-    "applicable": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.applicable.click"]
-    }
-  }
-}
-```
-
-**Cursor** (Settings → MCP → Add server):
-
-```json
-{
-  "mcpServers": {
-    "applicable": {
-      "url": "https://mcp.applicable.click"
-    }
-  }
-}
-```
-
-**curl** (initialize):
+**Health check**
 
 ```bash
-curl -s http://localhost:3100/health
-curl -s -X POST http://localhost:3100/ \
+curl -s https://mcp.applicable.click/health
+```
+
+**Initialize (Streamable HTTP)** — use `POST`, not a bare `GET` (GET opens a long-lived stream):
+
+```bash
+curl -s -X POST https://mcp.applicable.click/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"0.0.1"}}}'
 ```
 
-## Project layout
+Public REST (same data as the landing stats/feed): `/api/stats`, `/api/jobs`, `/api/companies/top`.
+
+## Architecture
 
 ```
-src/
-  ats/           # ATS adapters (ashby, greenhouse, lever)
-  classify/      # rules + LLM eligibility
-  discover/      # YC/HN/remote company discovery
-  mcp/           # Streamable HTTP + stdio MCP server
-  db/            # Drizzle schema, client, migrate
-  ingestion/     # upsert, fetch-company, pg-boss
-  scripts/       # seed, detect-ats, ingest-once, mcp-smoke
-  utils/         # http, html strip, content hash
-tests/
-  ats/           # adapter unit tests + fixtures
-  mcp/           # MCP schema + tool tests
-  integration/   # docker Postgres ingestion test
-companies.yaml
-drizzle/         # SQL migrations
-Dockerfile       # mcp image
-Caddyfile        # TLS reverse proxy for mcp.<domain>
+ATS boards ──ingest──▶ Postgres ──classify──▶ job_tags
+                 │                      │
+                 │                      └──sync──▶ HydraDB graph
+                 │
+                 ├── MCP (mcp.applicable.click)
+                 └── Next.js web (applicable.click)
+```
+
+- **Postgres** is the source of truth for jobs, companies, and eligibility labels.
+- **HydraDB** is the graph used by `ask_jobs` / skill matching (falls back to search when the graph is off).
+- Staffing / AI-trainer noise is kept in the DB but flagged `role_family=non_tech` and excluded from tech search by default.
+
+## Local development
+
+```bash
+cp .env.example .env
+docker compose up -d
+npm install
+npm run db:migrate
+npm run db:seed
+npm test
+npm run ingest:once
+npm run classify:once
+npm run mcp:http          # :3100
+cd web && npm install && npm run dev
+```
+
+See `.env.example` for required keys. Never commit `.env`.
+
+## Tests
+
+```bash
+npm test                  # unit
+npm run test:integration  # needs local Postgres
 ```

@@ -118,6 +118,25 @@ export async function fetchLandingFeedJobs(): Promise<JobRow[]> {
     if (job.eligibility !== "open" && job.eligibility !== "india_remote") {
       continue;
     }
+    // Demo hygiene: skip obvious non-eng titles if any slip past tags.
+    if (
+      /\b(product manager|program manager|medical biller|manufacturing|dialect|ai[\s-]?trainer|annotat)/i.test(
+        job.title,
+      )
+    ) {
+      continue;
+    }
+    const quote = evidenceQuoteFromJob(job.evidence)?.toLowerCase() ?? "";
+    if (
+      !quote ||
+      quote === "undefined" ||
+      quote === "null" ||
+      /example\.com/i.test(quote)
+    ) {
+      continue;
+    }
+    const site = (job.company_website ?? "").toLowerCase();
+    if (site.includes("example.com")) continue;
     const key = job.company.trim().toLowerCase();
     const n = perCompany.get(key) ?? 0;
     if (n >= 2) continue;

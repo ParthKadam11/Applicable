@@ -41,6 +41,21 @@ describe("classifyRoleFamily", () => {
     );
     expect(classifyRoleFamily("Product Designer").role_family).toBe("non_tech");
     expect(classifyRoleFamily("General Counsel").role_family).toBe("non_tech");
+    expect(classifyRoleFamily("Product Manager - Auth").role_family).toBe(
+      "non_tech",
+    );
+    expect(
+      classifyRoleFamily("Medical Biller, Specialty DME").role_family,
+    ).toBe("non_tech");
+  });
+
+  it("does not promote Product Manager via description infrastructure cues", () => {
+    expect(
+      classifyRoleFamily(
+        "Product Manager - Platform",
+        "You will own our infrastructure and platform engineer roadmap.",
+      ).role_family,
+    ).toBe("non_tech");
   });
 
   it("keeps sales engineer as tech solutions", () => {
