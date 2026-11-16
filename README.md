@@ -1,28 +1,33 @@
 # Applicable
 
-**Can I apply from India?** Live remote tech jobs, classified for India eligibility, with the exact line from the posting that proves the label.
+**Can I apply from India?**
 
-- **Web:** [https://applicable.click](https://applicable.click)
-- **MCP:** [https://mcp.applicable.click](https://mcp.applicable.click)
+Live remote tech jobs, labeled for India eligibility, with the exact line from the posting that proves it.
 
-## Live corpus (from MCP `stats`)
+[![Applicable — remote jobs that actually hire from India](docs/applicable-hero.jpg)](https://applicable.click)
+
+- **Web:** [applicable.click](https://applicable.click)
+- **MCP:** [mcp.applicable.click](https://mcp.applicable.click)
+- **Waitlist:** [joinwaitlist.parthkadam.tech](https://joinwaitlist.parthkadam.tech)
+
+## Live corpus
 
 | Metric | Value |
 |---|---|
-| Active companies | **718** |
+| Companies tracked | **718** |
 | Open tech roles | **15,079** |
+| Remote from India | **101** |
 | Open worldwide | **50** |
-| India remote | **101** |
 | India onsite | **339** |
 | Graph | HydraDB · ~7.2k nodes · ~24.7k edges |
 
-Numbers above are pulled from production `GET https://mcp.applicable.click/api/stats` at polish time; the landing page uses the same endpoint.
+Same numbers power the landing page via `GET https://mcp.applicable.click/api/stats`.
 
 ## What it is
 
-Applicable ingests public ATS job boards (Ashby, Greenhouse, Lever, SmartRecruiters), stores postings in **Postgres (source of truth)**, classifies India eligibility with rules (+ LLM when unclear), and syncs a skills/company **graph into HydraDB**.
+Applicable ingests public ATS boards (Ashby, Greenhouse, Lever, SmartRecruiters, Workable), stores postings in **Postgres**, classifies India eligibility with rules (+ LLM when unclear), and syncs a skills/company **graph into HydraDB**.
 
-You can browse jobs on the site, or ask an AI agent via MCP tools: `search_jobs`, `get_job`, `get_company`, `stats`, `ask_jobs`, and more.
+Browse on the site, or ask an agent over MCP: `search_jobs`, `get_job`, `get_company`, `stats`, `ask_jobs`, and more.
 
 ## Connect the MCP (30 seconds)
 
@@ -46,15 +51,6 @@ You can browse jobs on the site, or ask an AI agent via MCP tools: `search_jobs`
 curl -s https://mcp.applicable.click/health
 ```
 
-**Initialize (Streamable HTTP)** — use `POST`, not a bare `GET` (GET opens a long-lived stream):
-
-```bash
-curl -s -X POST https://mcp.applicable.click/ \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl","version":"0.0.1"}}}'
-```
-
 Public REST (same data as the landing stats/feed): `/api/stats`, `/api/jobs`, `/api/companies/top`.
 
 ## Architecture
@@ -70,7 +66,7 @@ ATS boards ──ingest──▶ Postgres ──classify──▶ job_tags
 
 - **Postgres** is the source of truth for jobs, companies, and eligibility labels.
 - **HydraDB** is the graph used by `ask_jobs` / skill matching (falls back to search when the graph is off).
-- Staffing / AI-trainer noise is kept in the DB but flagged `role_family=non_tech` and excluded from tech search by default.
+- Non-tech noise is kept in the DB as `role_family=non_tech` and excluded from tech search by default.
 
 ## Local development
 
