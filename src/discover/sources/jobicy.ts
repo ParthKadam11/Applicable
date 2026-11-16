@@ -2,7 +2,7 @@ import { fetchJson } from "../../utils/http.js";
 import { domainFromUrl, extractAtsUrls } from "../ats-urls.js";
 import {
   isEarlyCareerText,
-  isPriorityGeoText,
+  isWorldwideAnywhereText,
   sortByDiscoveryPriority,
 } from "../early-career-signal.js";
 import type { DiscoveredCompany } from "../types.js";
@@ -61,7 +61,12 @@ export function parseJobicyJobs(jobs: JobicyJob[]): DiscoveredCompany[] {
       job.jobExcerpt,
       job.jobDescription,
     );
-    const priorityGeo = isPriorityGeoText(job.jobGeo, job.jobDescription);
+    const worldwide = isWorldwideAnywhereText(
+      job.jobGeo,
+      job.jobDescription,
+      job.jobExcerpt,
+    );
+    if (!worldwide && !primary) continue;
 
     const key = primary
       ? `${primary.ats}:${primary.atsSlug}`.toLowerCase()
@@ -69,7 +74,7 @@ export function parseJobicyJobs(jobs: JobicyJob[]): DiscoveredCompany[] {
     const existing = byKey.get(key);
     if (existing) {
       existing.earlyCareer = existing.earlyCareer || earlyCareer;
-      existing.priorityGeo = existing.priorityGeo || priorityGeo;
+      existing.priorityGeo = true;
       continue;
     }
 
@@ -81,7 +86,7 @@ export function parseJobicyJobs(jobs: JobicyJob[]): DiscoveredCompany[] {
       ats: primary?.ats ?? null,
       atsSlug: primary?.atsSlug ?? null,
       earlyCareer,
-      priorityGeo,
+      priorityGeo: true,
     });
   }
 

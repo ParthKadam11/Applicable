@@ -27,9 +27,24 @@ const PATTERNS: Array<{
     regex: /https?:\/\/jobs\.smartrecruiters\.com\/([a-zA-Z0-9_-]+)/gi,
     slugGroup: 1,
   },
+  {
+    ats: "workable",
+    regex:
+      /https?:\/\/(?:apply|jobs)\.workable\.com\/([a-zA-Z0-9_-]+)(?:\/|$)/gi,
+    slugGroup: 1,
+  },
 ];
 
-/** Extract Ashby / Greenhouse / Lever / SmartRecruiters board hits from text. */
+const WORKABLE_SLUG_BLOCK = new Set([
+  "api",
+  "j",
+  "jobs",
+  "accounts",
+  "widget",
+  "spi",
+]);
+
+/** Extract Ashby / Greenhouse / Lever / SmartRecruiters / Workable board hits from text. */
 export function extractAtsUrls(text: string): AtsHit[] {
   const found = new Map<string, AtsHit>();
   for (const pattern of PATTERNS) {
@@ -38,6 +53,12 @@ export function extractAtsUrls(text: string): AtsHit[] {
     while ((match = pattern.regex.exec(text)) !== null) {
       const slug = match[pattern.slugGroup];
       if (!slug) continue;
+      if (
+        pattern.ats === "workable" &&
+        WORKABLE_SLUG_BLOCK.has(slug.toLowerCase())
+      ) {
+        continue;
+      }
       const key = `${pattern.ats}:${slug.toLowerCase()}`;
       if (!found.has(key)) {
         found.set(key, {

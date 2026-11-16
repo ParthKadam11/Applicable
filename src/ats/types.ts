@@ -5,6 +5,7 @@ export const AtsSchema = z.enum([
   "greenhouse",
   "lever",
   "smartrecruiters",
+  "workable",
 ]);
 
 export type Ats = z.infer<typeof AtsSchema>;

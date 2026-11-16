@@ -9,6 +9,16 @@ const EARLY_RE =
 const GEO_RE =
   /\b(?:worldwide|world[\s-]?wide|anywhere|global|india|indian|apac|asia[\s-]?pacific|south[\s-]?asia|bangalore|bengaluru|hyderabad|pune|mumbai|delhi|chennai|remote[\s-]?from[\s-]?india)\b/i;
 
+/** Stricter worldwide/anywhere tag used when filtering remote boards. */
+const WORLDWIDE_RE =
+  /\b(?:worldwide|world[\s-]?wide|anywhere|work\s+from\s+anywhere|global(?:ly)?)\b/i;
+
+export function isWorldwideAnywhereText(
+  ...parts: Array<string | null | undefined>
+): boolean {
+  return WORLDWIDE_RE.test(parts.filter(Boolean).join("\n"));
+}
+
 export function isEarlyCareerText(...parts: Array<string | null | undefined>): boolean {
   return EARLY_RE.test(parts.filter(Boolean).join("\n"));
 }

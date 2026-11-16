@@ -11,7 +11,8 @@ export type DiscoverSource =
   | "jobicy"
   | "arbeitnow"
   | "common_crawl"
-  | "early_career_seed";
+  | "early_career_seed"
+  | "simplify_jobs";
 
 export interface DiscoveredCompany {
   name: string;

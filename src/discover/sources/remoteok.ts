@@ -2,7 +2,7 @@ import { fetchJson } from "../../utils/http.js";
 import { domainFromUrl, extractAtsUrls } from "../ats-urls.js";
 import {
   isEarlyCareerText,
-  isPriorityGeoText,
+  isWorldwideAnywhereText,
   sortByDiscoveryPriority,
 } from "../early-career-signal.js";
 import type { DiscoveredCompany } from "../types.js";
@@ -34,12 +34,18 @@ export function parseRemoteOkJobs(jobs: RemoteOkJob[]): DiscoveredCompany[] {
       .join("\n");
     const atsHits = extractAtsUrls(blob);
     const primary = atsHits[0];
+    const tagText = (job.tags ?? []).join(" ");
     const earlyCareer = isEarlyCareerText(
       job.position,
       job.description,
-      ...(job.tags ?? []),
+      tagText,
     );
-    const priorityGeo = isPriorityGeoText(job.location, job.description);
+    const worldwide = isWorldwideAnywhereText(
+      job.location,
+      job.description,
+      tagText,
+    );
+    if (!worldwide && !primary) continue;
 
     const key = primary
       ? `${primary.ats}:${primary.atsSlug}`.toLowerCase()
@@ -47,7 +53,7 @@ export function parseRemoteOkJobs(jobs: RemoteOkJob[]): DiscoveredCompany[] {
     const existing = byKey.get(key);
     if (existing) {
       existing.earlyCareer = existing.earlyCareer || earlyCareer;
-      existing.priorityGeo = existing.priorityGeo || priorityGeo;
+      existing.priorityGeo = true;
       continue;
     }
 
@@ -61,7 +67,7 @@ export function parseRemoteOkJobs(jobs: RemoteOkJob[]): DiscoveredCompany[] {
       ats: primary?.ats ?? null,
       atsSlug: primary?.atsSlug ?? null,
       earlyCareer,
-      priorityGeo,
+      priorityGeo: true,
     });
   }
 

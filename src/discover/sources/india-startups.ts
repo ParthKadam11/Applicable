@@ -57,12 +57,19 @@ const KNOWN_INDIA: Array<{
   { name: "Smallcase", website: "https://www.smallcase.com", slugHints: ["smallcase"] },
 ];
 
-const PROBE_ORDER: Ats[] = ["ashby", "greenhouse", "lever", "smartrecruiters"];
+const PROBE_ORDER: Ats[] = [
+  "ashby",
+  "greenhouse",
+  "lever",
+  "smartrecruiters",
+  "workable",
+];
 
 function careersUrl(ats: Ats, slug: string): string {
   if (ats === "ashby") return `https://jobs.ashbyhq.com/${slug}`;
   if (ats === "greenhouse") return `https://boards.greenhouse.io/${slug}`;
   if (ats === "lever") return `https://jobs.lever.co/${slug}`;
+  if (ats === "workable") return `https://apply.workable.com/${slug}`;
   return `https://jobs.smartrecruiters.com/${slug}`;
 }
 
@@ -121,7 +128,7 @@ async function resolveBoard(
   return null;
 }
 
-/** Probe known India startups against public Ashby/Greenhouse/Lever boards. */
+/** Probe known India startups against Ashby/GH/Lever/SR/Workable boards. */
 export async function discoverIndiaStartups(): Promise<DiscoveredCompany[]> {
   const out: DiscoveredCompany[] = [];
   let resolved = 0;

@@ -3,6 +3,7 @@ import { extractAtsUrls } from "../ats-urls.js";
 import {
   isEarlyCareerText,
   isPriorityGeoText,
+  isWorldwideAnywhereText,
   sortByDiscoveryPriority,
 } from "../early-career-signal.js";
 import type { DiscoveredCompany } from "../types.js";
@@ -39,7 +40,11 @@ export function parseHimalayasJobs(jobs: HimalayasJob[]): DiscoveredCompany[] {
     const atsHits = extractAtsUrls(blob);
     const primary = atsHits[0];
     const earlyCareer = isEarlyCareerText(job.title, job.description);
-    const priorityGeo = isPriorityGeoText(job.description);
+    const worldwide = isWorldwideAnywhereText(job.description, job.title);
+    const priorityGeo =
+      worldwide || isPriorityGeoText(job.description, job.title);
+    // Prefer worldwide/anywhere-tagged postings for growth.
+    if (!worldwide && !primary) continue;
 
     const key = primary
       ? `${primary.ats}:${primary.atsSlug}`.toLowerCase()
@@ -64,7 +69,7 @@ export function parseHimalayasJobs(jobs: HimalayasJob[]): DiscoveredCompany[] {
       ats: primary?.ats ?? null,
       atsSlug: primary?.atsSlug ?? null,
       earlyCareer,
-      priorityGeo,
+      priorityGeo: true,
     });
   }
 

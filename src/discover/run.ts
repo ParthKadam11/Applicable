@@ -13,6 +13,7 @@ import {
 import { discoverJobicy } from "./sources/jobicy.js";
 import { discoverRemoteOk } from "./sources/remoteok.js";
 import { discoverRemotive } from "./sources/remotive.js";
+import { discoverSimplifyJobs } from "./sources/simplify-jobs.js";
 import { discoverYc } from "./sources/yc.js";
 import type { DiscoverSource, DiscoveredCompany } from "./types.js";
 import { upsertCandidates } from "./upsert-candidates.js";
@@ -35,6 +36,7 @@ const EMPTY_COUNTS = (): Record<DiscoverSource, number> => ({
   arbeitnow: 0,
   common_crawl: 0,
   early_career_seed: 0,
+  simplify_jobs: 0,
 });
 
 export async function runDiscovery(
@@ -53,6 +55,7 @@ export async function runDiscovery(
         "yc_india",
         "india_startups",
         "early_career_seed",
+        "simplify_jobs",
         "hn_hiring",
         "himalayas",
         "remoteok",
@@ -87,6 +90,7 @@ export async function runDiscovery(
   await runSource("yc_india", discoverYcIndia);
   await runSource("india_startups", discoverIndiaStartups);
   await runSource("early_career_seed", discoverEarlyCareerSeed);
+  await runSource("simplify_jobs", discoverSimplifyJobs);
   await runSource("hn_hiring", discoverHnHiring);
   await runSource("himalayas", discoverHimalayas);
   await runSource("remoteok", discoverRemoteOk);

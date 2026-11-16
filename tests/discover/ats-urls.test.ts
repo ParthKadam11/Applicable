@@ -27,6 +27,15 @@ describe("extractAtsUrls", () => {
     expect(hits).toHaveLength(1);
     expect(hits[0]?.atsSlug).toBe("modal");
   });
+
+  it("parses Workable apply board URLs and skips reserved slugs", () => {
+    const hits = extractAtsUrls(
+      "https://apply.workable.com/huggingface/j/ABC https://apply.workable.com/api/v3/x",
+    );
+    expect(hits).toEqual([
+      expect.objectContaining({ ats: "workable", atsSlug: "huggingface" }),
+    ]);
+  });
 });
 
 describe("domainFromUrl", () => {

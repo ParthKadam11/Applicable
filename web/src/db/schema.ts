@@ -21,6 +21,7 @@ export const atsEnum = pgEnum("ats", [
   "greenhouse",
   "lever",
   "smartrecruiters",
+  "workable",
 ]);
 
 export const candidateStatusEnum = pgEnum("candidate_status", [

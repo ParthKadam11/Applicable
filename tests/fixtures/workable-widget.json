@@ -1,0 +1,50 @@
+{
+  "name": "Hugging Face",
+  "description": null,
+  "jobs": [
+    {
+      "title": "Open-Source Machine Learning Engineer - EMEA Remote",
+      "shortcode": "ABC123",
+      "code": "",
+      "employment_type": "full_time",
+      "telecommuting": true,
+      "department": "Engineering",
+      "url": "https://apply.workable.com/huggingface/j/ABC123/",
+      "shortlink": "https://apply.workable.com/j/ABC123",
+      "application_url": "https://apply.workable.com/huggingface/j/ABC123/apply",
+      "published_on": "2026-09-21",
+      "created_at": "2026-09-20T12:00:00Z",
+      "country": "France",
+      "city": "",
+      "state": "",
+      "locations": [
+        {
+          "country": "France",
+          "countryCode": "FR",
+          "city": "",
+          "region": null,
+          "hidden": false
+        }
+      ],
+      "description": "<p>Build open-source ML tools.</p>"
+    },
+    {
+      "title": "Open-Source Machine Learning Engineer - EMEA Remote",
+      "shortcode": "ABC123",
+      "telecommuting": true,
+      "department": "Engineering",
+      "url": "https://apply.workable.com/huggingface/j/ABC123/",
+      "country": "Germany",
+      "city": "Berlin",
+      "locations": [
+        {
+          "country": "Germany",
+          "countryCode": "DE",
+          "city": "Berlin",
+          "hidden": false
+        }
+      ],
+      "description": "<p>Build open-source ML tools.</p>"
+    }
+  ]
+}
